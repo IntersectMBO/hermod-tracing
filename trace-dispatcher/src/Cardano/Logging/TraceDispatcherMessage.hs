@@ -6,13 +6,14 @@ module Cardano.Logging.TraceDispatcherMessage
 
 import           Cardano.Logging.ConfigurationParser ()
 import           Cardano.Logging.Types
+import           Cardano.Logging.Utils (showT)
 
-import           Data.Aeson hiding (Error)
-import           Data.ByteString.Lazy (toStrict)
-import qualified Data.Map as Map
-import           Data.Text (Text)
-import qualified Data.Text as Text
-import qualified Data.Text.Encoding as Text
+import           Data.Aeson                          hiding (Error)
+import           Data.ByteString.Lazy                (toStrict)
+import qualified Data.Map                            as Map
+import           Data.Text                           (Text)
+import qualified Data.Text                           as Text
+import qualified Data.Text.Encoding                  as Text
 
 data UnknownNamespaceKind =
     UKFSeverity
@@ -21,8 +22,8 @@ data UnknownNamespaceKind =
 
 instance Show UnknownNamespaceKind where
   show UKFSeverity = "severity"
-  show UKFPrivacy = "privacy"
-  show UKFDetails = "details"
+  show UKFPrivacy  = "privacy"
+  show UKFDetails  = "details"
 
 data TraceDispatcherMessage =
     StartLimiting Text
@@ -50,19 +51,19 @@ data TraceDispatcherMessage =
 instance LogFormatting TraceDispatcherMessage where
   forHuman (StartLimiting txt) = "Start of frequency limiting for " <> txt
   forHuman (StopLimiting txt num) = "Stop of frequency limiting for " <> txt <>
-    ". Suppressed " <> textShow num <> " messages."
+    ". Suppressed " <> showT num <> " messages."
   forHuman (RememberLimiting txt num) = "Frequency limiting still active for " <> txt <>
-    ". Suppressed so far " <> textShow num <> " messages."
+    ". Suppressed so far " <> showT num <> " messages."
   forHuman (UnknownNamespace nsPrefixNS nsInnerNS qk) = "Unknown namespace detected "
     <> Text.intercalate (Text.singleton '.') (nsPrefixNS ++ nsInnerNS)
-    <> ". Used for querying " <> textShow qk <> "."
+    <> ". Used for querying " <> showT qk <> "."
   forHuman (TracerInfo silent noMetrics allTracers) = "The tracing system has silent the following tracer,"
     <> " as they will never have any output according to the current config: "
-    <> Text.intercalate (Text.singleton ' ') silent <> ". The following tracers will not emit metrics "
-    <> Text.intercalate (Text.singleton ' ') noMetrics <> ". Here is a complete list of all tracers: "
-    <> Text.intercalate (Text.singleton ' ') allTracers <> "."
-  forHuman (MetricsInfo mmap) = "Number of metrics delivered, " <> textShow mmap
-  forHuman (TracerConsistencyWarnings errs) = "Consistency check found warnings:  " <> textShow errs
+    <> Text.unwords silent <> ". The following tracers will not emit metrics "
+    <> Text.unwords noMetrics <> ". Here is a complete list of all tracers: "
+    <> Text.unwords allTracers <> "."
+  forHuman (MetricsInfo mmap) = "Number of metrics delivered, " <> showT mmap
+  forHuman (TracerConsistencyWarnings errs) = "Consistency check found warnings:  " <> showT errs
   forHuman (TracerInfoConfig tc) = "Effective Tracer config is:  " <> Text.decodeUtf8 (toStrict (encode tc))
 
 
@@ -81,37 +82,29 @@ instance LogFormatting TraceDispatcherMessage where
         [ "kind" .= String "UnknownNamespace"
         , "unknownNamespace" .= String (Text.intercalate (Text.singleton '.') nsun)
         , "legalNamespace" .= String (Text.intercalate (Text.singleton '.') nsleg)
-        , "querying" .= String (textShow query)
+        , "querying" .= String (showT query)
         ]
   forMachine _dtl (TracerInfo silent noMetrics allTracers) = mconcat
         [ "kind" .= String "TracerMeta"
-        , "silentTracers" .= String (Text.intercalate (Text.singleton ' ') silent)
-        , "noMetrics" .= String (Text.intercalate (Text.singleton ' ') noMetrics)
-        , "allTracers" .= String (Text.intercalate (Text.singleton ' ') allTracers)
+        , "silentTracers" .= String (Text.unwords silent)
+        , "noMetrics" .= String (Text.unwords noMetrics)
+        , "allTracers" .= String (Text.unwords allTracers)
         ]
   forMachine _dtl (MetricsInfo mmap) = mconcat
         [ "kind" .= String "MetricsInfo"
-        , "metrics count" .= String (textShow mmap)
+        , "metrics count" .= String (showT mmap)
         ]
   forMachine _dtl (TracerConsistencyWarnings errs) = mconcat
         [ "kind" .= String "TracerConsistencyWarnings"
-        , "errors" .= String (textShow errs)
+        , "errors" .= String (showT errs)
         ]
   forMachine _dtl (TracerInfoConfig tc) = mconcat
         [ "conf" .= toJSON tc
         ]
 
-
-  asMetrics StartLimiting {} = []
-  asMetrics (StopLimiting txt num)  = [IntM
-                                        ("SuppressedMessages " <> txt)
-                                        (fromIntegral num)]
-  asMetrics RememberLimiting {} = []
-  asMetrics UnknownNamespace {} = []
-  asMetrics TracerInfo {}       = []
-  asMetrics MetricsInfo {}      = []
-  asMetrics TracerConsistencyWarnings {}     = []
-  asMetrics TracerInfoConfig {} = []
+  asMetrics = \case
+    StopLimiting txt num -> [IntM ("SuppressedMessages." <> txt) (fromIntegral num)]
+    _                    -> []
 
 internalRestriction :: Text
 internalRestriction = "\nThis internal message can't be filtered by the current configuration"
@@ -126,17 +119,15 @@ instance MetaTrace TraceDispatcherMessage where
     namespaceFor TracerConsistencyWarnings {}     = Namespace [] ["TracerConsistencyWarnings"]
     namespaceFor TracerInfoConfig {} = Namespace [] ["TracerConfigInfo"]
 
-
-
-    severityFor (Namespace _ ["StartLimiting"]) _    = Just Notice
-    severityFor (Namespace _ ["StopLimiting"]) _     = Just Notice
-    severityFor (Namespace _ ["RememberLimiting"]) _ = Just Notice
-    severityFor (Namespace _ ["UnknownNamespace"]) _ = Just Error
-    severityFor (Namespace _ ["TracerInfo"]) _       = Just Notice
-    severityFor (Namespace _ ["MetricsInfo"]) _      = Just Debug
-    severityFor (Namespace _ ["TracerConsistencyWarnings"]) _  = Just Warning
-    severityFor (Namespace _ ["TracerConfigInfo"]) _       = Just Notice
-    severityFor _ _                                  = Nothing
+    severityFor (Namespace _ ["StartLimiting"]) _             = Just Notice
+    severityFor (Namespace _ ["StopLimiting"]) _              = Just Notice
+    severityFor (Namespace _ ["RememberLimiting"]) _          = Just Notice
+    severityFor (Namespace _ ["UnknownNamespace"]) _          = Just Error
+    severityFor (Namespace _ ["TracerInfo"]) _                = Just Notice
+    severityFor (Namespace _ ["MetricsInfo"]) _               = Just Debug
+    severityFor (Namespace _ ["TracerConsistencyWarnings"]) _ = Just Warning
+    severityFor (Namespace _ ["TracerConfigInfo"]) _          = Just Notice
+    severityFor _ _                                           = Nothing
 
     documentFor (Namespace _ ["StartLimiting"])    = Just $
       "This message indicates the start of frequency limiting" <> internalRestriction
@@ -167,9 +158,8 @@ instance MetaTrace TraceDispatcherMessage where
     documentFor _ = Nothing
 
     metricsDocFor (Namespace _ ["StartLimiting"])    =
-      [("SuppressedMessages...", "Number of suppressed messages of a certain kind")]
+      [("SuppressedMessages..", "Number of suppressed messages of a certain namespace")]
     metricsDocFor _ = []
-
 
     allNamespaces = [
         Namespace [] ["StartLimiting"]
@@ -181,8 +171,3 @@ instance MetaTrace TraceDispatcherMessage where
       , Namespace [] ["TracerConsistencyWarnings"]
       , Namespace [] ["TracerConfigInfo"]
       ]
-
--- `text-2.1.2` provides `Text.show` which can replace this when
--- the lower bound for `text` is high enough.
-textShow :: Show a => a -> Text
-textShow = Text.pack . show

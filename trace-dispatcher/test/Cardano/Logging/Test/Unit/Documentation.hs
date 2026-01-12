@@ -43,5 +43,6 @@ config1 = TraceConfig {
     , tcResourceFrequency = Nothing
     , tcMetricsPrefix = Just "cardano"
     , tcLedgerMetricsFrequency = Nothing
+    , tcPrometheusSimpleRun = Nothing
     }
 

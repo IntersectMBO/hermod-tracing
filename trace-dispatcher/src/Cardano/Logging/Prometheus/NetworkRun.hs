@@ -36,7 +36,7 @@ data NetworkRunParams = NetworkRunParams
   { runSocketTimeout    :: !Int             -- ^ Release socket after inactivity (seconds)
   , runSocketGraceful   :: !Int             -- ^ Graceful closing of socket (milliseconds), 0 to disable
   , runRecvMaxSize      :: !Int             -- ^ Close socket if more than (runRecvMaxSize - 1) bytes received; choose a small power of 2
-  , runRateLimit        :: !Double          -- ^ Limit requests per second (may be < 0.0), 0.0 to disable
+  , runRateLimit        :: !Double          -- ^ Limit requests per second (may be < 1.0), 0.0 to disable
   , runConnLimitGlobal  :: !Int             -- ^ Limit total number of incoming connections, 0 to disable
   , runConnLimitPerHost :: !Int             -- ^ Limit number of incoming connections from the same host, 0 to disable
   , runServerName       :: !String          -- ^ The server name - exclusively used for labeling GHC threads
@@ -45,11 +45,11 @@ data NetworkRunParams = NetworkRunParams
 defaultRunParams :: String -> NetworkRunParams
 defaultRunParams name = NetworkRunParams
   { runSocketTimeout    = 22
-  , runSocketGraceful   = 1000
+  , runSocketGraceful   = 2000
   , runRecvMaxSize      = 2048
-  , runRateLimit        = 3.0
-  , runConnLimitGlobal  = 12
-  , runConnLimitPerHost = 4
+  , runRateLimit        = 8.0
+  , runConnLimitGlobal  = 16
+  , runConnLimitPerHost = 5
   , runServerName       = name
   }
 

@@ -1,13 +1,13 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE DeriveAnyClass             #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
+{-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiWayIf #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneKindSignatures #-}
+{-# LANGUAGE MultiWayIf                 #-}
+{-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE RecordWildCards            #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE StandaloneKindSignatures   #-}
 
 {-# OPTIONS_GHC -Wno-partial-fields  #-}
 
@@ -16,7 +16,6 @@ module Cardano.Logging.Types (
   , LogFormatting(..)
   , Metric(..)
   , getMetricName
-  , emptyObject
   , Documented(..)
   , DocMsg(..)
   , LoggingContext(..)
@@ -42,6 +41,8 @@ module Cardano.Logging.Types (
   , Verbosity(..)
   , TraceOptionForwarder(..)
   , defaultForwarder
+  , PrometheusSimpleRun(..)
+  , prometheusSimpleNoOverrides
   , ConfigReflection(..)
   , emptyConfigReflection
   , TraceConfig(..)
@@ -59,29 +60,29 @@ module Cardano.Logging.Types (
   , HowToConnect(..)
 ) where
 
-import           Codec.Serialise (Serialise (..))
+import           Codec.Serialise     (Serialise (..))
 import           Control.Applicative ((<|>))
-import           Control.DeepSeq (NFData)
-import qualified Control.Tracer as T
-import qualified Data.Aeson as AE
-import qualified Data.Aeson.Types as AE (Parser)
-import           Data.Bool (bool)
-import           Data.ByteString (ByteString)
-import qualified Data.HashMap.Strict as HM
+import           Control.DeepSeq     (NFData)
+import qualified Control.Tracer      as T
+import qualified Data.Aeson          as AE
+import qualified Data.Aeson.Types    as AE (Parser)
+import           Data.Bool           (bool)
+import           Data.ByteString     (ByteString)
 import           Data.IORef
-import           Data.Kind (Type)
-import           Data.Map.Strict (Map)
-import qualified Data.Map.Strict as Map
-import           Data.Set (Set)
-import qualified Data.Set as Set
-import           Data.Text as T (Text, breakOnEnd, intercalate, null, pack, singleton, unpack,
-                   unsnoc, words)
-import           Data.Text.Read as T (decimal)
-import           Data.Time (UTCTime)
-import           Data.Word (Word16)
+import           Data.Kind           (Type)
+import           Data.Map.Strict     (Map)
+import qualified Data.Map.Strict     as Map
+import           Data.Set            (Set)
+import qualified Data.Set            as Set
+import           Data.Text           as T (Text, breakOnEnd, intercalate, null,
+                                           pack, singleton, unpack, unsnoc,
+                                           words)
+import           Data.Text.Read      as T (decimal)
+import           Data.Time           (UTCTime)
+import           Data.Word           (Word16)
 import           GHC.Generics
-import           Network.HostName (HostName)
-import           Network.Socket (PortNumber)
+import           Network.HostName    (HostName)
+import           Network.Socket      (PortNumber)
 
 
 -- | The Trace carries the underlying tracer Tracer from the contra-tracer package.
@@ -199,22 +200,17 @@ data Metric
   -- e.g. if you have a prometheus metric with the name "prometheus_metric"
   -- and the key label pairs [("key1", "value1"), ("key2", "value2")]
   -- the metric will be represented as "prometheus_metric{key1=\"value1\",key2=\"value2\"} 1"
-
     | PrometheusM Text [(Text, Text)]
   deriving stock (Eq, Show, Generic)
   deriving anyclass NFData
 
 
 getMetricName :: Metric -> Text
-getMetricName (IntM name _) = name
-getMetricName (DoubleM name _) = name
-getMetricName (CounterM name _) = name
+getMetricName (IntM name _)        = name
+getMetricName (DoubleM name _)     = name
+getMetricName (CounterM name _)    = name
 getMetricName (PrometheusM name _) = name
 
-
--- | A helper function for creating an empty |Object|.
-emptyObject :: HM.HashMap Text a
-emptyObject = HM.empty
 
 -- Document all log messages by providing a list of DocMsgs for all constructors.
 -- Because it is not enforced by the type system, it is very
@@ -237,11 +233,11 @@ instance Show (DocMsg a) where
 
 -- | Context any log message carries
 data LoggingContext = LoggingContext {
-    lcNSInner   :: [Text]
-  , lcNSPrefix  :: [Text]
-  , lcSeverity  :: Maybe SeverityS
-  , lcPrivacy   :: Maybe Privacy
-  , lcDetails   :: Maybe DetailLevel
+    lcNSInner  :: [Text]
+  , lcNSPrefix :: [Text]
+  , lcSeverity :: Maybe SeverityS
+  , lcPrivacy  :: Maybe Privacy
+  , lcDetails  :: Maybe DetailLevel
   }
   deriving stock
     (Show, Generic)
@@ -328,9 +324,9 @@ instance Show SeverityF where
 
 -- |
 data ConfigReflection = ConfigReflection {
-    crSilent          :: IORef (Set [Text])
-  , crNoMetrics       :: IORef (Set [Text])
-  , crAllTracers      :: IORef (Set [Text])
+    crSilent     :: IORef (Set [Text])
+  , crNoMetrics  :: IORef (Set [Text])
+  , crAllTracers :: IORef (Set [Text])
   }
 
 emptyConfigReflection :: IO ConfigReflection
@@ -351,11 +347,11 @@ data FormattedMessage =
 
 
 data PreFormatted = PreFormatted {
-    pfTime              :: !UTCTime
-  , pfNamespace         :: !Text
-  , pfThreadId          :: !Text
-  , pfForHuman          :: !(Maybe Text)
-  , pfForMachineObject  :: AE.Object
+    pfTime             :: !UTCTime
+  , pfNamespace        :: !Text
+  , pfThreadId         :: !Text
+  , pfForHuman         :: !(Maybe Text)
+  , pfForMachineObject :: AE.Object
 }
 
 -- | Used as interface object for ForwarderTracer
@@ -474,9 +470,9 @@ instance AE.FromJSON Verbosity where
                                     <> "Unknown Verbosity: " <> show other
 
 data TraceOptionForwarder = TraceOptionForwarder {
-    tofQueueSize           :: Word
-  , tofVerbosity           :: Verbosity
-  , tofMaxReconnectDelay   :: Word
+    tofQueueSize         :: Word
+  , tofVerbosity         :: Verbosity
+  , tofMaxReconnectDelay :: Word
 } deriving stock (Eq, Ord, Show, Generic)
 
 -- A word regarding queue size:
@@ -535,21 +531,36 @@ instance AE.FromJSON ForwarderMode where
   parseJSON other                   = fail $ "Parsing of ForwarderMode failed."
                         <> "Unknown ForwarderMode: " <> show other
 
+data PrometheusSimpleRun
+  = -- | Parameter overrides for PrometheusSimple DoS protection
+    PrometheusSimpleRun
+      { connTimeout      :: Maybe Word     -- ^ Release socket after inactivity (seconds); default: 22
+      , connCountGlobal  :: Maybe Word     -- ^ Limit total number of incoming connections; default: 12
+      , connCountPerHost :: Maybe Word     -- ^ Limit number of incoming connections from the same host; default: 4
+      , connPerSecond    :: Maybe Double   -- ^ Limit requests per second (may be < 1.0); default: 3.0
+      }
+  deriving (Show, Generic, AE.FromJSON, AE.ToJSON)
+
+prometheusSimpleNoOverrides :: PrometheusSimpleRun
+prometheusSimpleNoOverrides = PrometheusSimpleRun Nothing Nothing Nothing Nothing
+
 data TraceConfig = TraceConfig {
      -- | Options specific to a certain namespace
-    tcOptions   :: Map.Map [Text] [ConfigOption]
+    tcOptions                :: Map.Map [Text] [ConfigOption]
      -- | Options for the forwarder
-  , tcForwarder :: Maybe TraceOptionForwarder
+  , tcForwarder              :: Maybe TraceOptionForwarder
     -- | Optional human-readable name of the node.
-  , tcNodeName  :: Maybe Text
+  , tcNodeName               :: Maybe Text
     -- | Optional prefix for metrics.
-  , tcMetricsPrefix :: Maybe Text
+  , tcMetricsPrefix          :: Maybe Text
     -- | Optional resource trace frequency in milliseconds.
-  , tcResourceFrequency :: Maybe Int
+  , tcResourceFrequency      :: Maybe Int
     -- | Optional ledger metrics frequency in milliseconds.
   , tcLedgerMetricsFrequency :: Maybe Int
-}
-  deriving stock (Eq, Ord, Show)
+    -- | Optional parameter overrides for PrometheusSimple DoS protection
+  , tcPrometheusSimpleRun    :: Maybe PrometheusSimpleRun
+  }
+  deriving stock Show
 
 emptyTraceConfig :: TraceConfig
 emptyTraceConfig = TraceConfig {
@@ -557,8 +568,9 @@ emptyTraceConfig = TraceConfig {
   , tcForwarder = Nothing
   , tcNodeName = Nothing
   , tcMetricsPrefix = Nothing
-  , tcResourceFrequency = Just 5000 -- Every five seconds
-  , tcLedgerMetricsFrequency = Just 1 -- Every slot
+  , tcResourceFrequency = Nothing
+  , tcLedgerMetricsFrequency = Nothing
+  , tcPrometheusSimpleRun = Nothing
   }
 
 ---------------------------------------------------------------------------
@@ -576,17 +588,17 @@ data TraceControl where
 newtype DocCollector = DocCollector (IORef (Map Int LogDoc))
 
 data LogDoc = LogDoc {
-    ldDoc             :: !Text
-  , ldMetricsDoc      :: !(Map.Map Text Text)
-  , ldNamespace       :: ![([Text],[Text])]
-  , ldSeverityCoded   :: !(Maybe SeverityS)
-  , ldPrivacyCoded    :: !(Maybe Privacy)
-  , ldDetailsCoded    :: !(Maybe DetailLevel)
-  , ldDetails         :: ![DetailLevel]
-  , ldBackends        :: ![BackendConfig]
-  , ldFiltered        :: ![SeverityF]
-  , ldLimiter         :: ![(Text, Double)]
-  , ldSilent          :: Bool
+    ldDoc           :: !Text
+  , ldMetricsDoc    :: !(Map.Map Text Text)
+  , ldNamespace     :: ![([Text],[Text])]
+  , ldSeverityCoded :: !(Maybe SeverityS)
+  , ldPrivacyCoded  :: !(Maybe Privacy)
+  , ldDetailsCoded  :: !(Maybe DetailLevel)
+  , ldDetails       :: ![DetailLevel]
+  , ldBackends      :: ![BackendConfig]
+  , ldFiltered      :: ![SeverityF]
+  , ldLimiter       :: ![(Text, Double)]
+  , ldSilent        :: Bool
 } deriving stock (Eq, Show)
 
 emptyLogDoc :: Text -> [(Text, Text)] -> LogDoc
