@@ -1,0 +1,11 @@
+# Nix
+result
+result-*
+.direnv/
+
+# Cabal
+dist-newstyle/
+.ghc.environment.*
+
+# Claude
+.claude/settings.local.json
