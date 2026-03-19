@@ -1,0 +1,76 @@
+name: Haddocks
+
+on:
+  schedule:
+    - cron:  '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  haddocks:
+    name: Haddocks
+
+    runs-on: ${{ matrix.os }}
+
+    defaults:
+      run:
+        shell: bash
+
+    strategy:
+      fail-fast: false
+      matrix:
+        ghc: ["9.10"]
+        os: [ubuntu-latest]
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: https://hermod.cardano.intersectmbo.org
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install Nix
+      uses: cachix/install-nix-action@v31
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
+        extra_nix_config: |
+          substituters = https://cache.nixos.org https://cache.iog.io
+          trusted-public-keys = hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+          experimental-features = nix-command flakes
+
+    - name: Install Haskell
+      uses: haskell-actions/setup@v2
+      id: setup-haskell
+      with:
+        ghc-version: ${{ matrix.ghc }}
+        cabal-version: '3.14.1.1'
+
+    - uses: actions/cache@v4
+      name: Cache cabal store
+      with:
+        path: ${{ steps.setup-haskell.outputs.cabal-store }}
+        key: cache-haddock-${{ runner.os }}-${{ matrix.ghc }}-v1-${{ hashFiles('cabal.project') }}-${{ github.sha }}
+        restore-keys: cache-haddock-${{ runner.os }}-${{ matrix.ghc }}-v1-${{ hashFiles('cabal.project') }}-
+
+    - name: Update Hackage index
+      run: cabal update
+
+    - name: Build plan
+      run: cabal build --dry-run all
+
+    - name: Build Haddocks
+      run: |
+        cabal haddock-project --hackage all
+
+    - name: Upload artifacts
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ./haddocks
+
+    - name: Deploy
+      id: deployment
+      uses: actions/deploy-pages@v4
