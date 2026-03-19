@@ -1,4 +1,4 @@
-{ inputs, ... }: {
+{ inputs, config, withSystem, lib, ... }: {
   perSystem = { hsPkgs, pkgs, ... }:
     let
       td = hsPkgs.trace-dispatcher;
@@ -14,4 +14,8 @@
             };
           };
     };
+
+  flake.hydraJobs = lib.genAttrs config.systems (system:
+    withSystem system ({ config, ... }: config.legacyPackages.hydraJobs)
+  );
 }
