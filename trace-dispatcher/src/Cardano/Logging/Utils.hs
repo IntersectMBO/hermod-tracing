@@ -7,7 +7,9 @@ module Cardano.Logging.Utils
 
 import           Control.Concurrent (threadDelay)
 import           Control.Concurrent.Async (concurrently_)
-import           Control.Exception (SomeAsyncException (..), SomeException, fromException, tryJust)
+import           Control.DeepSeq (NFData, force)
+import           Control.Exception (SomeAsyncException (..), SomeException, evaluate, fromException,
+                   tryJust)
 import           Data.IORef
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL (toStrict)
@@ -41,16 +43,22 @@ runInLoop action handleInterruption initialDelay maxDelay
       threadDelay $ fromIntegral $ 1_000_000 * maxDelay
       atomicWriteIORef currentDelay $ fromIntegral initialDelay
 
-    excludeAsyncExceptions e =
-      case fromException e of
-        Just SomeAsyncException{} -> Nothing
-        _ -> Just e
-
     bumpDelay current =
       ( min (current * 2) (fromIntegral maxDelay)
       , current
       )
 
+-- | Helper functions to force trace + metric values in a controlled section of code
+{-# INLINE excludeAsyncExceptions #-}
+excludeAsyncExceptions :: SomeException -> Maybe SomeException
+excludeAsyncExceptions e =
+  case fromException e of
+    Just SomeAsyncException{} -> Nothing
+    _ -> Just e
+
+{-# INLINE tryEvalNF #-}
+tryEvalNF :: NFData a => a -> IO (Either SomeException a)
+tryEvalNF = tryJust excludeAsyncExceptions . evaluate . force
 
 -- | Convenience function for a Show instance to be converted to text immediately
 {-# INLINE showT #-}

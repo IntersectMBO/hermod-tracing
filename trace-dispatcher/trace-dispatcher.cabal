@@ -1,12 +1,14 @@
 cabal-version: 3.0
 
 name:                   trace-dispatcher
-version:                2.11.1
-synopsis:               Tracers for Cardano
-description:            Package for development of simple and efficient tracers
-                        based on the arrow based contra-tracer package
-category:               Cardano,
-                        Trace,
+version:                2.12.0
+synopsis:               Modern, modular, configurable tracing and metrics system
+description:            This is Hermod's core package and API for development of simple and efficient tracers
+                        around the arrow based contra-tracer package
+category:               System,
+                        Logging,
+                        Tracing,
+                        Metrics,
 copyright:              2020-2023 Input Output Global Inc (IOG), 2023-2026 Intersect.
 author:                 Juergen Nicklisch-Franken
 maintainer:             operations@iohk.io

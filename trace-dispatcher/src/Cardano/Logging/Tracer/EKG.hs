@@ -7,14 +7,16 @@ module Cardano.Logging.Tracer.EKG (
 
 import           Cardano.Logging.DocuGenerator
 import           Cardano.Logging.Types
-import           Cardano.Logging.Utils (showTReal)
+import           Cardano.Logging.Utils (showTReal, tryEvalNF)
 
 import           Control.Concurrent.MVar
+import           Control.Exception (SomeException, displayException)
 import           Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Control.Tracer as T
 import qualified Data.HashMap.Strict as Map
 import           Data.Maybe (fromMaybe)
 import           Data.Text (Text, intercalate)
+import           System.IO (hPutStrLn, stderr)
 import qualified System.Metrics as Metrics
 import qualified System.Metrics.Counter as Counter
 import qualified System.Metrics.Gauge as Gauge
@@ -57,25 +59,29 @@ ekgTracer TraceConfig{tcMetricsPrefix} store = liftIO $ do
       -> MVar (Map Text Counter.Counter)
       -> Metric
       -> IO ()
-    setIt rgsGauges rgsLabels rgsCounters = \case
-        IntM name theInt -> do
-          let fullName = metricsPrefix <> name <> "_int"
-          gauge <- modifyMVar rgsGauges (setFunc Metrics.createGauge fullName)
-          Gauge.set gauge (fromIntegral theInt)
-        DoubleM name theDouble -> do
-          let fullName = metricsPrefix <> name <> "_real"
-          label <- modifyMVar rgsLabels (setFunc Metrics.createLabel fullName)
-          Label.set label (showTReal theDouble)
-        PrometheusM name keyLabels -> do
-          let fullName = metricsPrefix <> name
-          label <- modifyMVar rgsLabels (setFunc Metrics.createLabel fullName)
-          Label.set label (presentPrometheusM keyLabels)
-        CounterM name mbInt -> do
-          let fullName = metricsPrefix <> name <> "_counter"
-          counter <- modifyMVar rgsCounters (setFunc Metrics.createCounter fullName)
-          case mbInt of
-            Nothing -> Counter.inc counter
-            Just i  -> Counter.add counter (fromIntegral i)
+    setIt rgsGauges rgsLabels rgsCounters metric =
+      tryEvalNF metric >>= either (\(ex :: SomeException) -> errorInPureCode $ displayException ex) go
+      where
+        errorInPureCode err = hPutStrLn stderr $ "Error evaluating metric " ++ show (getMetricName metric) ++ ": " ++ err
+        go = \case
+          IntM name theInt -> do
+            let fullName = metricsPrefix <> name <> "_int"
+            gauge <- modifyMVar rgsGauges (setFunc Metrics.createGauge fullName)
+            Gauge.set gauge (fromIntegral theInt)
+          DoubleM name theDouble -> do
+            let fullName = metricsPrefix <> name <> "_real"
+            label <- modifyMVar rgsLabels (setFunc Metrics.createLabel fullName)
+            Label.set label (showTReal theDouble)
+          PrometheusM name keyLabels -> do
+            let fullName = metricsPrefix <> name
+            label <- modifyMVar rgsLabels (setFunc Metrics.createLabel fullName)
+            Label.set label (presentPrometheusM keyLabels)
+          CounterM name mbInt -> do
+            let fullName = metricsPrefix <> name <> "_counter"
+            counter <- modifyMVar rgsCounters (setFunc Metrics.createCounter fullName)
+            case mbInt of
+              Nothing -> Counter.inc counter
+              Just i  -> Counter.add counter (fromIntegral i)
 
     setFunc ::
          (Text -> Metrics.Store -> IO m)
