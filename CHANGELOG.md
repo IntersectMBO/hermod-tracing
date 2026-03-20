@@ -1,3 +1,5 @@
-# xxxx Committee Changelog
+# Changelog for the Hermod Tracing Project
 
-All major changes to this project will be documented in this file.
+## March 2026
+
+* Release `trace-dispatcher-2.12.0`.
