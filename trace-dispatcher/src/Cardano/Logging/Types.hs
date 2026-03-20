@@ -201,7 +201,8 @@ data Metric
   -- the metric will be represented as "prometheus_metric{key1=\"value1\",key2=\"value2\"} 1"
 
     | PrometheusM Text [(Text, Text)]
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass NFData
 
 
 getMetricName :: Metric -> Text
@@ -257,7 +258,7 @@ data DetailLevel =
     | DDetailed
     | DMaximum
   deriving stock (Eq, Ord, Show, Enum, Bounded, Generic)
-  deriving anyclass (Serialise, AE.FromJSON)
+  deriving anyclass (Serialise, AE.FromJSON, NFData)
 
 instance AE.ToJSON DetailLevel where
     toEncoding = AE.genericToEncoding AE.defaultOptions
@@ -280,7 +281,7 @@ data SeverityS
     | Alert                   -- ^ Take immediate action
     | Emergency               -- ^ System is unusable
   deriving stock (Eq, Ord, Show, Read, Enum, Bounded, Generic)
-  deriving anyclass (AE.ToJSON, AE.FromJSON, Serialise)
+  deriving anyclass (AE.ToJSON, AE.FromJSON, Serialise, NFData)
 
 -- | Severity for a filter
 -- Nothing means don't show anything (Silence)
@@ -371,7 +372,7 @@ data TraceObject = TraceObject {
     (Eq, Show, Generic)
   -- ^ Instances for 'TraceObject' to forward it using 'trace-forward' library.
   deriving anyclass
-    (Serialise)
+    (Serialise, NFData)
 
 -- |
 data BackendConfig =

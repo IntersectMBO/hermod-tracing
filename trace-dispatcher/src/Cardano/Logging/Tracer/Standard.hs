@@ -7,11 +7,11 @@ module Cardano.Logging.Tracer.Standard (
 
 import           Cardano.Logging.DocuGenerator
 import           Cardano.Logging.Types
-import           Cardano.Logging.Utils (threadLabelMe)
+import           Cardano.Logging.Utils (threadLabelMe, tryEvalNF)
 
 import           Control.Concurrent.Async
 import           Control.Concurrent.Chan.Unagi.Bounded
-import           Control.Exception (BlockedIndefinitelyOnMVar (..), handle)
+import           Control.Exception
 import           Control.Monad (forever, when)
 import           Control.Monad.IO.Class
 import qualified Control.Tracer as T
@@ -19,7 +19,7 @@ import           Data.IORef
 import           Data.Maybe (isNothing)
 import           Data.Text (Text)
 import qualified Data.Text.IO as TIO
-import           System.IO (hFlush, stdout)
+import           System.IO (hFlush, hPutStrLn, stderr, stdout)
 
 -- | The state of a standard tracer
 newtype StandardTracerState =  StandardTracerState {
@@ -77,7 +77,7 @@ startStdoutThread stateRef = do
 stdoutThread :: OutChan Text -> IO ()
 stdoutThread outChan =
   handle (\BlockedIndefinitelyOnMVar -> pure ()) $
-    forever $ do
-      readChan outChan
-        >>= TIO.putStrLn
-      hFlush stdout
+    forever $
+      readChan outChan >>= tryEvalNF >>= \case
+        Right t                     -> TIO.putStrLn t >> hFlush stdout
+        Left (ex :: SomeException)  -> hPutStrLn stderr $ "Error rendering trace message: " ++ displayException ex

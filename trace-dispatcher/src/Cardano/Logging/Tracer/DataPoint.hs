@@ -19,15 +19,19 @@ module Cardano.Logging.Tracer.DataPoint
 import           Cardano.Logging.DocuGenerator
 import           Cardano.Logging.Trace
 import           Cardano.Logging.Types
+import           Cardano.Logging.Utils (tryEvalNF)
 
 import           Control.Concurrent.STM (atomically)
 import           Control.Concurrent.STM.TVar
-import           Control.DeepSeq (NFData, ($!!))
+import           Control.DeepSeq (NFData)
+import           Control.Exception (SomeException, displayException)
 import           Control.Monad.IO.Class
 import qualified Control.Tracer as NT
 import           Data.Aeson
 import qualified Data.Map.Strict as M
 import           Data.Text (Text, intercalate)
+import           System.IO (hPutStrLn, stderr)
+
 
 ---------------------------------------------------------------------------
 --
@@ -56,10 +60,15 @@ writeToStore
   -> DataPoint
   -> IO ()
 writeToStore dpStore dpName (DataPoint obj) =
-  let !newVal = DataPoint $!! obj
-  in atomically $
-      modifyTVar' dpStore $
-        M.insert dpName newVal
+  tryEvalNF obj >>= either (\(ex :: SomeException) -> errorInPureCode $ displayException ex) go
+  where
+    -- obj' is expected to be in NF
+    go obj' =
+      let !newVal = DataPoint obj'
+      in atomically $
+          modifyTVar' dpStore $
+            M.insert dpName newVal
+    errorInPureCode err = hPutStrLn stderr $ "Error evaluating datapoint " ++ show dpName ++ ": " ++ err
 
 dataPointTracer :: forall m. MonadIO m
   => DataPointStore

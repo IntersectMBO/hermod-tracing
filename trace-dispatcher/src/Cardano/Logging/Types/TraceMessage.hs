@@ -1,4 +1,6 @@
 
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -12,9 +14,11 @@ import           Cardano.Logging.Types
 
 import           Codec.CBOR.JSON
 import           Codec.Serialise (Serialise (..))
+import           Control.DeepSeq (NFData)
 import           Data.Aeson as AE hiding (decode, encode)
 import           Data.Text (Text)
 import           Data.Time.Clock (UTCTime)
+import           GHC.Generics (Generic)
 
 
 -- | base for a machine readable trace message (JSON or CBOR), with metadata, and enclosed payload data from the trace itself.
@@ -26,7 +30,7 @@ data TraceMessage = TraceMessage
   , tmsgThread  :: !Text
   , tmsgHost    :: !Text
   }
-  deriving Show
+  deriving (Show, Eq, Ord, Generic, NFData)
 
 instance Serialise AE.Object where
   encode = encodeValue . Object
