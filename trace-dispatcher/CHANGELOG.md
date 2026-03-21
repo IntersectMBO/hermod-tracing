@@ -1,5 +1,9 @@
 # Revision history for trace-dispatcher
 
+## 2.12.0 - Mar 2026
+
+* Increase robustness of evaluating trace messages, metrics and datapoints
+
 ## 2.11.1 -- Feb 2026
 
 * Add strict `contramap'` (infix alias `>!$!<`) to the API, capturing a common pattern to avoid unintentional space leaks when composing tracers

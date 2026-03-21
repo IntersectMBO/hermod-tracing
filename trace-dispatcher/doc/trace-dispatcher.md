@@ -303,7 +303,7 @@ The configurability of dispatchers provided by this library relies on:
 2. __Runtime Reconfigurability__: Triggered by invoking `configureTracers`, enabling changes during program execution.
 
 The usual form to provide a configuration is via a configuration file, which can be in JSON or YAML format. The options that
-can be given based on a namespace are: `severity`, `detail`, `backends` and `limiter`.
+can be given based on a namespace are: `severity`, `detail`, `backends` and `maxFrequency`.
 
 Backends can be a combination of `Forwarder`, `EKGBackend`, `PrometheusSimple [suffix|nosuffix] [bindhost] <port>` and
 one of `Stdout MachineFormat`, `Stdout HumanFormatColoured` and `Stdout HumanFormatUncoloured`.

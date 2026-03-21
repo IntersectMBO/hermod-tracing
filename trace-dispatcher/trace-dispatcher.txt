@@ -2,10 +2,10 @@
 -- See Hoogle, http://www.haskell.org/hoogle/
 
 
--- | Package for development of simple and efficient tracers based on the
---   arrow based contra-tracer package
+-- | This is Hermod's core package and API for development of simple and
+--   efficient tracers around the arrow based contra-tracer package
 @package trace-dispatcher
-@version 2.11.1
+@version 2.12.0
 
 module Cardano.Logging.DocuGenerator.Result
 data DocuResult
@@ -128,7 +128,12 @@ runInLoop :: IO () -> (SomeException -> IO ()) -> Word -> Word -> IO ()
 -- | Convenience function for a Show instance to be converted to text
 --   immediately
 showT :: Show a => a -> Text
+tryEvalNF :: NFData a => a -> IO (Either SomeException a)
 showTReal :: RealFloat a => a -> Text
+
+-- | Helper functions to force trace + metric values in a controlled
+--   section of code
+excludeAsyncExceptions :: SomeException -> Maybe SomeException
 showTHex :: Integral a => a -> Text
 
 
@@ -765,10 +770,13 @@ LocalPipe :: !FilePath -> HowToConnect
 -- | Remote socket (host and port).
 RemoteSocket :: !Host -> !Port -> HowToConnect
 instance GHC.Classes.Eq (Cardano.Logging.Types.Namespace a)
+instance Control.DeepSeq.NFData Cardano.Logging.Types.Metric
+instance GHC.Generics.Generic Cardano.Logging.Types.Metric
 instance GHC.Show.Show Cardano.Logging.Types.Metric
 instance GHC.Classes.Eq Cardano.Logging.Types.Metric
 instance GHC.Base.Semigroup (Cardano.Logging.Types.Documented a)
 instance GHC.Show.Show (Cardano.Logging.Types.Documented a)
+instance Control.DeepSeq.NFData Cardano.Logging.Types.DetailLevel
 instance Data.Aeson.Types.FromJSON.FromJSON Cardano.Logging.Types.DetailLevel
 instance Codec.Serialise.Class.Serialise Cardano.Logging.Types.DetailLevel
 instance GHC.Generics.Generic Cardano.Logging.Types.DetailLevel
@@ -784,6 +792,7 @@ instance GHC.Enum.Enum Cardano.Logging.Types.Privacy
 instance GHC.Show.Show Cardano.Logging.Types.Privacy
 instance GHC.Classes.Ord Cardano.Logging.Types.Privacy
 instance GHC.Classes.Eq Cardano.Logging.Types.Privacy
+instance Control.DeepSeq.NFData Cardano.Logging.Types.SeverityS
 instance Codec.Serialise.Class.Serialise Cardano.Logging.Types.SeverityS
 instance Data.Aeson.Types.FromJSON.FromJSON Cardano.Logging.Types.SeverityS
 instance Data.Aeson.Types.ToJSON.ToJSON Cardano.Logging.Types.SeverityS
@@ -798,6 +807,7 @@ instance Codec.Serialise.Class.Serialise Cardano.Logging.Types.LoggingContext
 instance GHC.Generics.Generic Cardano.Logging.Types.LoggingContext
 instance GHC.Show.Show Cardano.Logging.Types.LoggingContext
 instance GHC.Classes.Eq Cardano.Logging.Types.SeverityF
+instance Control.DeepSeq.NFData Cardano.Logging.Types.TraceObject
 instance Codec.Serialise.Class.Serialise Cardano.Logging.Types.TraceObject
 instance GHC.Generics.Generic Cardano.Logging.Types.TraceObject
 instance GHC.Show.Show Cardano.Logging.Types.TraceObject
@@ -874,6 +884,10 @@ TraceMessage :: !UTCTime -> !Text -> !Object -> !SeverityS -> !Text -> !Text -> 
 [tmsgSev] :: TraceMessage -> !SeverityS
 [tmsgThread] :: TraceMessage -> !Text
 [tmsgHost] :: TraceMessage -> !Text
+instance Control.DeepSeq.NFData Cardano.Logging.Types.TraceMessage.TraceMessage
+instance GHC.Generics.Generic Cardano.Logging.Types.TraceMessage.TraceMessage
+instance GHC.Classes.Ord Cardano.Logging.Types.TraceMessage.TraceMessage
+instance GHC.Classes.Eq Cardano.Logging.Types.TraceMessage.TraceMessage
 instance GHC.Show.Show Cardano.Logging.Types.TraceMessage.TraceMessage
 instance Codec.Serialise.Class.Serialise Cardano.Logging.Types.TraceMessage.TraceMessage
 instance Data.Aeson.Types.ToJSON.ToJSON Cardano.Logging.Types.TraceMessage.TraceMessage
@@ -1887,6 +1901,7 @@ initDataPointStore :: IO DataPointStore
 writeToStore :: DataPointStore -> DataPointName -> DataPoint -> IO ()
 dataPointTracer :: forall m. MonadIO m => DataPointStore -> Trace m DataPoint
 mkDataPointTracer :: forall dp. (ToJSON dp, MetaTrace dp, NFData dp) => Trace IO DataPoint -> IO (Trace IO dp)
+tryEvalNF :: NFData a => a -> IO (Either SomeException a)
 
 -- | It is mandatory to construct only one standard tracer in any
 --   application! Throwing away a standard tracer and using a new one will
@@ -1993,5 +2008,9 @@ traceMaybe :: Monad m => (a -> Maybe b) -> Tracer m b -> Tracer m a
 -- | Uses <a>traceMaybe</a> to give a tracer which emits only if a
 --   predicate is true.
 squelchUnless :: Monad m => (a -> Bool) -> Tracer m a -> Tracer m a
+
+-- | Helper functions to force trace + metric values in a controlled
+--   section of code
+excludeAsyncExceptions :: SomeException -> Maybe SomeException
 showTHex :: Integral a => a -> Text
 runTracer :: Tracer m a -> TracerA m a ()
