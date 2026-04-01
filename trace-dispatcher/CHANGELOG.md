@@ -2,7 +2,7 @@
 
 ## 2.12.1 -- Apr 2026
 
-* Add `docuResultsToNamespaces` to `DocuGenerator` to support json schema generation.
+* Add `docuResultsToNamespaces` to `DocuGenerator` to support JSON schema generation.
 * Add `PrometheusSimpleRun` data type and field `TraceConfig.tcPrometheusSimpleRun`. This exposes some of the DoS protection parameters of the `PrometheusSimple` backend.
 * The above parameters can be set via the top-level config key `"TracePrometheusSimpleRun": {...}`. Those values will _selectively override_ the hardcoded ones from `defaultRunParams`.
 * Add `Cardano.Logging.Prometheus.TCPServer.runPrometheusSimpleWith` to run the backend providing a custom `PrometheusSimpleRun` value.
