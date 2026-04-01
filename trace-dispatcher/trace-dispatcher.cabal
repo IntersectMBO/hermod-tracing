@@ -1,7 +1,7 @@
 cabal-version: 3.0
 
 name:                   trace-dispatcher
-version:                2.12.0
+version:                2.12.1
 synopsis:               Modern, modular, configurable tracing and metrics system
 description:            This is Hermod's core package and API for development of simple and efficient tracers
                         around the arrow based contra-tracer package
@@ -10,7 +10,7 @@ category:               System,
                         Tracing,
                         Metrics,
 copyright:              2020-2023 Input Output Global Inc (IOG), 2023-2026 Intersect.
-author:                 Juergen Nicklisch-Franken
+author:                 Juergen Nicklisch-Franken, Michael Karg
 maintainer:             operations@iohk.io
 license:                Apache-2.0
 license-files:          LICENSE
