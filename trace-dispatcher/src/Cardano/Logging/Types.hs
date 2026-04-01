@@ -535,9 +535,9 @@ data PrometheusSimpleRun
   = -- | Parameter overrides for PrometheusSimple DoS protection
     PrometheusSimpleRun
       { connTimeout      :: Maybe Word     -- ^ Release socket after inactivity (seconds); default: 22
-      , connCountGlobal  :: Maybe Word     -- ^ Limit total number of incoming connections; default: 12
-      , connCountPerHost :: Maybe Word     -- ^ Limit number of incoming connections from the same host; default: 4
-      , connPerSecond    :: Maybe Double   -- ^ Limit requests per second (may be < 1.0); default: 3.0
+      , connCountGlobal  :: Maybe Word     -- ^ Limit total number of incoming connections; default: 16
+      , connCountPerHost :: Maybe Word     -- ^ Limit number of incoming connections from the same host; default: 5
+      , connPerSecond    :: Maybe Double   -- ^ Limit requests per second (may be < 1.0); default: 8.0
       }
   deriving (Show, Generic, AE.FromJSON, AE.ToJSON)
 

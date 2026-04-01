@@ -80,6 +80,7 @@ library
                       , containers
                       , contra-tracer
                       , deepseq
+                      , directory
                       , ekg-core
                       , hashable
                       , hostname

@@ -5,10 +5,15 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Cardano.Logging.ConfigurationParser
-  ( readConfiguration
+  ( mkConfiguration
+  , mkConfigurationWithFallback
+  , readConfiguration
   , readConfigurationWithFallback
+  , readConfiguration'
+  , readConfigurationWithFallback'
   , readConfigurationWithDefault
   , readConfigurationWithFallbackAndDefault
+  , applyFallback
   , configToRepresentation
   ) where
 
@@ -25,6 +30,7 @@ import           Data.Text             as T (Text, intercalate, null, splitOn,
                                              unpack)
 import           Data.Yaml             hiding (decodeFileEither)
 import           Data.Yaml.Include     (decodeFileEither)
+import           System.Directory      (doesFileExist)
 
 -- -----------------------------------------------------------------------------
 -- Configuration file
@@ -117,6 +123,17 @@ instance AE.ToJSON TraceConfig where
   toJSON = toJSON . configToRepresentation
 
 
+-- | Creates the minimal viable configuration by only setting fallback values in an empty TraceConfig.
+--   Fallback options for the namespace root: Notice severity, normal detail, JSON stdout logging.
+--   Notice severity was chosen as it will never filter out any actionable traces while creating minimal noise in the log.
+mkConfiguration :: TraceConfig
+mkConfiguration = mkConfigurationWithFallback Notice DNormal (Stdout MachineFormat)
+
+-- | Creates the minimal viable configuration by only setting custom fallback values in an empty TraceConfig.
+--   Fallback options for the namespace root: custom values.
+mkConfigurationWithFallback :: SeverityS -> DetailLevel -> BackendConfig -> TraceConfig
+mkConfigurationWithFallback fallbSev fallbDet fallbBack = applyFallback fallbSev fallbDet fallbBack emptyTraceConfig
+
 -- | Read a configuration file and return the internal representation.
 --   Fallback options for the namespace root: Notice severity, normal detail, JSON stdout logging.
 readConfiguration :: FilePath -> IO TraceConfig
@@ -127,7 +144,23 @@ readConfiguration = readConfigurationWithFallback Notice DNormal (Stdout Machine
 readConfigurationWithFallback :: SeverityS -> DetailLevel -> BackendConfig -> FilePath -> IO TraceConfig
 readConfigurationWithFallback fallbSev fallbDet fallbBack = readConfigurationInt apFallback
   where
-    apFallback = applyFallback (SeverityF $ Just fallbSev) fallbDet fallbBack
+    apFallback = applyFallback fallbSev fallbDet fallbBack
+
+-- | Read a configuration file and return the internal representation.
+--   This will silently provide a minimal viable config via @mkConfiguration@ when the file is absent.
+--   Fallback options for the namespace root: Notice severity, normal detail, JSON stdout logging.
+readConfiguration' :: FilePath -> IO TraceConfig
+readConfiguration' = readConfigurationWithFallback' Notice DNormal (Stdout MachineFormat)
+
+-- | Read a configuration file and return the internal representation.
+--   This will silently provide a minimal viable config via @mkConfigurationWithFallback@ when the file is absent.
+--   Fallback options for the namespace root: custom values.
+readConfigurationWithFallback' :: SeverityS -> DetailLevel -> BackendConfig -> FilePath -> IO TraceConfig
+readConfigurationWithFallback' fallbSev fallbDet fallbBack fp = do
+  exists <- doesFileExist fp
+  if exists
+    then readConfigurationInt (applyFallback fallbSev fallbDet fallbBack) fp
+    else pure $ mkConfigurationWithFallback fallbSev fallbDet fallbBack
 
 -- | Read a configuration file and return the internal representation.
 --   TraceConfig fields not specified in the file will be taken from the provided @defaultConf@ (when given there).
@@ -141,7 +174,7 @@ readConfigurationWithDefault = readConfigurationWithFallbackAndDefault Notice DN
 readConfigurationWithFallbackAndDefault :: SeverityS -> DetailLevel -> BackendConfig -> FilePath -> TraceConfig -> IO TraceConfig
 readConfigurationWithFallbackAndDefault fallbSev fallbDet fallbBack fp defaultConf = readConfigurationInt (apFallback . apDefault) fp
   where
-    apFallback = applyFallback (SeverityF $ Just fallbSev) fallbDet fallbBack
+    apFallback = applyFallback fallbSev fallbDet fallbBack
     apDefault  = mergeWithDefault defaultConf
 
 
@@ -158,7 +191,7 @@ readConfigurationInt ::
   -> FilePath
   -> IO TraceConfig
 readConfigurationInt modifyConf = go 4
-  where 
+  where
   go :: Int -> FilePath -> IO TraceConfig
   go redirects fp = do
     external :: Either ParseException ExternalFile <- decodeFileEither fp
@@ -195,8 +228,10 @@ mergeOptionRepFields o1 o2 =
     (backends o1     <|> backends o2)
     (maxFrequency o1 <|> maxFrequency o2)
 
--- applies the fallback values to the namespace root, or creates a namespace root if none was given
-applyFallback :: SeverityF -> DetailLevel -> BackendConfig -> TraceConfig -> TraceConfig
+-- | Applies the fallback values to the namespace root, or creates a namespace root from them if none is present.
+--   If you do not use any of mkConfiguration* or readConfiguration* to create your TraceConfig, but do it manually,
+--   it is highly recommended to call @applyFallback@ on that TraceConfig value as a last step before using it.
+applyFallback :: SeverityS -> DetailLevel -> BackendConfig -> TraceConfig -> TraceConfig
 applyFallback fallbSev fallbDet fallbBack tc@TraceConfig{tcOptions} =
   tc {tcOptions = Map.alter apply [] tcOptions}
   where
@@ -205,7 +240,7 @@ applyFallback fallbSev fallbDet fallbBack tc@TraceConfig{tcOptions} =
       optionsToRepresentation root `mergeOptionRepFields` fallback
 
     fallback = ConfigOptionRep
-      { severity      = Just fallbSev
+      { severity      = Just (SeverityF $ Just fallbSev)
       , detail        = Just fallbDet
       , backends      = Just [fallbBack]
       , maxFrequency  = Nothing
