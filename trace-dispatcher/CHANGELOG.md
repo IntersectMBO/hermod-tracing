@@ -2,6 +2,7 @@
 
 ## 2.12.1 -- Apr 2026
 
+* Add `docuResultsToNamespaces` to `DocuGenerator` to support json schema generation.
 * Add `PrometheusSimpleRun` data type and field `TraceConfig.tcPrometheusSimpleRun`. This exposes some of the DoS protection parameters of the `PrometheusSimple` backend.
 * The above parameters can be set via the top-level config key `"TracePrometheusSimpleRun": {...}`. Those values will _selectively override_ the hardcoded ones from `defaultRunParams`.
 * Add `Cardano.Logging.Prometheus.TCPServer.runPrometheusSimpleWith` to run the backend providing a custom `PrometheusSimpleRun` value.
@@ -39,6 +40,7 @@
 * Safely stop `standardTracer`'s stdout thread when there are no more producers
 
 ## 2.10.0 -- July, 2025
+
 * Forwarding protocol supports connections over TCP socket, in addition to Unix domain sockets.
 * Failure to initialise the `PrometheusSimple` backend is now lenient - i.e., won't result in an exception being propagated.
 * `trace-forward` now depends on `trace-dispatcher`, and not the other way round.
@@ -46,10 +48,12 @@
 * Drop unnecessary dependency on `io-classes`.
 
 ## 2.9.2 -- May 2025
+
 * New config field `traceOptionLedgerMetricsFrequency`.
 
 ## 2.9.1 -- Apr 2025
-* Removed `cardano-node' as a dependency from `cardano-tracer'. This necessitated moving `NodeInfo`
+
+* Removed `cardano-node' as a dependency from`cardano-tracer'. This necessitated moving `NodeInfo`
   (from `cardano-tracer:Cardano.Node.Startup` to `trace-dispatcher:Cardano.Logging.Types.NodeInfo`), `NodePeers`
   (from `cardano-node:Cardano.Node.Tracing.Peers` to `trace-dispatcher:Cardano.Logging.Types.NodePeers`), and
   `NodeStartupInfo` (from `cardano-tracer:Cardano.Node.Startup` to `cardano-node:Cardano.Node.Tracing.NodeStartupInfo.hs`).
