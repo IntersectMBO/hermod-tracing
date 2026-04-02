@@ -365,10 +365,12 @@ withLimitersFromConfig tri tr = do
 
 --------------------------------------------------------
 
--- | If no severity can be found in the config, it is set to Warning
+-- | By guaranteeing fallback values in the config's namespace root, the Debug severity value here should never get used.
+--   If it has to be used, this points to a severely erroneous config, or an implementation error in the application's MetaTrace instance(s).
+--   For those cases only, this ensures the affected trace message isn't silently filtered out.
 getSeverity :: TraceConfig -> Namespace a -> SeverityF
 getSeverity config ns =
-    fromMaybe (SeverityF (Just Warning))
+    fromMaybe (SeverityF (Just Debug))
               (getOption severitySelector config (nsGetComplete ns))
   where
     severitySelector :: ConfigOption -> Maybe SeverityF

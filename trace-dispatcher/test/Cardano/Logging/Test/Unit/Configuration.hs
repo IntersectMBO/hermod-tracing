@@ -60,6 +60,7 @@ config1 = TraceConfig {
     , tcResourceFrequency = Nothing
     , tcMetricsPrefix = Nothing
     , tcLedgerMetricsFrequency = Nothing
+    , tcPrometheusSimpleRun = Nothing
     }
 
 config2 :: TraceConfig
@@ -78,6 +79,7 @@ config2 = TraceConfig {
     , tcResourceFrequency = Nothing
     , tcMetricsPrefix = Nothing
     , tcLedgerMetricsFrequency = Nothing
+    , tcPrometheusSimpleRun = Nothing
     }
 
 testConfig' ::

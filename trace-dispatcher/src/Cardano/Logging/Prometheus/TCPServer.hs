@@ -1,4 +1,5 @@
-{-# LANGUAGE PackageImports #-}
+{-# LANGUAGE PackageImports  #-}
+{-# LANGUAGE RecordWildCards #-}
 
 {-# OPTIONS_GHC -Wno-partial-fields #-}
 
@@ -6,7 +7,7 @@
 module Cardano.Logging.Prometheus.TCPServer
        ( runPrometheusSimple
        , runPrometheusSimpleSilent
-
+       , runPrometheusSimpleWith
        , TracePrometheusSimple (..)
        ) where
 
@@ -25,6 +26,7 @@ import           Data.ByteString.Builder
 import qualified Data.ByteString.Char8 as BC
 import           Data.Int (Int64)
 import           Data.List (find, intersperse)
+import           Data.Maybe (fromMaybe)
 import           Data.Text as TS (pack)
 import           Data.Text.Lazy (Text)
 import qualified Data.Text.Lazy as T
@@ -60,13 +62,20 @@ instance LogFormatting TracePrometheusSimple where
     TracePrometheusSimpleStop message -> "PrometheusSimple backend stop: " <> TS.pack message
 
 
--- Same as below, but will not trace anything
+-- | Run a PrometheusSimple server with default DoS protection, and don't emit any traces.
+--   Will retry / restart Prometheus server when an exception occurs, in increasing intervals.
 runPrometheusSimpleSilent :: EKG.Store -> (Bool, Maybe HostName, PortNumber) -> IO (Async ())
 runPrometheusSimpleSilent = runPrometheusSimple nullTracer
 
--- Will retry / restart Prometheus server when an exception occurs, in increasing intervals
+-- | Run a PrometheusSimple server with default DoS protection.
+--   Will retry / restart Prometheus server when an exception occurs, in increasing intervals.
 runPrometheusSimple :: Tracer IO TracePrometheusSimple -> EKG.Store -> (Bool, Maybe HostName, PortNumber) -> IO (Async ())
-runPrometheusSimple tr ekgStore (noSuffixes, mHost, portNo) =
+runPrometheusSimple = runPrometheusSimpleWith prometheusSimpleNoOverrides
+
+-- | Run a PrometheusSimple server with custom DoS protection parameter overrides.
+--   Will retry / restart Prometheus server when an exception occurs, in increasing intervals.
+runPrometheusSimpleWith :: PrometheusSimpleRun -> Tracer IO TracePrometheusSimple -> EKG.Store -> (Bool, Maybe HostName, PortNumber) -> IO (Async ())
+runPrometheusSimpleWith PrometheusSimpleRun{..} tr ekgStore (noSuffixes, mHost, portNo) =
     async $ runInLoop fromScratchThrowing traceInterruption 1 60
   where
     traceInterruption (E.SomeException e) =
@@ -75,7 +84,15 @@ runPrometheusSimple tr ekgStore (noSuffixes, mHost, portNo) =
     fromScratchThrowing  = traceWith tr (TracePrometheusSimpleStart $ fromIntegral portNo) >> join createRunner
 
     getCurrentExposition = renderExpositionFromSample noSuffixes <$> sampleAll ekgStore
-    createRunner         = mkTCPServerRunner (defaultRunParams "PrometheusSimple") mHost portNo (serveAccepted getCurrentExposition)
+    createRunner         = mkTCPServerRunner dosOverrides mHost portNo (serveAccepted getCurrentExposition)
+
+    dosDefault@NetworkRunParams{..} = defaultRunParams "PrometheusSimple"
+    dosOverrides = dosDefault
+      { runSocketTimeout    = maybe runSocketTimeout fromIntegral connTimeout
+      , runConnLimitGlobal  = maybe runConnLimitGlobal fromIntegral connCountGlobal
+      , runConnLimitPerHost = maybe runConnLimitPerHost fromIntegral connCountPerHost
+      , runRateLimit        = fromMaybe runRateLimit connPerSecond
+      }
 
 -- serves an incoming connection; will release socket upon remote close, inactivity timeout or runRecvMaxSize bytes received
 serveAccepted :: IO Text -> TimeoutServer ()
