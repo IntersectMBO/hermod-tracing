@@ -29,7 +29,7 @@
 </span><span id="line-24"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="niSystemStartTime"><span class="annot"><span class="annottext">NodeInfo -&gt; UTCTime
 </span><a href="Cardano.Logging.Types.NodeInfo.html#niSystemStartTime"><span class="hs-identifier hs-var hs-var">niSystemStartTime</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/time-1.12.2/src/Data.Time.Clock.Internal.UTCTime.html#UTCTime"><span class="hs-identifier hs-type">UTCTime</span></a></span><span>
 </span><span id="line-25"></span><span>  </span><span class="hs-special">}</span><span>
-</span><span id="line-26"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679137462"><span id="local-6989586621679137472"><span class="annot"><span class="annottext">NodeInfo -&gt; NodeInfo -&gt; Bool
+</span><span id="line-26"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679138550"><span id="local-6989586621679138560"><span class="annot"><span class="annottext">NodeInfo -&gt; NodeInfo -&gt; Bool
 (NodeInfo -&gt; NodeInfo -&gt; Bool)
 -&gt; (NodeInfo -&gt; NodeInfo -&gt; Bool) -&gt; Eq NodeInfo
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -37,7 +37,7 @@ $c== :: NodeInfo -&gt; NodeInfo -&gt; Bool
 == :: NodeInfo -&gt; NodeInfo -&gt; Bool
 $c/= :: NodeInfo -&gt; NodeInfo -&gt; Bool
 /= :: NodeInfo -&gt; NodeInfo -&gt; Bool
-</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Classes.html#Eq"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679137477"><span id="local-6989586621679137489"><span id="local-6989586621679137493"><span class="annot"><span class="annottext">Int -&gt; NodeInfo -&gt; ShowS
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Classes.html#Eq"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679138565"><span id="local-6989586621679138577"><span id="local-6989586621679138581"><span class="annot"><span class="annottext">Int -&gt; NodeInfo -&gt; ShowS
 [NodeInfo] -&gt; ShowS
 NodeInfo -&gt; String
 (Int -&gt; NodeInfo -&gt; ShowS)
@@ -50,7 +50,7 @@ $cshow :: NodeInfo -&gt; String
 show :: NodeInfo -&gt; String
 $cshowList :: [NodeInfo] -&gt; ShowS
 showList :: [NodeInfo] -&gt; ShowS
-</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Show.html#Show"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679137497"><span id="local-6989586621679137499"><span class="annot"><span class="annottext">(forall x. NodeInfo -&gt; Rep NodeInfo x)
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Show.html#Show"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679138585"><span id="local-6989586621679138587"><span class="annot"><span class="annottext">(forall x. NodeInfo -&gt; Rep NodeInfo x)
 -&gt; (forall x. Rep NodeInfo x -&gt; NodeInfo) -&gt; Generic NodeInfo
 forall x. Rep NodeInfo x -&gt; NodeInfo
 forall x. NodeInfo -&gt; Rep NodeInfo x
@@ -61,12 +61,12 @@ from :: forall x. NodeInfo -&gt; Rep NodeInfo x
 $cto :: forall x. Rep NodeInfo x -&gt; NodeInfo
 to :: forall x. Rep NodeInfo x -&gt; NodeInfo
 </span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Generics.html#Generic"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></a></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-27"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679137503"><span class="annot"><span class="annottext">NodeInfo -&gt; ()
+</span><span id="line-27"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679138591"><span class="annot"><span class="annottext">NodeInfo -&gt; ()
 (NodeInfo -&gt; ()) -&gt; NFData NodeInfo
 forall a. (a -&gt; ()) -&gt; NFData a
 $crnf :: NodeInfo -&gt; ()
 rnf :: NodeInfo -&gt; ()
-</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/deepseq-1.4.8.1/src/Control.DeepSeq.html#NFData"><span class="hs-identifier hs-var hs-var hs-var hs-var">NFData</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679137532"><span id="local-6989586621679137539"><span id="local-6989586621679137542"><span id="local-6989586621679137545"><span id="local-6989586621679137548"><span class="annot"><span class="annottext">[NodeInfo] -&gt; Encoding
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/deepseq-1.4.8.1/src/Control.DeepSeq.html#NFData"><span class="hs-identifier hs-var hs-var hs-var hs-var">NFData</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679138620"><span id="local-6989586621679138627"><span id="local-6989586621679138630"><span id="local-6989586621679138633"><span id="local-6989586621679138636"><span class="annot"><span class="annottext">[NodeInfo] -&gt; Encoding
 [NodeInfo] -&gt; Value
 NodeInfo -&gt; Bool
 NodeInfo -&gt; Encoding
@@ -94,7 +94,7 @@ $ctoEncodingList :: [NodeInfo] -&gt; Encoding
 toEncodingList :: [NodeInfo] -&gt; Encoding
 $comitField :: NodeInfo -&gt; Bool
 omitField :: NodeInfo -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">ToJSON</span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679137705"><span id="local-6989586621679137712"><span id="local-6989586621679137715"><span class="annot"><span class="annottext">Maybe NodeInfo
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">ToJSON</span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679138793"><span id="local-6989586621679138800"><span id="local-6989586621679138803"><span class="annot"><span class="annottext">Maybe NodeInfo
 Value -&gt; Parser [NodeInfo]
 Value -&gt; Parser NodeInfo
 (Value -&gt; Parser NodeInfo)

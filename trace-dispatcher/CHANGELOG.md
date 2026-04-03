@@ -1,6 +1,21 @@
 # Revision history for trace-dispatcher
 
-## 2.12.0 - Mar 2026
+## 2.12.1 -- Apr 2026
+
+* Add `docuResultsToNamespaces` to `DocuGenerator` to support JSON schema generation.
+* Add `PrometheusSimpleRun` data type and field `TraceConfig.tcPrometheusSimpleRun`. This exposes some of the DoS protection parameters of the `PrometheusSimple` backend.
+* The above parameters can be set via the top-level config key `"TracePrometheusSimpleRun": {...}`. Those values will _selectively override_ the hardcoded ones from `defaultRunParams`.
+* Add `Cardano.Logging.Prometheus.TCPServer.runPrometheusSimpleWith` to run the backend providing a custom `PrometheusSimpleRun` value.
+* Generelly relax some of the DoS protection default values.
+* Fix `emptyTraceConfig` to be actually empty.
+* Implement the basics for the future way of providing configuration via the top-level config key `"HermodTracing"`.
+* This config key can reference an external file, or provide an object cleanly encapsulating _all_ of Hermod's options. The option names are shortened wrt. the current top-level names.
+* Support `!include` extension for YAML config files.
+* The namespace root in `"TraceOptions": { "": {...}}` can now be aliased as '\_root\_': `"TraceOptions": { "_root_": {...}}`. This facilitates automations that have to treat an empty JSON string as special case.
+* Add `readConfigurationWithFallback` and `readConfigurationWithFallbackAndDefault` to `Cardano.Logging.ConfigurationParser`, adding fallback values to the namespace root. These will apply iff no such value was given in the file or default config, and guard against accidentally missing trace output.
+* In the same module, `readConfiguration` and `readConfigurationWithDefault` will now guarantee fallback values: `Notice` severity, `DNormal` detail level and `Stdout MachineFormat` JSON logging.
+
+## 2.12.0 -- Mar 2026
 
 * Increase robustness of evaluating trace messages, metrics and datapoints
 
@@ -25,6 +40,7 @@
 * Safely stop `standardTracer`'s stdout thread when there are no more producers
 
 ## 2.10.0 -- July, 2025
+
 * Forwarding protocol supports connections over TCP socket, in addition to Unix domain sockets.
 * Failure to initialise the `PrometheusSimple` backend is now lenient - i.e., won't result in an exception being propagated.
 * `trace-forward` now depends on `trace-dispatcher`, and not the other way round.
@@ -32,10 +48,12 @@
 * Drop unnecessary dependency on `io-classes`.
 
 ## 2.9.2 -- May 2025
+
 * New config field `traceOptionLedgerMetricsFrequency`.
 
 ## 2.9.1 -- Apr 2025
-* Removed `cardano-node' as a dependency from `cardano-tracer'. This necessitated moving `NodeInfo`
+
+* Removed `cardano-node' as a dependency from`cardano-tracer'. This necessitated moving `NodeInfo`
   (from `cardano-tracer:Cardano.Node.Startup` to `trace-dispatcher:Cardano.Logging.Types.NodeInfo`), `NodePeers`
   (from `cardano-node:Cardano.Node.Tracing.Peers` to `trace-dispatcher:Cardano.Logging.Types.NodePeers`), and
   `NodeStartupInfo` (from `cardano-tracer:Cardano.Node.Startup` to `cardano-node:Cardano.Node.Tracing.NodeStartupInfo.hs`).
