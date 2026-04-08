@@ -19,6 +19,7 @@ module Cardano.Logging.ConfigurationParser
 
 import           Cardano.Logging.Types               hiding (backends, detail,
                                                       maxFrequency, severity)
+import           Cardano.Logging.Types.Configuration (PrometheusSimpleRun)
 
 import           Control.Applicative                 ((<|>))
 import           Control.Exception                   (throwIO)
@@ -26,8 +27,9 @@ import qualified Data.Aeson                          as AE
 import           Data.List                           as List (foldl')
 import qualified Data.Map.Strict                     as Map
 import           Data.Maybe
-import           Data.Text                           as T (Text, intercalate, last,
-                                                           null, snoc, splitOn)
+import           Data.Text                           as T (Text, intercalate,
+                                                           last, null, snoc,
+                                                           splitOn)
 import           Data.Yaml                           hiding (decodeFileEither)
 import           Data.Yaml.Include                   (decodeFileEither)
 import           System.Directory                    (doesFileExist)

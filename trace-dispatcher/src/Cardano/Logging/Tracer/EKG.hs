@@ -72,16 +72,16 @@ ekgTracer TraceConfig{tcMetricsPrefix} store = liftIO $ do
             let fullName = metricsPrefix <> name <> "_real"
             label <- modifyMVar rgsLabels (setFunc Metrics.createLabel fullName)
             Label.set label (showTReal theDouble)
-          PrometheusM name keyLabels -> do
+          LabelM name keyLabels -> do
             let fullName = metricsPrefix <> name
             label <- modifyMVar rgsLabels (setFunc Metrics.createLabel fullName)
-            Label.set label (presentPrometheusM keyLabels)
-          CounterM name mbInt -> do
+            Label.set label (presentLabelM keyLabels)
+          CounterM name increase -> do
             let fullName = metricsPrefix <> name <> "_counter"
             counter <- modifyMVar rgsCounters (setFunc Metrics.createCounter fullName)
-            case mbInt of
-              Nothing -> Counter.inc counter
-              Just i  -> Counter.add counter (fromIntegral i)
+            case increase of
+              CounterIncrement -> Counter.inc counter
+              CounterAdd w     -> Counter.add counter (fromIntegral w)
 
     setFunc ::
          (Text -> Metrics.Store -> IO m)
@@ -96,8 +96,8 @@ ekgTracer TraceConfig{tcMetricsPrefix} store = liftIO $ do
             let rgsMap' = Map.insert name metric rgsMap
             pure (rgsMap', metric)
 
-    presentPrometheusM :: [(Text, Text)] -> Text
-    presentPrometheusM =
+    presentLabelM :: [(Text, Text)] -> Text
+    presentLabelM =
       label . map pair
       where
         label pairs = "{" <> intercalate "," pairs <> "} 1"

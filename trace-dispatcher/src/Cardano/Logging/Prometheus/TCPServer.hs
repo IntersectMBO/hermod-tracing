@@ -13,31 +13,35 @@ module Cardano.Logging.Prometheus.TCPServer
 import           Cardano.Logging.Prometheus.Exposition (renderExpositionFromSample)
 import           Cardano.Logging.Prometheus.NetworkRun
 import           Cardano.Logging.Types
-import           Cardano.Logging.Utils (runInLoop, showT)
+import           Cardano.Logging.Types.Configuration   (PrometheusSimpleRun (..),
+                                                        prometheusSimpleNoOverrides)
+import           Cardano.Logging.Utils                 (runInLoop, showT)
 
-import           Control.Concurrent.Async (Async, async)
-import qualified Control.Exception as E
-import           Control.Monad (join, when)
+import           Control.Concurrent.Async              (Async, async)
+import qualified Control.Exception                     as E
+import           Control.Monad                         (join, when)
 import           Control.Tracer
-import           Data.Aeson.Types as AE (Value (String), (.=))
-import           Data.ByteString (ByteString)
+import           Data.Aeson.Types                      as AE (Value (String),
+                                                              (.=))
+import           Data.ByteString                       (ByteString)
 import           Data.ByteString.Builder
-import qualified Data.ByteString.Char8 as BC
-import           Data.Int (Int64)
-import           Data.List (find, intersperse)
-import           Data.Maybe (fromMaybe)
-import           Data.Text as TS (pack)
-import           Data.Text.Lazy (Text)
-import qualified Data.Text.Lazy as T
-import qualified Data.Text.Lazy.Encoding as T (encodeUtf8Builder)
-import           Data.Word (Word16)
-import           Network.HTTP.Date (epochTimeToHTTPDate, formatHTTPDate)
-import           Network.Socket (HostName, PortNumber)
-import qualified Network.Socket.ByteString as Strict (recv)
-import qualified Network.Socket.ByteString.Lazy as Lazy (sendAll)
-import           System.Metrics as EKG (Store, sampleAll)
-import           System.Posix.Types (EpochTime)
-import           System.PosixCompat.Time (epochTime)
+import qualified Data.ByteString.Char8                 as BC
+import           Data.Int                              (Int64)
+import           Data.List                             (find, intersperse)
+import           Data.Maybe                            (fromMaybe)
+import           Data.Text                             as TS (pack)
+import           Data.Text.Lazy                        (Text)
+import qualified Data.Text.Lazy                        as T
+import qualified Data.Text.Lazy.Encoding               as T (encodeUtf8Builder)
+import           Data.Word                             (Word16)
+import           Network.HTTP.Date                     (epochTimeToHTTPDate,
+                                                        formatHTTPDate)
+import           Network.Socket                        (HostName, PortNumber)
+import qualified Network.Socket.ByteString             as Strict (recv)
+import qualified Network.Socket.ByteString.Lazy        as Lazy (sendAll)
+import           System.Metrics                        as EKG (Store, sampleAll)
+import           System.Posix.Types                    (EpochTime)
+import           System.PosixCompat.Time               (epochTime)
 
 
 data TracePrometheusSimple =

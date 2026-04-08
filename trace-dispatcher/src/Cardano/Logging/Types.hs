@@ -14,6 +14,7 @@ module Cardano.Logging.Types (
     Trace(..)
   , LogFormatting(..)
   , Metric(..)
+  , CounterIncrease(..)
   , getMetricName
   , LoggingContext(..)
   , emptyLoggingContext
@@ -32,14 +33,11 @@ module Cardano.Logging.Types (
   , SeverityS(..)
   , SeverityF(..)
   , ConfigOption(..)
-  , ForwarderAddr(..)
   , FormatLogging(..)
   , ForwarderMode(..)
   , Verbosity(..)
   , TraceOptionForwarder(..)
   , defaultForwarder
-  , PrometheusSimpleRun(..)
-  , prometheusSimpleNoOverrides
   , ConfigReflection(..)
   , emptyConfigReflection
   , TraceConfig(..)
@@ -54,32 +52,34 @@ module Cardano.Logging.Types (
   , unfold
   , TraceObject(..)
   , PreFormatted(..)
+
+  -- Re-exports from Cardano.Logging.Types.Configuration
   , HowToConnect(..)
 ) where
 
-import           Codec.Serialise     (Serialise (..))
-import           Control.Applicative ((<|>))
-import           Control.DeepSeq     (NFData)
-import qualified Control.Tracer      as T
-import qualified Data.Aeson          as AE
-import qualified Data.Aeson.Types    as AE (Parser)
-import           Data.Bool           (bool)
-import           Data.ByteString     (ByteString)
+import           Cardano.Logging.Types.Configuration
+
+import           Codec.Serialise                     (Serialise (..))
+import           Control.DeepSeq                     (NFData)
+import qualified Control.Tracer                      as T
+import qualified Data.Aeson                          as AE
+import           Data.Bool                           (bool)
+import           Data.ByteString                     (ByteString)
 import           Data.IORef
-import           Data.Kind           (Type)
-import           Data.Map.Strict     (Map)
-import qualified Data.Map.Strict     as Map
-import           Data.Set            (Set)
-import qualified Data.Set            as Set
-import           Data.Text           as T (Text, breakOnEnd, intercalate, null,
-                                           pack, singleton, unpack, unsnoc,
-                                           words)
-import           Data.Text.Read      as T (decimal)
-import           Data.Time           (UTCTime)
-import           Data.Word           (Word16)
+import           Data.Map.Strict                     (Map)
+import qualified Data.Map.Strict                     as Map
+import           Data.Set                            (Set)
+import qualified Data.Set                            as Set
+import           Data.Text                           as T (Text, intercalate,
+                                                           null, pack,
+                                                           singleton, unpack,
+                                                           words)
+import           Data.Text.Read                      as T (decimal)
+import           Data.Time                           (UTCTime)
+import           Data.Word                           (Word64)
 import           GHC.Generics
-import           Network.HostName    (HostName)
-import           Network.Socket      (PortNumber)
+import           Network.HostName                    (HostName)
+import           Network.Socket                      (PortNumber)
 
 
 -- | The Trace carries the underlying tracer Tracer from the contra-tracer package.
@@ -149,14 +149,15 @@ nsToText (Namespace ns1 ns2) = intercalate "." (ns1 ++ ns2)
 class LogFormatting a where
   -- | Machine readable representation with the possibility to represent with varying serialisations based on the detail level.
   -- This will result in JSON formatted log output.
-  -- A `forMachine` implementation is required for any instance definition.
+  -- A @forMachine@ implementation is required for any instance definition.
   forMachine :: DetailLevel -> a -> AE.Object
 
   -- | Human-readable representation.
   -- The empty text indicates there's no specific human-readable formatting for that type - this is the default implementation.
+  --
   -- If however human-readble output is explicitly requested, e.g. by logs, the system will fall back to a JSON object
-  -- conforming to the `forMachine` definition, and rendering it as a value in `{"data": <value>}`.
-  -- Leaving out `forHuman` in some instance definition will not lead to loss of log information that way.
+  -- conforming to the @forMachine@ definition, and rendering it as a value in /{"data": <value>}`/
+  -- Leaving out @forHuman@ in some instance definition will not lead to loss of log information that way.
   forHuman :: a -> Text
   forHuman _v = ""
 
@@ -170,44 +171,71 @@ class MetaTrace a where
   namespaceFor  :: a -> Namespace a
 
   severityFor   :: Namespace a -> Maybe a -> Maybe SeverityS
+
   privacyFor    :: Namespace a -> Maybe a -> Maybe Privacy
   privacyFor _  _ =  Just Public
+
   detailsFor    :: Namespace a -> Maybe a -> Maybe DetailLevel
   detailsFor _  _ =  Just DNormal
 
   documentFor   :: Namespace a -> Maybe Text
+
   metricsDocFor :: Namespace a -> [(Text,Text)]
   metricsDocFor _ = []
+
   allNamespaces :: [Namespace a]
 
+-- | This type defines metrics, and how to update them.
+--
+--   The @Text@ field always contains the metric name.
+--   Metric names are recommended to conform to the [Prometheus data model](https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels).
+--   If you want to structure your metrics in namespaces, please use a dot separator, such as @"name.space.metricName"@.
+--
+--   Example, defining three metrics based on the occurrence of a single trace event:
+--
+-- > data Trace = BatchProcessed { batchSize :: Int }
+-- >
+-- > instance LogFormatting Trace where
+-- >   asMetrics (BatchProcessed size) =
+-- >     [ IntM     "batch.current" (fromIntegral size)              -- element count of the most recent batch
+-- >     , CounterM "batchesTotal"  CounterIncrement                 -- total batches processed
+-- >     , CounterM "batch.total"   (CounterAdd $ fromIntegral size) -- total elements processed
+-- >     ]
+--
 data Metric
-  -- | An integer metric.
-  -- Text is used to name the metric
+  -- | An integer gauge metric.
+  --   Gauges are variable values.
     = IntM Text Integer
-  -- | A double metric.
-  -- Text is used to name the metric
+  -- | A floating-point gauge metric.
+  --   Gauges are variable values.
     | DoubleM Text Double
   -- | A counter metric.
-  -- Text is used to name the metric
-    | CounterM Text (Maybe Int)
-  -- | A prometheus metric with key label pairs.
-  -- Text is used to name the metric
-  -- [(Text, Text)] is used to represent the key label pairs
-  -- The value of the metric will always be "1"
-  -- e.g. if you have a prometheus metric with the name "prometheus_metric"
-  -- and the key label pairs [("key1", "value1"), ("key2", "value2")]
-  -- the metric will be represented as "prometheus_metric{key1=\"value1\",key2=\"value2\"} 1"
-    | PrometheusM Text [(Text, Text)]
+  --   Counters are non-negative, monotonically increasing values.
+    | CounterM Text CounterIncrease
+  -- | A label set containing the specified key-value pairs.
+  --   The OpenMetrics standard permits empty label sets; the value of this labeled metric will always be "1".
+  --
+  --   For instance, a @LabelM "foo" [("key1", "value1"), ("key2", "value2")]@
+  --   will be exposed as /"foo{key1=\"value1\",key2=\"value2\"} 1"/
+    | LabelM Text [(Text, Text)]
   deriving stock (Eq, Show, Generic)
   deriving anyclass NFData
 
 
 getMetricName :: Metric -> Text
-getMetricName (IntM name _)        = name
-getMetricName (DoubleM name _)     = name
-getMetricName (CounterM name _)    = name
-getMetricName (PrometheusM name _) = name
+getMetricName (IntM name _)     = name
+getMetricName (DoubleM name _)  = name
+getMetricName (CounterM name _) = name
+getMetricName (LabelM name _)   = name
 
+-- | Excplicit type on how to update a @CounterM@ metric (which may never decrease).
+data CounterIncrease
+  -- | Increment the counter by one
+  = CounterIncrement
+  -- | Increase the counter by some value
+  | CounterAdd Word64
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass NFData
 
 -- | Context any log message carries
 data LoggingContext = LoggingContext {
@@ -218,48 +246,72 @@ data LoggingContext = LoggingContext {
   , lcDetails  :: Maybe DetailLevel
   }
   deriving stock
-    (Show, Generic)
-  deriving anyclass
-    Serialise
+    (Show) -- TODO: Generic)
+  --deriving anyclass
+  --   Serialise
 
 emptyLoggingContext :: LoggingContext
 emptyLoggingContext = LoggingContext [] [] Nothing Nothing Nothing
 
--- | Formerly known as verbosity
+
+-- | The detail level facilitates rendering the same trace value to messages with varying verbosities in its @instance LogFormatting@.
 data DetailLevel =
       DMinimal
     | DNormal
     | DDetailed
     | DMaximum
   deriving stock (Eq, Ord, Show, Enum, Bounded, Generic)
-  deriving anyclass (Serialise, AE.FromJSON, NFData)
+  deriving anyclass (AE.FromJSON, NFData)
 
 instance AE.ToJSON DetailLevel where
-    toEncoding = AE.genericToEncoding AE.defaultOptions
+  toEncoding = AE.genericToEncoding AE.defaultOptions
+
+instance Serialise DetailLevel where
+  encode = encode . fromEnum
+  decode = decode >>= \val ->
+    if val >= 0 && val <= 3
+      then pure $ toEnum val
+      else fail $ "hermod.DetailLevel.decode: Unknown value: " ++ show val
 
 -- | Privacy of a message. Default is Public
 data Privacy =
       Confidential              -- ^ confidential information - handle with care
     | Public                    -- ^ can be public.
-  deriving stock (Eq, Ord, Show, Enum, Bounded, Generic)
-  deriving anyclass Serialise
+  deriving stock (Eq, Ord, Show, Enum, Bounded)
+  -- , Generic)
+  -- TODO: deriving anyclass Serialise
 
--- | Severity of a message
+-- | Severity of a message. These are defined alongside message namespaces in an @instance MetaTrace@.
+--
+-- The severities and their semantics adhere to those defined in the [Syslog Protocol](https://www.rfc-editor.org/rfc/rfc5424#section-6.2.1).
 data SeverityS
     = Debug                   -- ^ Debug messages
-    | Info                    -- ^ Information
-    | Notice                  -- ^ Normal runtime Conditions
+    | Info                    -- ^ Informational - confirmation the program is working as expected
+    | Notice                  -- ^ Normal, but significant conditions - may require special handling
     | Warning                 -- ^ General Warnings
     | Error                   -- ^ General Errors
     | Critical                -- ^ Severe situations
     | Alert                   -- ^ Take immediate action
     | Emergency               -- ^ System is unusable
   deriving stock (Eq, Ord, Show, Read, Enum, Bounded, Generic)
-  deriving anyclass (AE.ToJSON, AE.FromJSON, Serialise, NFData)
+  deriving anyclass (AE.FromJSON, NFData)
 
--- | Severity for a filter
--- Nothing means don't show anything (Silence)
--- Just level means show messages with severity >= level
+instance AE.ToJSON SeverityS where
+    toEncoding = AE.genericToEncoding AE.defaultOptions
+
+instance Serialise SeverityS where
+  -- This ensures the binary representation is identical to the Syslog Protocol's numerical code
+  encode = encode . (7 -) . fromEnum
+  decode = decode >>= \val ->
+    if val >= 0 && val <= 7
+      then pure $ toEnum $ 7 - val
+      else fail $ "hermod.SeverityS.decode: Unknown value: " ++ show val
+
+-- | Severity for a filter. These are supplied by a concrete configuration of how to filter the entire message namespace at runtime.
+--
+-- @Nothing@ means: filter everything ('Silence').
+--
+-- @Just severity@ means: render messages with @SeverityS >= severity@.
 newtype SeverityF = SeverityF (Maybe SeverityS)
   deriving stock Eq
 
@@ -283,8 +335,7 @@ instance AE.FromJSON SeverityF where
     parseJSON (AE.String "Alert")     = pure (SeverityF (Just Alert))
     parseJSON (AE.String "Emergency") = pure (SeverityF (Just Emergency))
     parseJSON (AE.String "Silence")  = pure (SeverityF Nothing)
-    parseJSON invalid = fail $ "Parsing of filter Severity failed."
-                          <> "Unknown severity: " <> show invalid
+    parseJSON invalid = fail $ "hermod.SeverityF.parseJSON: unknown severity: " <> show invalid
 
 instance Ord SeverityF where
   compare (SeverityF (Just s1)) (SeverityF (Just s2)) = compare s1 s2
@@ -300,7 +351,6 @@ instance Show SeverityF where
 ----------------------------------------------------------------
 -- Configuration
 
--- |
 data ConfigReflection = ConfigReflection {
     crSilent     :: IORef (Set [Text])
   , crNoMetrics  :: IORef (Set [Text])
@@ -375,7 +425,7 @@ instance AE.FromJSON BackendConfig where
     "Stdout HumanFormatColoured"    -> pure $ Stdout HumanFormatColoured
     "Stdout HumanFormatUncoloured"  -> pure $ Stdout HumanFormatUncoloured
     "Stdout MachineFormat"          -> pure $ Stdout MachineFormat
-    prometheus                      -> either fail pure (parsePrometheusString prometheus)
+    prometheus                      -> either (fail . ("hermod.BackendConfig.parseJSON: " ++)) pure (parsePrometheusString prometheus)
 
 parsePrometheusString :: Text -> Either String BackendConfig
 parsePrometheusString t = case T.words t of
@@ -416,13 +466,6 @@ data ConfigOption =
   -- which represents frequency in number of messages per second
   | ConfLimiter {maxFrequency :: Double}
   deriving stock (Eq, Ord, Show, Generic)
-
-newtype ForwarderAddr
-  = LocalSocket FilePath
-  deriving stock (Eq, Ord, Show)
-
-instance AE.FromJSON ForwarderAddr where
-  parseJSON = AE.withObject "ForwarderAddr" $ \o -> LocalSocket <$> o AE..: "filePath"
 
 data ForwarderMode =
     -- | Forwarder works as a client: it initiates network connection with
@@ -509,19 +552,6 @@ instance AE.FromJSON ForwarderMode where
   parseJSON other                   = fail $ "Parsing of ForwarderMode failed."
                         <> "Unknown ForwarderMode: " <> show other
 
-data PrometheusSimpleRun
-  = -- | Parameter overrides for PrometheusSimple DoS protection
-    PrometheusSimpleRun
-      { connTimeout      :: Maybe Word     -- ^ Release socket after inactivity (seconds); default: 22
-      , connCountGlobal  :: Maybe Word     -- ^ Limit total number of incoming connections; default: 16
-      , connCountPerHost :: Maybe Word     -- ^ Limit number of incoming connections from the same host; default: 5
-      , connPerSecond    :: Maybe Double   -- ^ Limit requests per second (may be < 1.0); default: 8.0
-      }
-  deriving (Show, Generic, AE.FromJSON, AE.ToJSON)
-
-prometheusSimpleNoOverrides :: PrometheusSimpleRun
-prometheusSimpleNoOverrides = PrometheusSimpleRun Nothing Nothing Nothing Nothing
-
 data TraceConfig = TraceConfig {
      -- | Options specific to a certain namespace
     tcOptions                :: Map.Map [Text] [ConfigOption]
@@ -592,56 +622,3 @@ instance LogFormatting b => LogFormatting (Folding a b) where
   forMachine v (Folding b) =  forMachine v b
   forHuman (Folding b)     =  forHuman b
   asMetrics (Folding b)    =  asMetrics b
-
--- | Specifies how to connect to the peer.
---
--- Taken from ekg-forward:System.Metrics.Configuration, to avoid dependency.
-type Host :: Type
-type Host = Text
-
-type Port :: Type
-type Port = Word16
-
-type HowToConnect :: Type
-data HowToConnect
-  = LocalPipe    !FilePath    -- ^ Local pipe (UNIX or Windows).
-  | RemoteSocket !Host !Port  -- ^ Remote socket (host and port).
-  deriving stock (Eq, Generic)
-  deriving anyclass (NFData)
-
-instance Show HowToConnect where
-  show = \case
-    LocalPipe pipe         -> pipe
-    RemoteSocket host port -> T.unpack host ++ ":" ++ show port
-
-instance AE.ToJSON HowToConnect where
-  toJSON     = AE.toJSON . show
-  toEncoding = AE.toEncoding . show
-
--- first try to host:port, and if that fails revert to parsing any
--- string literal and assume it is a localpipe.
-instance AE.FromJSON HowToConnect where
-  parseJSON = AE.withText "HowToConnect" $ \t ->
-        (uncurry RemoteSocket <$> parseHostPort t)
-    <|> (        LocalPipe    <$> parseLocalPipe t)
-
-parseLocalPipe :: Text -> AE.Parser FilePath
-parseLocalPipe t
-  | T.null t = fail "parseLocalPipe: empty Text"
-  | otherwise   = pure $ T.unpack t
-
-parseHostPort :: Text -> AE.Parser (Text, Word16)
-parseHostPort t
-  | T.null t
-  = fail "parseHostPort: empty Text"
-  | otherwise
-  = let
-    (host_, portText) = T.breakOnEnd ":" t
-    host              = maybe "" fst (T.unsnoc host_)
-  in if
-    | T.null host      -> fail "parseHostPort: Empty host or no colon found."
-    | T.null portText  -> fail "parseHostPort: Empty port."
-    | Right (port, remainder) <- T.decimal portText
-    , T.null remainder
-    , 0 <= port, port <= 65535 -> pure (host, port)
-    | otherwise -> fail "parseHostPort: Non-numeric port or value out of range."
