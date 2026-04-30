@@ -1,13 +1,12 @@
-{-# LANGUAGE DeriveAnyClass             #-}
-{-# LANGUAGE DeriveGeneric              #-}
-{-# LANGUAGE DerivingStrategies         #-}
-{-# LANGUAGE GADTs                      #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiWayIf                 #-}
-{-# LANGUAGE RankNTypes                 #-}
-{-# LANGUAGE RecordWildCards            #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE StandaloneKindSignatures   #-}
+{-# LANGUAGE DeriveAnyClass           #-}
+{-# LANGUAGE DeriveGeneric            #-}
+{-# LANGUAGE DerivingStrategies       #-}
+{-# LANGUAGE GADTs                    #-}
+{-# LANGUAGE MultiWayIf               #-}
+{-# LANGUAGE RankNTypes               #-}
+{-# LANGUAGE RecordWildCards          #-}
+{-# LANGUAGE ScopedTypeVariables      #-}
+{-# LANGUAGE StandaloneKindSignatures #-}
 
 {-# OPTIONS_GHC -Wno-partial-fields  #-}
 
@@ -16,8 +15,6 @@ module Cardano.Logging.Types (
   , LogFormatting(..)
   , Metric(..)
   , getMetricName
-  , Documented(..)
-  , DocMsg(..)
   , LoggingContext(..)
   , emptyLoggingContext
   , Namespace(..)
@@ -211,25 +208,6 @@ getMetricName (DoubleM name _)     = name
 getMetricName (CounterM name _)    = name
 getMetricName (PrometheusM name _) = name
 
-
--- Document all log messages by providing a list of DocMsgs for all constructors.
--- Because it is not enforced by the type system, it is very
--- important to provide a complete list, as the prototypes are used as well for configuration.
--- If you don't want to add an item for documentation enter an empty text.
-newtype Documented a = Documented {undoc :: [DocMsg a]}
-  deriving stock Show
-  deriving newtype Semigroup
-
--- | Document a message by giving a prototype, its most special name in the namespace
--- and a comment in markdown format
-data DocMsg a = DocMsg {
-    dmNamespace :: Namespace a
-  , dmMetricsMD :: [(Text, Text)]
-  , dmMarkdown  :: Text
-}
-
-instance Show (DocMsg a) where
-  show (DocMsg _ _ md) = unpack md
 
 -- | Context any log message carries
 data LoggingContext = LoggingContext {

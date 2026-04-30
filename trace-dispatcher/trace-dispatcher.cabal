@@ -48,8 +48,6 @@ library
                       Cardano.Logging.ConfigurationParser
                       Cardano.Logging.Consistency
                       Cardano.Logging.DocuGenerator
-                      Cardano.Logging.DocuGenerator.Result
-                      Cardano.Logging.DocuGenerator.Tree
                       Cardano.Logging.Formatter
                       Cardano.Logging.FrequencyLimiter
                       Cardano.Logging.Prometheus.Exposition
@@ -63,10 +61,12 @@ library
                       Cardano.Logging.Tracer.Forward
                       Cardano.Logging.Tracer.Composed
                       Cardano.Logging.Types
-                      Cardano.Logging.Types.TraceMessage
                       Cardano.Logging.Types.NodeInfo
                       Cardano.Logging.Types.NodeStartupInfo
+                      Cardano.Logging.Types.TraceMessage
                       Cardano.Logging.Utils
+
+  other-modules:      Cardano.Logging.Types.DocuGenerator
 
   build-depends:        base >=4.12 && <5
                       , aeson >= 2.1.0.0

@@ -17,19 +17,20 @@ module Cardano.Logging.ConfigurationParser
   , configToRepresentation
   ) where
 
-import           Cardano.Logging.Types hiding (backends, detail, maxFrequency,
-                                        severity)
+import           Cardano.Logging.Types               hiding (backends, detail,
+                                                      maxFrequency, severity)
 
-import           Control.Applicative   ((<|>))
-import           Control.Exception     (throwIO)
-import qualified Data.Aeson            as AE
-import           Data.List             as List (foldl')
-import qualified Data.Map.Strict       as Map
+import           Control.Applicative                 ((<|>))
+import           Control.Exception                   (throwIO)
+import qualified Data.Aeson                          as AE
+import           Data.List                           as List (foldl')
+import qualified Data.Map.Strict                     as Map
 import           Data.Maybe
-import           Data.Text             as T (Text, intercalate, null, splitOn)
-import           Data.Yaml             hiding (decodeFileEither)
-import           Data.Yaml.Include     (decodeFileEither)
-import           System.Directory      (doesFileExist)
+import           Data.Text                           as T (Text, intercalate, last,
+                                                           null, snoc, splitOn)
+import           Data.Yaml                           hiding (decodeFileEither)
+import           Data.Yaml.Include                   (decodeFileEither)
+import           System.Directory                    (doesFileExist)
 
 -- -----------------------------------------------------------------------------
 -- Configuration file
@@ -228,11 +229,12 @@ mergeOptionRepFields o1 o2 =
     (maxFrequency o1 <|> maxFrequency o2)
 
 -- | Applies the fallback values to the namespace root, or creates a namespace root from them if none is present.
+--   Furthermore, it ensures a metric prefix is properly namespaced, if there is one configured.
 --   If you do not use any of mkConfiguration* or readConfiguration* to create your TraceConfig, but do it manually,
 --   it is highly recommended to call @applyFallback@ on that TraceConfig value as a last step before using it.
 applyFallback :: SeverityS -> DetailLevel -> BackendConfig -> TraceConfig -> TraceConfig
-applyFallback fallbSev fallbDet fallbBack tc@TraceConfig{tcOptions} =
-  tc {tcOptions = Map.alter apply [] tcOptions}
+applyFallback fallbSev fallbDet fallbBack tc@TraceConfig{tcOptions, tcMetricsPrefix} =
+  tc {tcOptions = Map.alter apply [] tcOptions, tcMetricsPrefix = sanitizePrefix `fmap` tcMetricsPrefix}
   where
     apply Nothing     = Just $ representationToOptions fallback
     apply (Just root) = Just $ representationToOptions $
@@ -244,6 +246,10 @@ applyFallback fallbSev fallbDet fallbBack tc@TraceConfig{tcOptions} =
       , backends      = Just [fallbBack]
       , maxFrequency  = Nothing
       }
+
+    sanitizePrefix t
+      | T.null t  = t
+      | otherwise = if T.last t == '.' then t else t `T.snoc` '.'
 
 -- The namespace root "" in the external representation can be aliased as "_root_".
 -- Even though an empty JSON string is a valid key in an object, it does not
