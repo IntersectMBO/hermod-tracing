@@ -67,9 +67,6 @@ library
                       Cardano.Logging.Types.NodeInfo
                       Cardano.Logging.Types.NodeStartupInfo
                       Cardano.Logging.Utils
-                      Control.Tracer.Arrow
-                      Control.Tracer
-
   build-depends:        base >=4.12 && <5
                       , aeson >= 2.1.0.0
                       , aeson-pretty
@@ -78,7 +75,7 @@ library
                       , cborg
                       , cborg-json
                       , containers
-                      , contra-tracer
+                      , contra-tracer ^>= 0.2.1
                       , deepseq
                       , directory
                       , ekg-core
