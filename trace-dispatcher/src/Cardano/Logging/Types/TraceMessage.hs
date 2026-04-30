@@ -1,8 +1,8 @@
 
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveAnyClass    #-}
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 {-# OPTIONS_GHC -Wno-orphans #-}
 
@@ -10,25 +10,25 @@ module Cardano.Logging.Types.TraceMessage
   ( TraceMessage (..)
   ) where
 
-import           Cardano.Logging.Types
+import           Cardano.Logging.Types (SeverityS)
 
 import           Codec.CBOR.JSON
-import           Codec.Serialise (Serialise (..))
-import           Control.DeepSeq (NFData)
-import           Data.Aeson as AE hiding (decode, encode)
-import           Data.Text (Text)
-import           Data.Time.Clock (UTCTime)
-import           GHC.Generics (Generic)
+import           Codec.Serialise       (Serialise (..))
+import           Control.DeepSeq       (NFData)
+import           Data.Aeson            as AE hiding (decode, encode)
+import           Data.Text             (Text)
+import           Data.Time.Clock       (UTCTime)
+import           GHC.Generics          (Generic)
 
 
 -- | base for a machine readable trace message (JSON or CBOR), with metadata, and enclosed payload data from the trace itself.
 data TraceMessage = TraceMessage
-  { tmsgAt      :: !UTCTime
-  , tmsgNS      :: !Text
-  , tmsgData    :: !AE.Object
-  , tmsgSev     :: !SeverityS
-  , tmsgThread  :: !Text
-  , tmsgHost    :: !Text
+  { tmsgAt     :: !UTCTime
+  , tmsgNS     :: !Text
+  , tmsgData   :: !AE.Object
+  , tmsgSev    :: !SeverityS
+  , tmsgThread :: !Text
+  , tmsgHost   :: !Text
   }
   deriving (Show, Eq, Ord, Generic, NFData)
 

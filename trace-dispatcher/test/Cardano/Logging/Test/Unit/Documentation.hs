@@ -1,19 +1,20 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-
-
 
 module Cardano.Logging.Test.Unit.Documentation (
     docTracers
 ) where
 
 import           Cardano.Logging
+import           Cardano.Logging.DocuGenerator         (docuResultsToText,
+                                                        documentTracer)
 import           Cardano.Logging.Test.Tracer
 import           Cardano.Logging.Test.Unit.TestObjects
 
 import           Data.IORef
-import qualified Data.Map as Map
-import qualified Data.Text as T
+import qualified Data.Map                              as Map
+import qualified Data.Text                             as T
+
 
 docTracers :: IO T.Text
 docTracers = do
