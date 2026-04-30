@@ -1,4 +1,3 @@
-{-# LANGUAGE PackageImports  #-}
 {-# LANGUAGE RecordWildCards #-}
 
 {-# OPTIONS_GHC -Wno-partial-fields #-}
@@ -19,7 +18,7 @@ import           Cardano.Logging.Utils (runInLoop, showT)
 import           Control.Concurrent.Async (Async, async)
 import qualified Control.Exception as E
 import           Control.Monad (join, when)
-import           "contra-tracer" Control.Tracer
+import           Control.Tracer
 import           Data.Aeson.Types as AE (Value (String), (.=))
 import           Data.ByteString (ByteString)
 import           Data.ByteString.Builder
