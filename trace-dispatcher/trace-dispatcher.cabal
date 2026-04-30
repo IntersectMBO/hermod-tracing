@@ -1,7 +1,7 @@
 cabal-version: 3.0
 
 name:                   trace-dispatcher
-version:                2.12.1
+version:                2.13.0
 synopsis:               Modern, modular, configurable tracing and metrics system
 description:            This is Hermod's core package and API for development of simple and efficient tracers
                         around the arrow based contra-tracer package
@@ -67,8 +67,6 @@ library
                       Cardano.Logging.Types.NodeInfo
                       Cardano.Logging.Types.NodeStartupInfo
                       Cardano.Logging.Utils
-                      Control.Tracer.Arrow
-                      Control.Tracer
 
   build-depends:        base >=4.12 && <5
                       , aeson >= 2.1.0.0
@@ -78,7 +76,7 @@ library
                       , cborg
                       , cborg-json
                       , containers
-                      , contra-tracer
+                      , contra-tracer ^>= 0.2.1
                       , deepseq
                       , directory
                       , ekg-core
