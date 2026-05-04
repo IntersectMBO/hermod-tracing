@@ -10,7 +10,7 @@ category:               System,
                         Tracing,
                         Metrics,
 copyright:              2020-2023 Input Output Global Inc (IOG), 2023-2026 Intersect.
-author:                 Juergen Nicklisch-Franken, Michael Karg
+author:                 Juergen Nicklisch, Michael Karg
 maintainer:             operations@iohk.io
 license:                Apache-2.0
 license-files:          LICENSE
