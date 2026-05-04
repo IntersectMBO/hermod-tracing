@@ -1,5 +1,5 @@
-{-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE DerivingVia         #-}
+{-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 {- HLINT ignore "Use map" -}
@@ -26,28 +26,37 @@ module Cardano.Logging.DocuGenerator (
 ) where
 
 import           Cardano.Logging.ConfigurationParser ()
-import           Cardano.Logging.DocuGenerator.Tree
-import           Cardano.Logging.DocuGenerator.Result (DocuResult (..))
-import qualified Cardano.Logging.DocuGenerator.Result as DocuResult
 import           Cardano.Logging.Types
+import           Cardano.Logging.Types.DocuGenerator
 
-import           Prelude hiding (lines, unlines)
+import           Prelude                             hiding (lines, unlines)
 
-import           Control.Monad (mfilter)
-import           Control.Monad.IO.Class (MonadIO, liftIO)
-import qualified Control.Tracer as TR
-import           Data.Aeson (ToJSON)
-import qualified Data.Aeson.Encode.Pretty as AE
-import           Data.IORef (modifyIORef, newIORef, readIORef)
-import           Data.List (find, groupBy, intersperse, isPrefixOf, nub, sort, sortBy)
-import qualified Data.Map.Strict as Map
-import           Data.Maybe (fromJust, fromMaybe, mapMaybe)
-import           Data.Text (split)
-import           Data.Text as T (Text, empty, intercalate, lines, pack, stripPrefix, toLower,
-                   unlines)
-import           Data.Text.Internal.Builder (toLazyText)
-import           Data.Text.Lazy (toStrict)
-import           Data.Text.Lazy.Builder (Builder, fromString, fromText, singleton)
+import           Control.Monad                       (mfilter)
+import           Control.Monad.IO.Class              (MonadIO, liftIO)
+import qualified Control.Tracer                      as TR
+import           Data.Aeson                          (ToJSON)
+import qualified Data.Aeson.Encode.Pretty            as AE
+import           Data.Function                       (on)
+import           Data.IORef                          (modifyIORef, newIORef,
+                                                      readIORef)
+import           Data.List                           (find, group, groupBy,
+                                                      intersperse, isPrefixOf,
+                                                      nub, sort, sortBy)
+import qualified Data.Map.Strict                     as Map
+import           Data.Maybe                          (fromJust, fromMaybe,
+                                                      mapMaybe)
+import           Data.Text                           (split)
+import           Data.Text                           as T (Text, empty,
+                                                           intercalate, lines,
+                                                           pack, stripPrefix,
+                                                           toLower, unlines)
+import           Data.Text.Internal.Builder          (toLazyText)
+import           Data.Text.Lazy                      (toStrict)
+import           Data.Text.Lazy.Builder              (Builder, fromString,
+                                                      fromText, singleton)
+import           Data.Tree                           (Forest, Tree (..),
+                                                      unfoldForest)
+
 
 type InconsistencyWarning = Text
 
@@ -73,7 +82,7 @@ data DocTracer = DocTracer {
     , dtNoMetrics   :: [[Text]]
     , dtBuilderList :: [([Text], DocuResult)]
     , dtWarnings    :: [InconsistencyWarning]
-} deriving (Show)
+} deriving Show
 
 instance Semigroup DocTracer where
   dtl <> dtr = DocTracer
@@ -110,12 +119,12 @@ documentTracer tracer = do
         metricsDocs = documentMetrics metricsItems
         tracerName = case sortedItems of
                       ((_i, ld) : _) -> case ldNamespace ld of
-                                          (prn, _pon) : _  -> prn
-                                          []               -> []
+                                          (prn, _pon) : _ -> prn
+                                          []              -> []
                       []             -> []
         silent = case sortedItems of
                       ((_i, ld) : _) -> ldSilent ld
-                      [] -> False
+                      []             -> False
         hasNoMetrics = null metricsItems
         warnings = concatMap (\(i, ld) -> case ldNamespace ld of
                                             (_,_): _       -> warningItem (i, ld)
@@ -192,8 +201,8 @@ documentTracer tracer = do
                                                       (map fromText (nsPr ++ nsPo)))
 
     namespacesWarning :: [([Text], [Text])] -> LogDoc -> [InconsistencyWarning]
-    namespacesWarning [] ld  = ["Namespace missing " <> ldDoc ld]
-    namespacesWarning _ _  = []
+    namespacesWarning [] ld = ["Namespace missing " <> ldDoc ld]
+    namespacesWarning _ _   = []
 
     propertiesBuilder :: LogDoc -> Builder
     propertiesBuilder LogDoc {..} =
@@ -433,11 +442,11 @@ docItDatapoint _backend (LoggingContext {}, _) = pure ()
 docuResultsToText :: DocTracer -> TraceConfig -> Text
 docuResultsToText dt@DocTracer {..} configuration =
   let traceBuilders = sortBy (\ (l,_) (r,_) -> compare l r)
-                          (filter (DocuResult.isTracer . snd) dtBuilderList)
+                          (filter (resultIsTracer . snd) dtBuilderList)
       metricsBuilders = sortBy (\ (l,_) (r,_) -> compare l r)
-                          (filter (DocuResult.isMetric .snd) dtBuilderList)
+                          (filter (resultIsMetric .snd) dtBuilderList)
       datapointBuilders = sortBy (\ (l,_) (r,_) -> compare l r)
-                          (filter (DocuResult.isDatapoint . snd) dtBuilderList)
+                          (filter (resultIsDatapoint . snd) dtBuilderList)
       header  = fromText "# Cardano Trace Documentation\n\n"
       header1  = fromText "## Table Of Contents\n\n"
       toc      = generateTOC dt
@@ -447,13 +456,13 @@ docuResultsToText dt@DocTracer {..} configuration =
 
       header2  = fromText "\n## Trace Messages\n\n"
       contentT = mconcat $ intersperse (fromText "\n\n")
-                              (map (DocuResult.unpackDocu . snd) traceBuilders)
+                              (map (unpackDocu . snd) traceBuilders)
       header3  = fromText "\n## Metrics\n\n"
       contentM = mconcat $ intersperse (fromText "\n\n")
-                              (map (DocuResult.unpackDocu . snd) metricsBuilders)
+                              (map (unpackDocu . snd) metricsBuilders)
       header4  = fromText "\n## Datapoints\n\n"
       contentD = mconcat $ intersperse (fromText "\n\n")
-                              (map (DocuResult.unpackDocu . snd) datapointBuilders)
+                              (map (unpackDocu . snd) datapointBuilders)
       config  = fromText "\n## Configuration: \n```\n"
                         <> AE.encodePrettyToTextBuilder configuration
                         <> fromText "\n```\n"
@@ -577,6 +586,15 @@ accentuated t = if t == ""
                     then ">"
                     else "> " <> t'
 
+-- Convert a list of namespaces to a tree representation
+toForest :: [[Text]] -> Forest Text
+toForest = unfoldForest build . groupByHead
+ where
+  groupByHead = groupBy ((==) `on` head)
+
+  build :: [[Text]] -> (Text, [[[Text]]])
+  build grp@(representative : _) = (head representative, (groupByHead . filter (not . null) . map tail) grp)
+
 -- this reflects the type cardano-tracer expects the metrics help texts to be serialized from:
 -- simple key-value map
 newtype MetricsHelp = MH (Map.Map Text Text)
@@ -605,6 +623,6 @@ docuResultsToNamespaces DocTracer{dtBuilderList} =
     namespaces =
       [ intercalate "." ns
       | (ns, doc) <- dtBuilderList
-      , DocuResult.isTracer doc || DocuResult.isDatapoint doc
+      , resultIsTracer doc || resultIsDatapoint doc
       ]
-    uniqueSorted = map head $ groupBy (==) $ sort namespaces
+    uniqueSorted = map head $ group $ sort namespaces

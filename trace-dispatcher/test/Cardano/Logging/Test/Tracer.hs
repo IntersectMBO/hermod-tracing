@@ -9,6 +9,7 @@ module Cardano.Logging.Test.Tracer (
   ) where
 
 import           Cardano.Logging
+import           Cardano.Logging.DocuGenerator (docIt)
 import           Cardano.Logging.Types.TraceMessage
 
 import           Control.Monad.IO.Class

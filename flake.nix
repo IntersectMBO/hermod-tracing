@@ -16,7 +16,9 @@
       inputs.hackage.follows = "hackageNix";
     };
     hackageNix = {
-      url = "github:input-output-hk/hackage.nix";
+      # This avoids bringing alfred-margaret-2.1.1.0 into scope,
+      # which has a regression on GHC9.6, breaking the build.
+      url = "github:input-output-hk/hackage.nix?ref=dc7cfd9bd2e8d0fc662c4bbec02ad36455758912";
       flake = false;
     };
     nixpkgs.follows = "haskellNix/nixpkgs-unstable";

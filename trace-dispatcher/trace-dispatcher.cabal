@@ -1,7 +1,7 @@
 cabal-version: 3.0
 
 name:                   trace-dispatcher
-version:                2.12.1
+version:                2.13.0
 synopsis:               Modern, modular, configurable tracing and metrics system
 description:            This is Hermod's core package and API for development of simple and efficient tracers
                         around the arrow based contra-tracer package
@@ -10,7 +10,7 @@ category:               System,
                         Tracing,
                         Metrics,
 copyright:              2020-2023 Input Output Global Inc (IOG), 2023-2026 Intersect.
-author:                 Juergen Nicklisch-Franken, Michael Karg
+author:                 Juergen Nicklisch, Michael Karg
 maintainer:             operations@iohk.io
 license:                Apache-2.0
 license-files:          LICENSE
@@ -48,8 +48,6 @@ library
                       Cardano.Logging.ConfigurationParser
                       Cardano.Logging.Consistency
                       Cardano.Logging.DocuGenerator
-                      Cardano.Logging.DocuGenerator.Result
-                      Cardano.Logging.DocuGenerator.Tree
                       Cardano.Logging.Formatter
                       Cardano.Logging.FrequencyLimiter
                       Cardano.Logging.Prometheus.Exposition
@@ -63,12 +61,12 @@ library
                       Cardano.Logging.Tracer.Forward
                       Cardano.Logging.Tracer.Composed
                       Cardano.Logging.Types
-                      Cardano.Logging.Types.TraceMessage
                       Cardano.Logging.Types.NodeInfo
                       Cardano.Logging.Types.NodeStartupInfo
+                      Cardano.Logging.Types.TraceMessage
                       Cardano.Logging.Utils
-                      Control.Tracer.Arrow
-                      Control.Tracer
+
+  other-modules:      Cardano.Logging.Types.DocuGenerator
 
   build-depends:        base >=4.12 && <5
                       , aeson >= 2.1.0.0
@@ -78,7 +76,7 @@ library
                       , cborg
                       , cborg-json
                       , containers
-                      , contra-tracer
+                      , contra-tracer ^>= 0.2.1
                       , deepseq
                       , directory
                       , ekg-core
