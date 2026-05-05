@@ -1,0 +1,140 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE DerivingStrategies         #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Cardano.Logging.Types.DocuGenerator</span><span>
+</span><span id="line-5"></span><span>       </span><span class="hs-special">(</span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html"><span class="hs-identifier">Cardano.Logging.Types.DocuGenerator</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-6"></span><span>       </span><span class="hs-keyword">where</span><span>
+</span><span id="line-7"></span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="Cardano.Logging.Types.html"><span class="hs-identifier">Cardano.Logging.Types</span></a></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Cardano.Logging.Types.html#Namespace"><span class="hs-identifier">Namespace</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/text-2.0.2/src/Data.Text.html"><span class="hs-identifier">Data.Text</span></a></span><span>              </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/text-2.0.2/src/Data.Text.Internal.html#Text"><span class="hs-identifier">Text</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/text-2.0.2/src/Data.Text.Show.html#unpack"><span class="hs-identifier">unpack</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/text-2.0.2/src/Data.Text.Lazy.Builder.html"><span class="hs-identifier">Data.Text.Lazy.Builder</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/text-2.0.2/src/Data.Text.Internal.Builder.html#Builder"><span class="hs-identifier">Builder</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span>
+</span><span id="line-15"></span><span class="hs-comment">-- Document all log messages by providing a list of DocMsgs for all constructors.</span><span>
+</span><span id="line-16"></span><span class="hs-comment">-- Because it is not enforced by the type system, it is very</span><span>
+</span><span id="line-17"></span><span class="hs-comment">-- important to provide a complete list, as the prototypes are used as well for configuration.</span><span>
+</span><span id="line-18"></span><span class="hs-comment">-- If you don't want to add an item for documentation enter an empty text.</span><span>
+</span><span id="line-19"></span><span class="hs-keyword">newtype</span><span> </span><span id="Documented"><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#Documented"><span class="hs-identifier hs-var">Documented</span></a></span></span><span> </span><span id="local-6989586621679141558"><span class="annot"><a href="#local-6989586621679141558"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Documented"><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#Documented"><span class="hs-identifier hs-var">Documented</span></a></span></span><span> </span><span class="hs-special">{</span><span id="undoc"><span class="annot"><span class="annottext">forall a. Documented a -&gt; [DocMsg a]
+</span><a href="Cardano.Logging.Types.DocuGenerator.html#undoc"><span class="hs-identifier hs-var hs-var">undoc</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#DocMsg"><span class="hs-identifier hs-type">DocMsg</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679141558"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span class="hs-special">}</span><span>
+</span><span id="line-20"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span> </span><span id="local-6989586621679141591"><span id="local-6989586621679141598"><span id="local-6989586621679141602"><span class="annot"><span class="annottext">Int -&gt; Documented a -&gt; ShowS
+[Documented a] -&gt; ShowS
+Documented a -&gt; String
+(Int -&gt; Documented a -&gt; ShowS)
+-&gt; (Documented a -&gt; String)
+-&gt; ([Documented a] -&gt; ShowS)
+-&gt; Show (Documented a)
+forall a. Int -&gt; Documented a -&gt; ShowS
+forall a. [Documented a] -&gt; ShowS
+forall a. Documented a -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall a. Int -&gt; Documented a -&gt; ShowS
+showsPrec :: Int -&gt; Documented a -&gt; ShowS
+$cshow :: forall a. Documented a -&gt; String
+show :: Documented a -&gt; String
+$cshowList :: forall a. [Documented a] -&gt; ShowS
+showList :: [Documented a] -&gt; ShowS
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Show.html#Show"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span>
+</span><span id="line-21"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">newtype</span></span><span> </span><span id="local-6989586621679141607"><span id="local-6989586621679141612"><span id="local-6989586621679141618"><span class="annot"><span class="annottext">NonEmpty (Documented a) -&gt; Documented a
+Documented a -&gt; Documented a -&gt; Documented a
+(Documented a -&gt; Documented a -&gt; Documented a)
+-&gt; (NonEmpty (Documented a) -&gt; Documented a)
+-&gt; (forall b. Integral b =&gt; b -&gt; Documented a -&gt; Documented a)
+-&gt; Semigroup (Documented a)
+forall b. Integral b =&gt; b -&gt; Documented a -&gt; Documented a
+forall a. NonEmpty (Documented a) -&gt; Documented a
+forall a. Documented a -&gt; Documented a -&gt; Documented a
+forall a.
+(a -&gt; a -&gt; a)
+-&gt; (NonEmpty a -&gt; a)
+-&gt; (forall b. Integral b =&gt; b -&gt; a -&gt; a)
+-&gt; Semigroup a
+forall a b. Integral b =&gt; b -&gt; Documented a -&gt; Documented a
+$c&lt;&gt; :: forall a. Documented a -&gt; Documented a -&gt; Documented a
+&lt;&gt; :: Documented a -&gt; Documented a -&gt; Documented a
+$csconcat :: forall a. NonEmpty (Documented a) -&gt; Documented a
+sconcat :: NonEmpty (Documented a) -&gt; Documented a
+$cstimes :: forall a b. Integral b =&gt; b -&gt; Documented a -&gt; Documented a
+stimes :: forall b. Integral b =&gt; b -&gt; Documented a -&gt; Documented a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Base.html#Semigroup"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Semigroup</span></a></span></span></span></span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="hs-comment">-- | Document a message by giving a prototype, its most special name in the namespace</span><span>
+</span><span id="line-24"></span><span class="hs-comment">-- and a comment in markdown format</span><span>
+</span><span id="line-25"></span><span class="hs-keyword">data</span><span> </span><span id="DocMsg"><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#DocMsg"><span class="hs-identifier hs-var">DocMsg</span></a></span></span><span> </span><span id="local-6989586621679141578"><span class="annot"><a href="#local-6989586621679141578"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="DocMsg"><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#DocMsg"><span class="hs-identifier hs-var">DocMsg</span></a></span></span><span> </span><span class="hs-special">{</span><span>
+</span><span id="line-26"></span><span>    </span><span id="dmNamespace"><span class="annot"><span class="annottext">forall a. DocMsg a -&gt; Namespace a
+</span><a href="Cardano.Logging.Types.DocuGenerator.html#dmNamespace"><span class="hs-identifier hs-var hs-var">dmNamespace</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Cardano.Logging.Types.html#Namespace"><span class="hs-identifier hs-type">Namespace</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679141578"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-27"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="dmMetricsMD"><span class="annot"><span class="annottext">forall a. DocMsg a -&gt; [(Text, Text)]
+</span><a href="Cardano.Logging.Types.DocuGenerator.html#dmMetricsMD"><span class="hs-identifier hs-var hs-var">dmMetricsMD</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/text-2.0.2/src/Data.Text.Internal.html#Text"><span class="hs-identifier hs-type">Text</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/text-2.0.2/src/Data.Text.Internal.html#Text"><span class="hs-identifier hs-type">Text</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-28"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="dmMarkdown"><span class="annot"><span class="annottext">forall a. DocMsg a -&gt; Text
+</span><a href="Cardano.Logging.Types.DocuGenerator.html#dmMarkdown"><span class="hs-identifier hs-var hs-var">dmMarkdown</span></a></span></span><span>  </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/text-2.0.2/src/Data.Text.Internal.html#Text"><span class="hs-identifier hs-type">Text</span></a></span><span>
+</span><span id="line-29"></span><span class="hs-special">}</span><span>
+</span><span id="line-30"></span><span>
+</span><span id="line-31"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679141566"><span id="local-6989586621679141630"><span id="local-6989586621679141634"><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Show.html#Show"><span class="hs-identifier hs-type">Show</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#DocMsg"><span class="hs-identifier hs-type">DocMsg</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679141566"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-32"></span><span>  </span><span id="local-6989586621679141636"><span class="annot"><span class="annottext">show :: DocMsg a -&gt; String
+</span><a href="#local-6989586621679141636"><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#DocMsg"><span class="hs-identifier hs-type">DocMsg</span></a></span><span> </span><span class="annot"><span class="annottext">Namespace a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">[(Text, Text)]
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679141638"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679141638"><span class="hs-identifier hs-var">md</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; String
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/text-2.0.2/src/Data.Text.Show.html#unpack"><span class="hs-identifier hs-var">unpack</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679141638"><span class="hs-identifier hs-var">md</span></a></span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span>
+</span><span id="line-35"></span><span class="hs-keyword">data</span><span> </span><span id="DocuResult"><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#DocuResult"><span class="hs-identifier hs-var">DocuResult</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-36"></span><span>    </span><span id="DocuTracer"><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#DocuTracer"><span class="hs-identifier hs-var">DocuTracer</span></a></span></span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/text-2.0.2/src/Data.Text.Internal.Builder.html#Builder"><span class="hs-identifier hs-type">Builder</span></a></span><span>
+</span><span id="line-37"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="DocuMetric"><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#DocuMetric"><span class="hs-identifier hs-var">DocuMetric</span></a></span></span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/text-2.0.2/src/Data.Text.Internal.Builder.html#Builder"><span class="hs-identifier hs-type">Builder</span></a></span><span>
+</span><span id="line-38"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="DocuDatapoint"><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#DocuDatapoint"><span class="hs-identifier hs-var">DocuDatapoint</span></a></span></span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/text-2.0.2/src/Data.Text.Internal.Builder.html#Builder"><span class="hs-identifier hs-type">Builder</span></a></span><span>
+</span><span id="line-39"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621679141643"><span id="local-6989586621679141652"><span id="local-6989586621679141656"><span class="annot"><span class="annottext">Int -&gt; DocuResult -&gt; ShowS
+[DocuResult] -&gt; ShowS
+DocuResult -&gt; String
+(Int -&gt; DocuResult -&gt; ShowS)
+-&gt; (DocuResult -&gt; String)
+-&gt; ([DocuResult] -&gt; ShowS)
+-&gt; Show DocuResult
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; DocuResult -&gt; ShowS
+showsPrec :: Int -&gt; DocuResult -&gt; ShowS
+$cshow :: DocuResult -&gt; String
+show :: DocuResult -&gt; String
+$cshowList :: [DocuResult] -&gt; ShowS
+showList :: [DocuResult] -&gt; ShowS
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Show.html#Show"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span>
+</span><span id="line-40"></span><span>
+</span><span id="line-41"></span><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#unpackDocu"><span class="hs-identifier hs-type">unpackDocu</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#DocuResult"><span class="hs-identifier hs-type">DocuResult</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/text-2.0.2/src/Data.Text.Internal.Builder.html#Builder"><span class="hs-identifier hs-type">Builder</span></a></span><span>
+</span><span id="line-42"></span><span id="unpackDocu"><span class="annot"><span class="annottext">unpackDocu :: DocuResult -&gt; Builder
+</span><a href="Cardano.Logging.Types.DocuGenerator.html#unpackDocu"><span class="hs-identifier hs-var hs-var">unpackDocu</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#DocuTracer"><span class="hs-identifier hs-type">DocuTracer</span></a></span><span> </span><span id="local-6989586621679141659"><span class="annot"><span class="annottext">Builder
+</span><a href="#local-6989586621679141659"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span>    </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Builder
+</span><a href="#local-6989586621679141659"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-43"></span><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#unpackDocu"><span class="hs-identifier hs-var">unpackDocu</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#DocuMetric"><span class="hs-identifier hs-type">DocuMetric</span></a></span><span> </span><span id="local-6989586621679141660"><span class="annot"><span class="annottext">Builder
+</span><a href="#local-6989586621679141660"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span>    </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Builder
+</span><a href="#local-6989586621679141660"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-44"></span><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#unpackDocu"><span class="hs-identifier hs-var">unpackDocu</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#DocuDatapoint"><span class="hs-identifier hs-type">DocuDatapoint</span></a></span><span> </span><span id="local-6989586621679141661"><span class="annot"><span class="annottext">Builder
+</span><a href="#local-6989586621679141661"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Builder
+</span><a href="#local-6989586621679141661"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-45"></span><span>
+</span><span id="line-46"></span><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#resultIsTracer"><span class="hs-identifier hs-type">resultIsTracer</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#DocuResult"><span class="hs-identifier hs-type">DocuResult</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Types.html#Bool"><span class="hs-identifier hs-type">Bool</span></a></span><span>
+</span><span id="line-47"></span><span id="resultIsTracer"><span class="annot"><span class="annottext">resultIsTracer :: DocuResult -&gt; Bool
+</span><a href="Cardano.Logging.Types.DocuGenerator.html#resultIsTracer"><span class="hs-identifier hs-var hs-var">resultIsTracer</span></a></span></span><span> </span><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#DocuTracer"><span class="hs-identifier hs-type">DocuTracer</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Types.html#True"><span class="hs-identifier hs-var">True</span></a></span><span>
+</span><span id="line-48"></span><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#resultIsTracer"><span class="hs-identifier hs-var">resultIsTracer</span></a></span><span> </span><span class="annot"><span class="annottext">DocuResult
+</span><span class="hs-identifier">_</span></span><span>            </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Types.html#False"><span class="hs-identifier hs-var">False</span></a></span><span>
+</span><span id="line-49"></span><span>
+</span><span id="line-50"></span><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#resultIsMetric"><span class="hs-identifier hs-type">resultIsMetric</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#DocuResult"><span class="hs-identifier hs-type">DocuResult</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Types.html#Bool"><span class="hs-identifier hs-type">Bool</span></a></span><span>
+</span><span id="line-51"></span><span id="resultIsMetric"><span class="annot"><span class="annottext">resultIsMetric :: DocuResult -&gt; Bool
+</span><a href="Cardano.Logging.Types.DocuGenerator.html#resultIsMetric"><span class="hs-identifier hs-var hs-var">resultIsMetric</span></a></span></span><span> </span><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#DocuMetric"><span class="hs-identifier hs-type">DocuMetric</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Types.html#True"><span class="hs-identifier hs-var">True</span></a></span><span>
+</span><span id="line-52"></span><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#resultIsMetric"><span class="hs-identifier hs-var">resultIsMetric</span></a></span><span> </span><span class="annot"><span class="annottext">DocuResult
+</span><span class="hs-identifier">_</span></span><span>            </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Types.html#False"><span class="hs-identifier hs-var">False</span></a></span><span>
+</span><span id="line-53"></span><span>
+</span><span id="line-54"></span><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#resultIsDatapoint"><span class="hs-identifier hs-type">resultIsDatapoint</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#DocuResult"><span class="hs-identifier hs-type">DocuResult</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Types.html#Bool"><span class="hs-identifier hs-type">Bool</span></a></span><span>
+</span><span id="line-55"></span><span id="resultIsDatapoint"><span class="annot"><span class="annottext">resultIsDatapoint :: DocuResult -&gt; Bool
+</span><a href="Cardano.Logging.Types.DocuGenerator.html#resultIsDatapoint"><span class="hs-identifier hs-var hs-var">resultIsDatapoint</span></a></span></span><span> </span><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#DocuDatapoint"><span class="hs-identifier hs-type">DocuDatapoint</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Types.html#True"><span class="hs-identifier hs-var">True</span></a></span><span>
+</span><span id="line-56"></span><span class="annot"><a href="Cardano.Logging.Types.DocuGenerator.html#resultIsDatapoint"><span class="hs-identifier hs-var">resultIsDatapoint</span></a></span><span> </span><span class="annot"><span class="annottext">DocuResult
+</span><span class="hs-identifier">_</span></span><span>               </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Types.html#False"><span class="hs-identifier hs-var">False</span></a></span><span>
+</span><span id="line-57"></span></pre></body></html>
