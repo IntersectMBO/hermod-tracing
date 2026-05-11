@@ -1,5 +1,6 @@
 module Cardano.Logging.Prometheus.Exposition
   ( MetricName
+  , asPrometheusMetricName
   , renderExpositionFromSample
   , renderExpositionFromSampleWith
   ) where
@@ -45,13 +46,6 @@ renderExpositionFromSampleWith helpTextDict noSuffixes =
       | noSuffixes = \name -> fromMaybe name $ asum $ map (`T.stripSuffix` name) ["_int", "_counter", "_real"]
       | otherwise  = id
 
-    prepareName :: MetricName -> MetricName
-    prepareName =
-        T.filter (\c -> isAsciiLower c || isAsciiUpper c || isDigit c || c == '_')
-      . T.replace " " "_"
-      . T.replace "-" "_"
-      . T.replace "." "_"
-
     -- the help annotation line
     buildHelp :: Builder -> Builder -> Builder
     buildHelp h n =
@@ -79,7 +73,7 @@ renderExpositionFromSampleWith helpTextDict noSuffixes =
 
         -- the metric name for exposition
         buildName =
-          TB.fromText $ prepareName $ stripSuffix mName
+          TB.fromText $ asPrometheusMetricName $ stripSuffix mName
 
         -- the type annotation line
         buildTypeAnn t =
@@ -96,3 +90,12 @@ buildInfo     = TB.fromText " info"
 buildEOF      = TB.fromText "# EOF\n"
 newline       = TB.singleton '\n'
 space         = TB.singleton ' '
+
+
+-- | Converts Hermod's more permissive, internal metrics names to external ones conforming to https://prometheus.io/docs/practices/naming/
+--   The external metric name will be visible in the exposition.
+asPrometheusMetricName :: MetricName -> MetricName
+asPrometheusMetricName =
+    T.filter (\c -> isAsciiLower c || isAsciiUpper c || isDigit c || c == '_')
+  . T.map    (\c -> if c == ' ' || c == '-' || c == '.' then '_' else c)
+{-# INLINABLE asPrometheusMetricName #-}
