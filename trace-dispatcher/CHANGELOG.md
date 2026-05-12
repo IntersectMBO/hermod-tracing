@@ -6,6 +6,7 @@
 * Remove internal `contra-tracer` fork and depend on `contra-tracer ^>= 0.2.1`.
 * Drop the documentation generator from the import-all module `Cardano.Logging`; make doc generator types internal.
 * Snoc a namespace separator `.` to the metrics prefix config value when missing.
+* Provide `Cardano.Logging.Prometheus.Exposition.asPrometheusMetricName`, creating an external (Prometheus naming schemal compliant) metric name from an internal one.
 
 ## 2.12.1 -- Apr 2026
 

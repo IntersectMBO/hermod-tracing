@@ -9,6 +9,11 @@
 
 module Cardano.Logging.Prometheus.Exposition
 type MetricName = Text
+
+-- | Converts Hermod's more permissive, internal metrics names to external
+--   ones conforming to <a>https://prometheus.io/docs/practices/naming/</a>
+--   The external metric name will be visible in the exposition.
+asPrometheusMetricName :: MetricName -> MetricName
 renderExpositionFromSample :: Bool -> Sample -> Text
 renderExpositionFromSampleWith :: [(MetricName, Builder)] -> Bool -> Sample -> Text
 
