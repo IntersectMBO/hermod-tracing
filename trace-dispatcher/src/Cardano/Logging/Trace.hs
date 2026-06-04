@@ -60,6 +60,8 @@ filterTrace :: (Monad m)
   => ((LoggingContext, a) -> Bool)
   -> Trace m a
   -> Trace m a
+-- NOTE: (@russoul) If the input tracer `tr` is emitting then, no matter the predicate, the resulting
+-- tracer is emitting!
 filterTrace ff (Trace tr) = Trace $ T.squelchUnless
     (\case
       (_lc, Left _)     -> True
@@ -70,6 +72,8 @@ filterTrace ff (Trace tr) = Trace $ T.squelchUnless
 filterTraceMaybe :: Monad m
   => Trace m a
   -> Trace m (Maybe a)
+-- NOTE: (@russoul) If the input tracer `tr` is emitting then, no matter the predicate, the resulting
+-- tracer is emitting!
 filterTraceMaybe (Trace tr) = Trace $
     T.squelchUnless
       (\case
