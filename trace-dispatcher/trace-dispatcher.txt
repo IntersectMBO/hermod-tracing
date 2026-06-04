@@ -658,7 +658,10 @@ module Cardano.Logging.Types.NodeStartupInfo
 --   required for 'cardano-tracer' service (particularly, for RTView).
 data NodeStartupInfo
 NodeStartupInfo :: Text -> NominalDiffTime -> Word64 -> Word64 -> NodeStartupInfo
-[suiEra] :: NodeStartupInfo -> Text
+
+-- | The most recent era the node supports transitioning to, not
+--   necessarily the era it currently operates in.
+[suiLatestSupportedEra] :: NodeStartupInfo -> Text
 [suiSlotLength] :: NodeStartupInfo -> NominalDiffTime
 [suiEpochLength] :: NodeStartupInfo -> Word64
 [suiSlotsPerKESPeriod] :: NodeStartupInfo -> Word64
