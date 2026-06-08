@@ -88,6 +88,8 @@ instance AE.ToJSON ConfigRepresentation where
     , "ApplicationName"          .= traceOptionNodeName
     , "MetricsPrefix"            .= traceOptionMetricsPrefix
     , "PrometheusSimpleRun"      .= tracePrometheusSimpleRun
+    -- Both *Frequency fields are scheduled for removal from the data type.
+    -- The current data loss on round-trip wrt. `parseAsLegacy` above is deliberate.
     ]
 
 type OptionsRepresentation = Map.Map Text ConfigOptionRep

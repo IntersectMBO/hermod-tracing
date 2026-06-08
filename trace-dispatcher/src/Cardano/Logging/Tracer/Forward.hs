@@ -28,11 +28,11 @@ forwardTracer write =
        LoggingContext
     -> Either TraceControl FormattedMessage
     -> m ()
-  output LoggingContext {} (Right (FormattedForwarder lo)) = liftIO $
-    write lo
-  output LoggingContext {} (Left TCReset) = liftIO $ do
+  output LoggingContext{} (Right (FormattedForwarder lo)) =
+    liftIO $ write lo
+  output LoggingContext{} (Left TCReset) =
     pure ()
   output lk (Left c@TCDocument {}) =
     docIt Forwarder (lk, Left c)
-  output LoggingContext {} (Right _)  = pure ()
-  output LoggingContext {} _  = pure ()
+  output LoggingContext{} _ =
+    pure ()

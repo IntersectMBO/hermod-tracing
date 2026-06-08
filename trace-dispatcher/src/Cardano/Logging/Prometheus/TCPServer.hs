@@ -23,13 +23,13 @@ import           Data.Aeson.Types as AE (Value (String), (.=))
 import           Data.ByteString (ByteString)
 import           Data.ByteString.Builder
 import qualified Data.ByteString.Char8 as BC
+import qualified Data.ByteString.Lazy.Char8 as BCL (length)
 import           Data.Int (Int64)
 import           Data.List (find, intersperse)
 import           Data.Maybe (fromMaybe)
 import           Data.Text as TS (pack)
 import           Data.Text.Lazy (Text)
-import qualified Data.Text.Lazy as T
-import qualified Data.Text.Lazy.Encoding as T (encodeUtf8Builder)
+import qualified Data.Text.Lazy.Encoding as T (encodeUtf8)
 import           Data.Word (Word16)
 import           Network.HTTP.Date (epochTimeToHTTPDate, formatHTTPDate)
 import           Network.Socket (HostName, PortNumber)
@@ -188,11 +188,13 @@ responseMessage :: Bool -> Builder -> Text -> EpochTime -> Builder
 responseMessage withBody contentType msg now =
   mconcat $ intersperse nl
     [ "HTTP/1.1 200 OK"
-    , hdrContentLength (T.length msg)
+    , hdrContentLength contentLength
     , contentType
     , "Date: " <> byteString httpDate
     , ""
-    , if withBody then T.encodeUtf8Builder msg else ""
+    , if withBody then lazyByteString contentLBS else ""
     ]
     where
-      httpDate = formatHTTPDate $ epochTimeToHTTPDate now
+      contentLBS    = T.encodeUtf8 msg
+      contentLength = if withBody then BCL.length contentLBS else 0
+      httpDate      = formatHTTPDate $ epochTimeToHTTPDate now

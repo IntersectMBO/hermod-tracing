@@ -50,10 +50,11 @@ import           Data.Text                           as T (Text, empty,
                                                            intercalate, lines,
                                                            pack, stripPrefix,
                                                            toLower, unlines)
-import           Data.Text.Internal.Builder          (toLazyText)
+import qualified Data.Text                           as T (null)
 import           Data.Text.Lazy                      (toStrict)
 import           Data.Text.Lazy.Builder              (Builder, fromString,
-                                                      fromText, singleton)
+                                                      fromText, singleton,
+                                                      toLazyText)
 import           Data.Tree                           (Forest, Tree (..),
                                                       unfoldForest)
 
@@ -568,6 +569,8 @@ generateTOC DocTracer {..} traces metrics datapoints =
         link = mconcat (map (fromText . toLower) firstTracer)
 
         -- The first tracer in the list of tracers that has that namespace prefix
+        -- Safe: the tree is constructed from allTracers via toForest (and trim, which
+        -- preserves the invariant), so ns is always a prefix of some element in allTracers.
         firstTracer :: [Text]
         firstTracer = fromJust $ find (ns `isPrefixOf`) allTracers
 
@@ -576,15 +579,13 @@ asCode :: Builder -> Builder
 asCode b = singleton '`' <> b <> singleton '`'
 
 accentuated :: Text -> Builder
-accentuated t = if t == ""
-                  then fromText "\n"
-                  else fromText "\n"
-                        <> fromText (unlines $ map addAccent (lines t))
+accentuated t =
+     singleton '\n'
+  <> mconcat (map (\l -> addAccent l <> singleton '\n') (T.lines t))
   where
-    addAccent :: Text -> Text
-    addAccent t' = if t' == ""
-                    then ">"
-                    else "> " <> t'
+    addAccent l
+      | T.null l  = singleton '>'
+      | otherwise = fromText "> " <> fromText l
 
 -- Convert a list of namespaces to a tree representation
 toForest :: [[Text]] -> Forest Text

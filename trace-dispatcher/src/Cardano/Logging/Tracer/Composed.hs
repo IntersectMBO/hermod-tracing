@@ -18,13 +18,10 @@ import           Cardano.Logging.Trace
 import           Cardano.Logging.TraceDispatcherMessage
 import           Cardano.Logging.Types
 
-import           Control.Concurrent.MVar
 import           Control.Monad (when)
-import           Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Control.Tracer as T
 import           Data.IORef
 import qualified Data.List as L
-import qualified Data.Map as Map
 import           Data.Maybe (fromMaybe, isNothing)
 import qualified Data.Set as Set
 import           Data.Text hiding (map)
@@ -86,7 +83,6 @@ mkCardanoTracer' trStdout trForward mbTrEkg tracerPrefix hook = do
                       Nothing -> pure $ Trace T.nullTracer
                       Just ekgTrace ->
                         pure (metricsFormatter ekgTrace)
---                      >>= recordMetricsStatistics internalTr
                         >>= maybeSilent hasNoMetrics tracerPrefix True
                         >>= hook
 
@@ -216,33 +212,4 @@ traceTracerInfo trStdout trForward cr = do
 
 -- A basic tracer just for metrics
 mkMetricsTracer :: Maybe (Trace IO FormattedMessage) -> Trace IO FormattedMessage
-mkMetricsTracer mbTrEkg = case mbTrEkg of
-                          Nothing -> Trace T.nullTracer
-                          Just ekgTrace -> ekgTrace
-
-_recordMetricsStatistics :: forall a m . (LogFormatting a, MonadIO m)
-  => Trace m TraceDispatcherMessage
-  -> Trace m a
-  -> m (Trace m a)
-_recordMetricsStatistics internalTr (Trace tr) = do
-    ref <- liftIO $ newMVar (0, Map.empty)
-    pure $ Trace (T.arrow (T.emit
-      (\case
-        (lc, Right e) -> process ref lc e
-        (lc, Left e) -> T.traceWith tr (lc, Left e))))
-  where
-    process :: MVar (Int, Map.Map Text Int) -> LoggingContext -> a -> m ()
-    process ref lc msg = do
-      let metrics = asMetrics msg
-      mapM_ (\m ->
-              let mName = getMetricName m
-              in liftIO $ modifyMVar ref (\ (i', mmap) ->
-                  case Map.lookup mName mmap of
-                    Nothing -> pure ((i' + 1, Map.insert mName 1 mmap), ())
-                    Just _  -> pure ((i' + 1, Map.adjust (+1) mName mmap), ()))) metrics
-      (i,mmap) <- liftIO $ readMVar ref
-      when (i >= 1000) $ do
-        traceWith (withInnerNames (appendPrefixNames ["Reflection"] internalTr))
-                  (MetricsInfo mmap)
-        liftIO $ modifyMVar ref (\ (_i, mmap') -> pure ((0,mmap'), ()))
-      T.traceWith tr (lc, Right msg)
+mkMetricsTracer = fromMaybe (Trace T.nullTracer)

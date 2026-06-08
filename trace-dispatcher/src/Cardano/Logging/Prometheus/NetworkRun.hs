@@ -3,9 +3,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
 
-{-# OPTIONS_GHC -fno-warn-unused-imports #-}
-
-
 -- | Run a TCP server, with hardening against connection flooding
 module Cardano.Logging.Prometheus.NetworkRun
        ( NetworkRunParams (..)
@@ -25,7 +22,6 @@ import           Control.Monad (forever, void, when)
 import qualified Data.Foldable as F (sum)
 import           Data.Hashable (hash)
 import qualified Data.IntMap.Strict as IM
-import qualified Data.List.NonEmpty as NE
 import           Data.Maybe (fromMaybe)
 import           Network.Socket
 import qualified System.TimeManager as T

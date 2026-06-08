@@ -54,13 +54,11 @@ standardTracer = do
         Nothing                -> pure ()
     output stateRef LoggingContext{} (Left TCReset) = liftIO $ do
       st <- readIORef stateRef
-      case stRunning st of
-        Nothing -> when (isNothing $ stRunning st) $
-                      startStdoutThread stateRef
-        Just _  -> pure ()
+      when (isNothing $ stRunning st) $
+        startStdoutThread stateRef
     output _ lk c@(Left TCDocument {}) =
        docIt
-        (Stdout MachineFormat) -- TODO Find out the right format
+        (Stdout MachineFormat)
         (lk, c)
     output _stateRef LoggingContext {} _ = pure ()
 

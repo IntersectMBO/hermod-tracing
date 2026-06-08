@@ -28,14 +28,15 @@ import           Cardano.Logging.Trace
 import           Cardano.Logging.TraceDispatcherMessage
 import           Cardano.Logging.Types
 
+import           Control.Applicative (asum)
 import           Control.Monad (unless)
 import           Control.Monad.IO.Class (MonadIO, liftIO)
 import           Control.Monad.IO.Unlift (MonadUnliftIO)
 import qualified Control.Tracer as T
 import           Data.IORef (IORef, modifyIORef, newIORef, readIORef, writeIORef)
-import           Data.List (maximumBy, nub)
-import qualified Data.Map as Map
-import           Data.Maybe (fromMaybe, mapMaybe)
+import           Data.List (inits, maximumBy, nub)
+import qualified Data.Map.Lazy as Map
+import           Data.Maybe (fromMaybe, listToMaybe, mapMaybe)
 import qualified Data.Set as Set
 import           Data.Text (Text, intercalate, unpack)
 
@@ -253,7 +254,7 @@ filterSeverityFromConfig :: (MonadIO m) =>
 filterSeverityFromConfig =
     withNamespaceConfig
       "severity"
-      getSeverity'
+      (\conf -> pure . getSeverity conf)
       (\sev tr -> contramapMCond tr (mapF sev))
   where
     mapF confSev =
@@ -282,7 +283,7 @@ withDetailsFromConfig :: (MonadIO m) =>
 withDetailsFromConfig =
   withNamespaceConfig
     "details"
-    getDetails'
+    (\conf -> pure . getDetails conf)
     (\mbDtl b -> case mbDtl of
               Just dtl -> pure $ setDetails dtl b
               Nothing  -> pure $ setDetails DNormal b)
@@ -294,7 +295,7 @@ withBackendsFromConfig :: (MonadIO m) =>
 withBackendsFromConfig rappendPrefixNameAndFormatter =
   withNamespaceConfig
     "backends"
-    getBackends'
+    (\conf -> pure . getBackends conf)
     rappendPrefixNameAndFormatter
     (Trace T.nullTracer)
 
@@ -377,9 +378,6 @@ getSeverity config ns =
     severitySelector (ConfSeverity s) = Just s
     severitySelector _              = Nothing
 
-getSeverity' :: Applicative m => TraceConfig -> Namespace a -> m SeverityF
-getSeverity' config ns = pure $ getSeverity config ns
-
 -- | If no details can be found in the config, it is set to DNormal
 getDetails :: TraceConfig -> Namespace a -> DetailLevel
 getDetails config ns =
@@ -388,9 +386,6 @@ getDetails config ns =
     detailSelector :: ConfigOption -> Maybe DetailLevel
     detailSelector (ConfDetail d) = Just d
     detailSelector _            = Nothing
-
-getDetails' :: Applicative m => TraceConfig -> Namespace a -> m DetailLevel
-getDetails' config n = pure $ getDetails config n
 
 -- | If no backends can be found in the config, it is set to
 -- [EKGBackend, Forwarder, Stdout HumanFormatColoured]
@@ -403,9 +398,6 @@ getBackends config ns =
     backendSelector (ConfBackend s) = Just s
     backendSelector _             = Nothing
 
-getBackends' :: Applicative m => TraceConfig -> Namespace a -> m [BackendConfig]
-getBackends' config ns = pure $ getBackends config ns
-
 -- | May return a limiter specification
 getLimiterSpec :: TraceConfig -> Namespace a -> Maybe (Text, Double)
 getLimiterSpec config ns = getOption limiterSelector config (nsGetComplete ns)
@@ -414,17 +406,10 @@ getLimiterSpec config ns = getOption limiterSelector config (nsGetComplete ns)
     limiterSelector (ConfLimiter f) = Just (intercalate "." (nsPrefix ns ++ nsInner ns), f)
     limiterSelector _               = Nothing
 
--- | Searches in the config to find an option
+-- | Searches in the config to find an option, most-specific as per namespace first.
+-- (Generates all ancestor prefixes once via `inits`, avoiding a repeated O(n) `init` call at each recursion level)
 getOption :: (ConfigOption -> Maybe a) -> TraceConfig -> [Text] -> Maybe a
-getOption sel config [] =
-  case Map.lookup [] (tcOptions config) of
-    Nothing -> Nothing
-    Just options -> case mapMaybe sel options of
-                      []        -> Nothing
-                      (opt : _) -> Just opt
-getOption sel config ns =
-  case Map.lookup ns (tcOptions config) of
-    Nothing -> getOption sel config (init ns)
-    Just options -> case mapMaybe sel options of
-                      []        -> getOption sel config (init ns)
-                      (opt : _) -> Just opt
+getOption sel TraceConfig{tcOptions} ns =
+  asum $ map tryLookup $ reverse $ inits ns
+  where
+    tryLookup k = listToMaybe . mapMaybe sel =<< Map.lookup k tcOptions

@@ -1,6 +1,4 @@
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -246,8 +244,9 @@ colorBySeverity withColor severity' msg =
 
 humanFormatter
   :: forall a m .
-     MonadIO m
-  => LogFormatting a
+     ( MonadIO m
+     , LogFormatting a
+     )
   => Bool
   -> Trace m FormattedMessage
   -> m (Trace m a)
@@ -256,8 +255,9 @@ humanFormatter withColor =
 
 machineFormatter
   :: forall a m .
-     (MonadIO m
-  ,  LogFormatting a)
+     ( MonadIO m
+     , LogFormatting a
+     )
   => Trace m FormattedMessage
   -> m (Trace m a)
 machineFormatter =
@@ -265,8 +265,9 @@ machineFormatter =
 
 cborFormatter
   :: forall a m .
-     (MonadIO m
-  ,  LogFormatting a)
+     ( MonadIO m
+     , LogFormatting a
+     )
   => Trace m FormattedMessage
   -> m (Trace m a)
 cborFormatter =
@@ -274,8 +275,9 @@ cborFormatter =
 
 forwardFormatter
   :: forall a m .
-     MonadIO m
-  => LogFormatting a
+     ( MonadIO m
+     , LogFormatting a
+     )
   => Trace m FormattedMessage
   -> m (Trace m a)
 forwardFormatter =

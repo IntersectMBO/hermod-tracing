@@ -82,11 +82,12 @@ dataPointTracer dataPointStore =
       -> m ()
     output LoggingContext {..} (Right val) =
       liftIO $ writeToStore dataPointStore (nameSpaceToText (lcNSPrefix ++ lcNSInner)) val
-    output LoggingContext {} (Left TCReset) = liftIO $ do
+    output LoggingContext {} (Left TCReset) =
       pure ()
-    output lk (Left c@TCDocument {}) = do
+    output lk (Left c@TCDocument {}) =
       docIt DatapointBackend (lk, Left c)
-    output LoggingContext {} _  = pure ()
+    output LoggingContext {} _  =
+      pure ()
 
     nameSpaceToText :: [Text] -> Text
     nameSpaceToText = intercalate "."
