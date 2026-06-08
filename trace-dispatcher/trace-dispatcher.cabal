@@ -143,6 +143,17 @@ test-suite trace-dispatcher-test
                       , QuickCheck
 
 
+executable delta-live-inspect
+  import:           project-config
+  hs-source-dirs:   delta-live-inspect
+  main-is:          Main.hs
+  build-depends:    base >=4.12 && <5
+                  , containers
+                  , contra-tracer
+                  , text
+                  , trace-dispatcher
+  ghc-options:      -rtsopts
+
 benchmark trace-dispatcher-bench
   import:               project-config
   type:                 exitcode-stdio-1.0
