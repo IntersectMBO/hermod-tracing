@@ -16,13 +16,14 @@ import qualified Data.Text.Lazy as TL (toStrict)
 import qualified Data.Text.Lazy.Builder as T (toLazyText)
 import qualified Data.Text.Lazy.Builder.Int as T
 import qualified Data.Text.Lazy.Builder.RealFloat as T (realFloat)
+import           Data.Word (Word64)
 import           GHC.Conc (labelThread, myThreadId)
 
 
 -- | Run an IO action which may throw an exception in a loop.
---   On exception, the action will be re-run after a pause.
+--   On exception, the action will be re-run after a pause (the delay parameters represent seconds).
 --   That pause doubles which each exception, but is reset when the action runs long enough.
-runInLoop :: IO () -> (SomeException -> IO ()) -> Word -> Word -> IO ()
+runInLoop :: IO () -> (SomeException -> IO ()) -> Word64 -> Word64 -> IO ()
 runInLoop action handleInterruption initialDelay maxDelay
   | initialDelay == 0         = runInLoop action handleInterruption 1 maxDelay
   | maxDelay < initialDelay   = runInLoop action handleInterruption initialDelay initialDelay

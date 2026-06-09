@@ -67,17 +67,20 @@ instance LogFormatting TraceDispatcherMessage where
   forHuman (TracerInfoConfig tc) = "Effective Tracer config is:  " <> Text.decodeUtf8 (toStrict (encode tc))
 
 
-  forMachine _dtl StartLimiting {} = mconcat
+  forMachine dtl (StartLimiting txt) = mconcat $
         [ "kind" .= String "StartLimiting"
         ]
-  forMachine _dtl (StopLimiting _txt num) = mconcat
+        ++ [ "limiter" .= txt | dtl >= DDetailed ]
+  forMachine dtl (StopLimiting txt num) = mconcat $
         [ "kind" .= String "StopLimiting"
         , "numSuppressed" .= Number (fromIntegral num)
         ]
-  forMachine _dtl (RememberLimiting _txt num) = mconcat
+        ++ [ "limiter" .= txt | dtl >= DDetailed ]
+  forMachine dtl (RememberLimiting txt num) = mconcat $
         [ "kind" .= String "RememberLimiting"
         , "numSuppressed" .= Number (fromIntegral num)
         ]
+        ++ [ "limiter" .= txt | dtl >= DDetailed ]
   forMachine _dtl (UnknownNamespace nsun nsleg query) = mconcat
         [ "kind" .= String "UnknownNamespace"
         , "unknownNamespace" .= String (Text.intercalate (Text.singleton '.') nsun)
@@ -117,7 +120,7 @@ instance MetaTrace TraceDispatcherMessage where
     namespaceFor TracerInfo {}       = Namespace [] ["TracerInfo"]
     namespaceFor MetricsInfo {}      = Namespace [] ["MetricsInfo"]
     namespaceFor TracerConsistencyWarnings {}     = Namespace [] ["TracerConsistencyWarnings"]
-    namespaceFor TracerInfoConfig {} = Namespace [] ["TracerConfigInfo"]
+    namespaceFor TracerInfoConfig {} = Namespace [] ["TracerInfoConfig"]
 
     severityFor (Namespace _ ["StartLimiting"]) _             = Just Notice
     severityFor (Namespace _ ["StopLimiting"]) _              = Just Notice
@@ -126,7 +129,7 @@ instance MetaTrace TraceDispatcherMessage where
     severityFor (Namespace _ ["TracerInfo"]) _                = Just Notice
     severityFor (Namespace _ ["MetricsInfo"]) _               = Just Debug
     severityFor (Namespace _ ["TracerConsistencyWarnings"]) _ = Just Warning
-    severityFor (Namespace _ ["TracerConfigInfo"]) _          = Just Notice
+    severityFor (Namespace _ ["TracerInfoConfig"]) _          = Just Notice
     severityFor _ _                                           = Nothing
 
     documentFor (Namespace _ ["StartLimiting"])    = Just $
@@ -152,13 +155,13 @@ instance MetaTrace TraceDispatcherMessage where
     documentFor (Namespace _ ["TracerConsistencyWarnings"]) = Just $ mconcat
       [ "Tracer consistency check found errors."
       ] <>  internalRestriction
-    documentFor (Namespace _ ["TracerConfigInfo"]) = Just $ mconcat
+    documentFor (Namespace _ ["TracerInfoConfig"]) = Just $ mconcat
       [ "Trace the tracer configuration which is effectively used."
       ] <>  internalRestriction
     documentFor _ = Nothing
 
     metricsDocFor (Namespace _ ["StartLimiting"])    =
-      [("SuppressedMessages..", "Number of suppressed messages of a certain namespace")]
+      [("SuppressedMessages.", "Number of suppressed messages of a certain namespace")]
     metricsDocFor _ = []
 
     allNamespaces = [
@@ -169,5 +172,5 @@ instance MetaTrace TraceDispatcherMessage where
       , Namespace [] ["TracerInfo"]
       , Namespace [] ["MetricsInfo"]
       , Namespace [] ["TracerConsistencyWarnings"]
-      , Namespace [] ["TracerConfigInfo"]
+      , Namespace [] ["TracerInfoConfig"]
       ]

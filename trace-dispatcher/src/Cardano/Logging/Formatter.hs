@@ -1,6 +1,4 @@
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -46,6 +44,8 @@ import           System.IO.Unsafe (unsafePerformIO)
 -- | If the @TRACE_DISPATCHER_LOGGING_HOSTNAME@ environment variable is set,
 --   it overrides the system hostname in the trace message. This is useful when
 --   multiple instances of a service or application on the same host.
+-- 
+--   The env var is expected to be set (if desired) before the application emits its first trace, as this is evaluated only once.
 hostname :: Text
 {-# NOINLINE hostname #-}
 hostname = unsafePerformIO $
@@ -246,8 +246,9 @@ colorBySeverity withColor severity' msg =
 
 humanFormatter
   :: forall a m .
-     MonadIO m
-  => LogFormatting a
+     ( MonadIO m
+     , LogFormatting a
+     )
   => Bool
   -> Trace m FormattedMessage
   -> m (Trace m a)
@@ -256,8 +257,9 @@ humanFormatter withColor =
 
 machineFormatter
   :: forall a m .
-     (MonadIO m
-  ,  LogFormatting a)
+     ( MonadIO m
+     , LogFormatting a
+     )
   => Trace m FormattedMessage
   -> m (Trace m a)
 machineFormatter =
@@ -265,8 +267,9 @@ machineFormatter =
 
 cborFormatter
   :: forall a m .
-     (MonadIO m
-  ,  LogFormatting a)
+     ( MonadIO m
+     , LogFormatting a
+     )
   => Trace m FormattedMessage
   -> m (Trace m a)
 cborFormatter =
@@ -274,8 +277,9 @@ cborFormatter =
 
 forwardFormatter
   :: forall a m .
-     MonadIO m
-  => LogFormatting a
+     ( MonadIO m
+     , LogFormatting a
+     )
   => Trace m FormattedMessage
   -> m (Trace m a)
 forwardFormatter =

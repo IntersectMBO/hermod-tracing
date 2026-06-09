@@ -23,13 +23,14 @@ import           Data.Aeson.Types as AE (Value (String), (.=))
 import           Data.ByteString (ByteString)
 import           Data.ByteString.Builder
 import qualified Data.ByteString.Char8 as BC
+import qualified Data.ByteString.Lazy.Char8 as BCL (length)
 import           Data.Int (Int64)
 import           Data.List (find, intersperse)
 import           Data.Maybe (fromMaybe)
 import           Data.Text as TS (pack)
 import           Data.Text.Lazy (Text)
-import qualified Data.Text.Lazy as T
-import qualified Data.Text.Lazy.Encoding as T (encodeUtf8Builder)
+import qualified Data.Text.Lazy as TL (length)
+import qualified Data.Text.Lazy.Encoding as T (encodeUtf8)
 import           Data.Word (Word16)
 import           Network.HTTP.Date (epochTimeToHTTPDate, formatHTTPDate)
 import           Network.Socket (HostName, PortNumber)
@@ -158,11 +159,17 @@ hdrContentTypeOpenMetrics = "Content-Type: application/openmetrics-text;version=
 hdrContentLength :: Int64 -> Builder
 hdrContentLength len = "Content-Length: " <> int64Dec len
 
-errorBadRequest, errorNotFound, errorBadMethod, errorBadContent :: (ByteString, ByteString)
-errorBadRequest = ("400", "Bad Request")
-errorNotFound   = ("404", "Not Found")
-errorBadMethod  = ("405", "Method Not Allowed")
-errorBadContent = ("415", "Unsupported Media Type")
+errorBadRequest, errorNotFound, errorBadMethod, errorBadContent, errorPayloadTooLarge :: (ByteString, ByteString)
+errorBadRequest    = ("400", "Bad Request")
+errorNotFound      = ("404", "Not Found")
+errorBadMethod     = ("405", "Method Not Allowed")
+errorBadContent    = ("415", "Unsupported Media Type")
+errorPayloadTooLarge = ("503", "Service Unavailable")
+
+-- 8 MB ceiling as a safeguard for response size - this should never fire.
+-- Corresponds to roughly 56.000 distinct application metrics: a legitimate exposition should be well under this!
+maxResponseChars :: Int64
+maxResponseChars = 8 * 1024 * 1024
 
 -- HTTP header line break
 nl :: Builder
@@ -185,14 +192,19 @@ responseError withBody (errCode, errMsg) =
     msg = errCode <> " " <> errMsg
 
 responseMessage :: Bool -> Builder -> Text -> EpochTime -> Builder
-responseMessage withBody contentType msg now =
-  mconcat $ intersperse nl
-    [ "HTTP/1.1 200 OK"
-    , hdrContentLength (T.length msg)
-    , contentType
-    , "Date: " <> byteString httpDate
-    , ""
-    , if withBody then T.encodeUtf8Builder msg else ""
-    ]
-    where
-      httpDate = formatHTTPDate $ epochTimeToHTTPDate now
+responseMessage withBody contentType msg now
+  | withBody && TL.length msg > maxResponseChars =
+      responseError True errorPayloadTooLarge
+  | otherwise =
+      mconcat $ intersperse nl
+        [ "HTTP/1.1 200 OK"
+        , hdrContentLength contentLength
+        , contentType
+        , "Date: " <> byteString httpDate
+        , ""
+        , if withBody then lazyByteString contentLBS else ""
+        ]
+  where
+    contentLBS    = T.encodeUtf8 msg
+    contentLength = if withBody then BCL.length contentLBS else 0
+    httpDate      = formatHTTPDate $ epochTimeToHTTPDate now

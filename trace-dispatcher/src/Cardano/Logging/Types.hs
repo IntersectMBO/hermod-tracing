@@ -140,7 +140,7 @@ nsGetTuple :: Namespace a -> ([Text],[Text])
 nsGetTuple (Namespace o i)  = (o,i)
 
 nsRawToText :: ([Text], [Text]) -> Text
-nsRawToText (ns1, ns2) = intercalate "." (ns1 ++ ns2)
+nsRawToText = nsToText . uncurry Namespace
 
 nsToText :: Namespace a -> Text
 nsToText (Namespace ns1 ns2) = intercalate "." (ns1 ++ ns2)
@@ -149,14 +149,15 @@ nsToText (Namespace ns1 ns2) = intercalate "." (ns1 ++ ns2)
 class LogFormatting a where
   -- | Machine readable representation with the possibility to represent with varying serialisations based on the detail level.
   -- This will result in JSON formatted log output.
-  -- A `forMachine` implementation is required for any instance definition.
+  -- A @forMachine@ implementation is required for any instance definition.
   forMachine :: DetailLevel -> a -> AE.Object
 
   -- | Human-readable representation.
   -- The empty text indicates there's no specific human-readable formatting for that type - this is the default implementation.
+  --
   -- If however human-readble output is explicitly requested, e.g. by logs, the system will fall back to a JSON object
-  -- conforming to the `forMachine` definition, and rendering it as a value in `{"data": <value>}`.
-  -- Leaving out `forHuman` in some instance definition will not lead to loss of log information that way.
+  -- conforming to the @forMachine@ definition, and rendering it as a value in /{"data": <value>}`/
+  -- Leaving out @forHuman@ in some instance definition will not lead to loss of log information that way.
   forHuman :: a -> Text
   forHuman _v = ""
 
@@ -180,23 +181,38 @@ class MetaTrace a where
   metricsDocFor _ = []
   allNamespaces :: [Namespace a]
 
+-- | This type defines metrics, and how to update them.
+--
+--   The @Text@ field always contains the metric name.
+--   Metric names are recommended to conform to the [Prometheus data model](https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels).
+--   If you want to structure your metrics in namespaces, please use a dot separator, such as @"name.space.metricName"@.
+--
+--   Example, defining three metrics based on the occurrence of a single trace event:
+--
+-- > data Trace = BatchProcessed { batchSize :: Int }
+-- >
+-- > instance LogFormatting Trace where
+-- >   asMetrics (BatchProcessed size) =
+-- >     [ IntM       "batch.current" (fromIntegral size)        -- element count of the most recent batch
+-- >     , CounterM   "batchesTotal"  Nothing                    -- total batches processed (increment by 1)
+-- >     , CounterM   "batch.total"   (Just $ fromIntegral size) -- total elements processed
+-- >     ]
+--
 data Metric
-  -- | An integer metric.
-  -- Text is used to name the metric
+  -- | An integer gauge metric.
+  --   Gauges are variable values.
     = IntM Text Integer
-  -- | A double metric.
-  -- Text is used to name the metric
+  -- | A floating-point gauge metric.
+  --   Gauges are variable values.
     | DoubleM Text Double
   -- | A counter metric.
-  -- Text is used to name the metric
+  --   Counters are non-negative, monotonically increasing values.
     | CounterM Text (Maybe Int)
-  -- | A prometheus metric with key label pairs.
-  -- Text is used to name the metric
-  -- [(Text, Text)] is used to represent the key label pairs
-  -- The value of the metric will always be "1"
-  -- e.g. if you have a prometheus metric with the name "prometheus_metric"
-  -- and the key label pairs [("key1", "value1"), ("key2", "value2")]
-  -- the metric will be represented as "prometheus_metric{key1=\"value1\",key2=\"value2\"} 1"
+  -- | A label set containing the specified key-value pairs.
+  --   The OpenMetrics standard permits empty label sets; the value of this labeled metric will always be "1".
+  --
+  --   For instance, a @PrometheusM "foo" [("key1", "value1"), ("key2", "value2")]@
+  --   will be exposed as /"foo{key1=\"value1\",key2=\"value2\"} 1"/
     | PrometheusM Text [(Text, Text)]
   deriving stock (Eq, Show, Generic)
   deriving anyclass NFData
@@ -225,7 +241,7 @@ data LoggingContext = LoggingContext {
 emptyLoggingContext :: LoggingContext
 emptyLoggingContext = LoggingContext [] [] Nothing Nothing Nothing
 
--- | Formerly known as verbosity
+-- | The detail level facilitates rendering the same trace value to messages with varying verbosities in its @instance LogFormatting@.
 data DetailLevel =
       DMinimal
     | DNormal
@@ -244,11 +260,13 @@ data Privacy =
   deriving stock (Eq, Ord, Show, Enum, Bounded, Generic)
   deriving anyclass Serialise
 
--- | Severity of a message
+-- | Severity of a message. These are defined alongside message namespaces in an @instance MetaTrace@.
+--
+-- The severities and their semantics adhere to those defined in the [Syslog Protocol](https://www.rfc-editor.org/rfc/rfc5424#section-6.2.1).
 data SeverityS
     = Debug                   -- ^ Debug messages
-    | Info                    -- ^ Information
-    | Notice                  -- ^ Normal runtime Conditions
+    | Info                    -- ^ Informational - confirmation the program is working as expected
+    | Notice                  -- ^ Normal, but significant conditions - may require special handling
     | Warning                 -- ^ General Warnings
     | Error                   -- ^ General Errors
     | Critical                -- ^ Severe situations
@@ -257,9 +275,11 @@ data SeverityS
   deriving stock (Eq, Ord, Show, Read, Enum, Bounded, Generic)
   deriving anyclass (AE.ToJSON, AE.FromJSON, Serialise, NFData)
 
--- | Severity for a filter
--- Nothing means don't show anything (Silence)
--- Just level means show messages with severity >= level
+-- | Severity for a filter. These are supplied by a concrete configuration of how to filter the entire message namespace at runtime.
+--
+-- @Nothing@ means: filter everything ('Silence').
+--
+-- @Just severity@ means: render messages with @SeverityS >= severity@.
 newtype SeverityF = SeverityF (Maybe SeverityS)
   deriving stock Eq
 

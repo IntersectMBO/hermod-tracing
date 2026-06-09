@@ -5,6 +5,7 @@
 
 module Cardano.Logging.Configuration
   ( ConfigReflection (..)
+  , HermodException(..)
   , emptyConfigReflection
   , configureTracers
   , withNamespaceConfig
@@ -28,17 +29,26 @@ import           Cardano.Logging.Trace
 import           Cardano.Logging.TraceDispatcherMessage
 import           Cardano.Logging.Types
 
+import           Control.Applicative (asum)
+import           Control.Exception
 import           Control.Monad (unless)
 import           Control.Monad.IO.Class (MonadIO, liftIO)
 import           Control.Monad.IO.Unlift (MonadUnliftIO)
 import qualified Control.Tracer as T
 import           Data.IORef (IORef, modifyIORef, newIORef, readIORef, writeIORef)
-import           Data.List (maximumBy, nub)
-import qualified Data.Map as Map
-import           Data.Maybe (fromMaybe, mapMaybe)
+import           Data.List (inits, maximumBy, nub)
+import qualified Data.Map.Lazy as Map
+import           Data.Maybe (fromMaybe, listToMaybe, mapMaybe)
 import qualified Data.Set as Set
 import           Data.Text (Text, intercalate, unpack)
 
+
+-- This is currently ad-hoc. With a future refactoring of trace-dispatcher,
+-- it will be moved and serve as a proper error / exception type.
+data HermodException = HermodConfigException { excMessage :: String }
+     deriving Show
+
+instance Exception HermodException
 
 -- | Call this function at initialisation, and later for reconfiguration.
 -- Config reflection is used to optimise the tracers and has to collect
@@ -153,6 +163,7 @@ withNamespaceConfig name extract withConfig tr = do
     ref  <- liftIO (newIORef (Left (Map.empty, Nothing)))
     pure $ contramapM' (mapFunc ref)
   where
+    configError = liftIO . throwIO . HermodConfigException
     mapFunc ref =
       \case
         (lc, Right a) -> do
@@ -192,11 +203,11 @@ withNamespaceConfig name extract withConfig tr = do
                     then do
                       Trace tt <- withConfig (Just val) tr
                       T.traceWith tt (lc, Left (TCConfig c))
-                    else error $ "Inconsistent trace configuration with context "
+                    else configError $ "Inconsistent trace configuration with context "
                                       ++ show nst
-            Right _val -> error $ "Trace not reset before reconfiguration (1)"
+            Right _val -> configError $ "Trace not reset before reconfiguration (1)"
                                 ++ show nst
-            Left (_cmap, Just _v) -> error $ "Trace not reset before reconfiguration (2)"
+            Left (_cmap, Just _v) -> configError $ "Trace not reset before reconfiguration (2)"
                                 ++ show nst
         (lc, Left (TCOptimize cr)) -> do
           eitherConf <- liftIO $ readIORef ref
@@ -222,10 +233,10 @@ withNamespaceConfig name extract withConfig tr = do
                             liftIO $ writeIORef ref (Left (newmap, Just mostCommon))
                             Trace tt <- withConfig Nothing tr
                             T.traceWith tt (lc, Left (TCOptimize cr))
-            Right _val -> error $ "Trace not reset before reconfiguration (3)"
+            Right _val -> configError $ "Trace not reset before reconfiguration (3)"
                                 ++ show nst
             Left (_cmap, Just _v) ->
-                          error $ "Trace not reset before reconfiguration (4)"
+                          configError $ "Trace not reset before reconfiguration (4)"
                                       ++ show nst
         (lc, Left dc@TCDocument {}) -> do
           eitherConf <- liftIO $ readIORef ref
@@ -243,7 +254,7 @@ withNamespaceConfig name extract withConfig tr = do
                     Nothing  -> do
                       tt <- withConfig (Just v) tr
                       T.traceWith (unpackTrace tt) (lc, Left dc)
-            Left (_cmap, Nothing) -> error ("Missing configuration(2) " <> name <> " ns " <> show nst)
+            Left (_cmap, Nothing) -> configError $ "Missing configuration(2) " <> name <> " ns " <> show nst
 
 
 -- | Filter a trace by severity and take the filter value from the config
@@ -253,7 +264,7 @@ filterSeverityFromConfig :: (MonadIO m) =>
 filterSeverityFromConfig =
     withNamespaceConfig
       "severity"
-      getSeverity'
+      (\conf -> pure . getSeverity conf)
       (\sev tr -> contramapMCond tr (mapF sev))
   where
     mapF confSev =
@@ -282,7 +293,7 @@ withDetailsFromConfig :: (MonadIO m) =>
 withDetailsFromConfig =
   withNamespaceConfig
     "details"
-    getDetails'
+    (\conf -> pure . getDetails conf)
     (\mbDtl b -> case mbDtl of
               Just dtl -> pure $ setDetails dtl b
               Nothing  -> pure $ setDetails DNormal b)
@@ -294,7 +305,7 @@ withBackendsFromConfig :: (MonadIO m) =>
 withBackendsFromConfig rappendPrefixNameAndFormatter =
   withNamespaceConfig
     "backends"
-    getBackends'
+    (\conf -> pure . getBackends conf)
     rappendPrefixNameAndFormatter
     (Trace T.nullTracer)
 
@@ -377,9 +388,6 @@ getSeverity config ns =
     severitySelector (ConfSeverity s) = Just s
     severitySelector _              = Nothing
 
-getSeverity' :: Applicative m => TraceConfig -> Namespace a -> m SeverityF
-getSeverity' config ns = pure $ getSeverity config ns
-
 -- | If no details can be found in the config, it is set to DNormal
 getDetails :: TraceConfig -> Namespace a -> DetailLevel
 getDetails config ns =
@@ -388,9 +396,6 @@ getDetails config ns =
     detailSelector :: ConfigOption -> Maybe DetailLevel
     detailSelector (ConfDetail d) = Just d
     detailSelector _            = Nothing
-
-getDetails' :: Applicative m => TraceConfig -> Namespace a -> m DetailLevel
-getDetails' config n = pure $ getDetails config n
 
 -- | If no backends can be found in the config, it is set to
 -- [EKGBackend, Forwarder, Stdout HumanFormatColoured]
@@ -403,9 +408,6 @@ getBackends config ns =
     backendSelector (ConfBackend s) = Just s
     backendSelector _             = Nothing
 
-getBackends' :: Applicative m => TraceConfig -> Namespace a -> m [BackendConfig]
-getBackends' config ns = pure $ getBackends config ns
-
 -- | May return a limiter specification
 getLimiterSpec :: TraceConfig -> Namespace a -> Maybe (Text, Double)
 getLimiterSpec config ns = getOption limiterSelector config (nsGetComplete ns)
@@ -414,17 +416,10 @@ getLimiterSpec config ns = getOption limiterSelector config (nsGetComplete ns)
     limiterSelector (ConfLimiter f) = Just (intercalate "." (nsPrefix ns ++ nsInner ns), f)
     limiterSelector _               = Nothing
 
--- | Searches in the config to find an option
+-- | Searches in the config to find an option, most-specific as per namespace first.
+-- (Generates all ancestor prefixes once via `inits`, avoiding a repeated O(n) `init` call at each recursion level)
 getOption :: (ConfigOption -> Maybe a) -> TraceConfig -> [Text] -> Maybe a
-getOption sel config [] =
-  case Map.lookup [] (tcOptions config) of
-    Nothing -> Nothing
-    Just options -> case mapMaybe sel options of
-                      []        -> Nothing
-                      (opt : _) -> Just opt
-getOption sel config ns =
-  case Map.lookup ns (tcOptions config) of
-    Nothing -> getOption sel config (init ns)
-    Just options -> case mapMaybe sel options of
-                      []        -> getOption sel config (init ns)
-                      (opt : _) -> Just opt
+getOption sel TraceConfig{tcOptions} ns =
+  asum $ map tryLookup $ reverse $ inits ns
+  where
+    tryLookup k = listToMaybe . mapMaybe sel =<< Map.lookup k tcOptions
