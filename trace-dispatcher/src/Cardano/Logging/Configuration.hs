@@ -5,6 +5,7 @@
 
 module Cardano.Logging.Configuration
   ( ConfigReflection (..)
+  , HermodException(..)
   , emptyConfigReflection
   , configureTracers
   , withNamespaceConfig
@@ -29,6 +30,7 @@ import           Cardano.Logging.TraceDispatcherMessage
 import           Cardano.Logging.Types
 
 import           Control.Applicative (asum)
+import           Control.Exception
 import           Control.Monad (unless)
 import           Control.Monad.IO.Class (MonadIO, liftIO)
 import           Control.Monad.IO.Unlift (MonadUnliftIO)
@@ -40,6 +42,13 @@ import           Data.Maybe (fromMaybe, listToMaybe, mapMaybe)
 import qualified Data.Set as Set
 import           Data.Text (Text, intercalate, unpack)
 
+
+-- This is currently ad-hoc. With a future refactoring of trace-dispatcher,
+-- it will be moved and serve as a proper error / exception type.
+data HermodException = HermodConfigException { excMessage :: String }
+     deriving Show
+
+instance Exception HermodException
 
 -- | Call this function at initialisation, and later for reconfiguration.
 -- Config reflection is used to optimise the tracers and has to collect
@@ -154,6 +163,7 @@ withNamespaceConfig name extract withConfig tr = do
     ref  <- liftIO (newIORef (Left (Map.empty, Nothing)))
     pure $ contramapM' (mapFunc ref)
   where
+    configError = liftIO . throwIO . HermodConfigException
     mapFunc ref =
       \case
         (lc, Right a) -> do
@@ -193,11 +203,11 @@ withNamespaceConfig name extract withConfig tr = do
                     then do
                       Trace tt <- withConfig (Just val) tr
                       T.traceWith tt (lc, Left (TCConfig c))
-                    else error $ "Inconsistent trace configuration with context "
+                    else configError $ "Inconsistent trace configuration with context "
                                       ++ show nst
-            Right _val -> error $ "Trace not reset before reconfiguration (1)"
+            Right _val -> configError $ "Trace not reset before reconfiguration (1)"
                                 ++ show nst
-            Left (_cmap, Just _v) -> error $ "Trace not reset before reconfiguration (2)"
+            Left (_cmap, Just _v) -> configError $ "Trace not reset before reconfiguration (2)"
                                 ++ show nst
         (lc, Left (TCOptimize cr)) -> do
           eitherConf <- liftIO $ readIORef ref
@@ -223,10 +233,10 @@ withNamespaceConfig name extract withConfig tr = do
                             liftIO $ writeIORef ref (Left (newmap, Just mostCommon))
                             Trace tt <- withConfig Nothing tr
                             T.traceWith tt (lc, Left (TCOptimize cr))
-            Right _val -> error $ "Trace not reset before reconfiguration (3)"
+            Right _val -> configError $ "Trace not reset before reconfiguration (3)"
                                 ++ show nst
             Left (_cmap, Just _v) ->
-                          error $ "Trace not reset before reconfiguration (4)"
+                          configError $ "Trace not reset before reconfiguration (4)"
                                       ++ show nst
         (lc, Left dc@TCDocument {}) -> do
           eitherConf <- liftIO $ readIORef ref
@@ -244,7 +254,7 @@ withNamespaceConfig name extract withConfig tr = do
                     Nothing  -> do
                       tt <- withConfig (Just v) tr
                       T.traceWith (unpackTrace tt) (lc, Left dc)
-            Left (_cmap, Nothing) -> error ("Missing configuration(2) " <> name <> " ns " <> show nst)
+            Left (_cmap, Nothing) -> configError $ "Missing configuration(2) " <> name <> " ns " <> show nst
 
 
 -- | Filter a trace by severity and take the filter value from the config

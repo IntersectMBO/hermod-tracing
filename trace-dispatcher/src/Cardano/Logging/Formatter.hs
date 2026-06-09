@@ -44,6 +44,8 @@ import           System.IO.Unsafe (unsafePerformIO)
 -- | If the @TRACE_DISPATCHER_LOGGING_HOSTNAME@ environment variable is set,
 --   it overrides the system hostname in the trace message. This is useful when
 --   multiple instances of a service or application on the same host.
+-- 
+--   The env var is expected to be set (if desired) before the application emits its first trace, as this is evaluated only once.
 hostname :: Text
 {-# NOINLINE hostname #-}
 hostname = unsafePerformIO $
