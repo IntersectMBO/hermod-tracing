@@ -5,8 +5,7 @@ Explain a version of linear temporal logic that is suitable for realtime conform
 
 1. Temporal Vocabulary
 ----------------------
-- The logic offers implication, conjunction/disjunction, and negation, plus a small family of temporal constructs: universal and existential quantifiers over trace suffixes, strict and weak “next” operators, bounded repetitions of those next operators, and the classical “until”.
-- Weak next behaves like strict next whenever another event exists but is considered satisfied automatically once the trace ends. The bounded repetition variant simply chains that weak obligation across a fixed number of steps, enabling “in the reasonably proximate future” requirements without referencing wall-clock time.
+- The logic offers implication, conjunction/disjunction, and negation, plus a small family of temporal constructs: unbounded universal and bounded existential quantifiers over trace suffixes, “next” operator and a bounded “until”. Integer-valued properties within atomic predicates support **Presburger arithmetic** — linear integer arithmetic with equality, ordering, and quantifiers over ℤ, decided via Cooper's quantifier-elimination procedure.
 - Atomic formulas represent predicates over properties of individual trace records.
 
 2. Atomic Predicates & Trace Records
@@ -18,62 +17,57 @@ Explain a version of linear temporal logic that is suitable for realtime conform
 --------------
 - A trace is a finite sequence of the normalised records, ordered by timestamp. Timestamps are not exposed to atomic formulas but instead are handled by the temporal fragment of the logic.
 
-4. Derivative Perspective
--------------------------
-- The logic is interpreted via derivatives: consuming an event rewrites the current obligation into a new formula that describes what must hold for the remaining suffix. This mirrors Brzozowski derivatives for regular expressions, extended to the temporal combinators.
-- Brzozowski derivatives originate in regular-expression theory: for a regex `R` and an input symbol `a`, the derivative `∂ₐ R` recognises exactly those suffixes `w` for which the concatenation `a·w` belongs to `R`. Iteratively taking derivatives as each symbol arrives lets one perform deterministic matching without constructing an automaton up front. Our temporal setting follows the same idea—treat each log record as the “symbol”, rewrite the obligation, and inspect the residual formula instead of building a separate monitor.
+4. Formula Progression
+----------------------
+- Each event advances the current formula obligation through a single step: temporal operators are unfolded (`☐ ᪲ₖ φ` expands to `φ ∧ ◯(◯ᵏ(☐ ᪲ₖ φ))`), atoms are evaluated against the current event (`⊤` on a type and property match, `⊥` on a type mismatch), and `◯ φ` reduces to `φ` after consuming the time unit.
+- The result is a new formula encoding exactly what must hold for the remaining trace suffix. This is purely a satisfiability-based transformation: no automaton is constructed up-front.
 
 5. Simplification & Verdicts
 ----------------------------
-- After each derivative step we simplify: flatten nested conjunctions/disjunctions, remove redundant `True`/`False`, collapse duplicate subformulas, and optionally drop weak-next obligations just before the last two events of a finite trace.
-- To produce a final Boolean verdict on a finite trace, evaluate the simplified residual formula assuming the end of timeline: universal obligations become `True`, atomic formulas evaluate to `False`.
+- After each progression step two rewrite passes run in sequence: first, `rewriteHomogeneous` extracts any temporally-pure subformula (containing no temporal operators or atoms) and evaluates it via Presburger or finite-domain arithmetic, replacing it with `⊤` or `⊥`; then `rewriteIdentity` folds standard logical identities (`φ ∧ ⊤ = φ`, `¬¬φ = φ`, constant comparison folding, etc.).
+- If at any step the formula reduces to `⊤` the property is immediately satisfied; if it reduces to `⊥` it has immediately failed, enabling early exit in both cases.
+- After the trace is exhausted, the residual formula is evaluated by `terminate`: bounded universal obligations (`☐ⁿ`) become `⊤`, bounded existential obligations (`♢ⁿ`) become `⊥`, and any remaining unmatched atoms become `⊥`.
 
-6. Automata & Offline Monitoring
---------------------------------
-- Given the alphabet of atomic predicates we care about is finite (e.g., a bounded collection of namespaces and slot-labelled events), the derivative process can only produce finitely many distinct residual formulas. Each residual formula can therefore be treated as a “state” in a deterministic monitor: feed an event, take the derivative, simplify, land in another state. By enumerating all such states and recording which state each event causes you to enter, you effectively synthesise a deterministic automaton or lookup table that implements the original LTL property.
-
-
-7. Worked Examples (concrete notation)
---------------------------------------
-Let `☐ φ` abbreviate “φ must always hold".
-Let `◯(k) φ` abbreviate “φ must hold within the next `k` units of time, tolerating early termination” and treat each trace namespace as an atom. The following invariants operate on the standard Cardano forging messages:
+6. Worked Examples
+------------------
+The following invariants operate on the standard Cardano forging messages. `k`, `m` denote window sizes chosen large enough to accommodate intermediate bookkeeping events between the paired messages.
 
 1. **Leadership outcome within a window**
-   `☐ (StartLeadershipCheck ⇒ ◯(k) (NodeIsLeader ∨ NodeNotLeader))`
-   Use a `k` large enough to cover expected intermediate bookkeeping events so overlapping leadership checks don’t interfere.
+   `☐ ᪲ (∀i ∈ ℤ. Forge.Loop.StartLeadershipCheck{slot = i} ⇒ ♢ᵏ (Forge.Loop.NodeIsLeader{slot = i} ∨ Forge.Loop.NodeNotLeader{slot = i}))`
+   Every leadership-check event must be resolved by an outcome within `k` steps.
 
 2. **Forge adoption chain**
-   `☐ (ForgedBlock ⇒ ◯(k) (AdoptedBlock ∨ DidntAdoptBlock ∨ ForgedInvalidBlock))`
-   Guarantees every forged block is followed swiftly by an adoption verdict; weak next ensures the rule is vacuously true if the node shuts down immediately after forging.
+   `☐ ᪲ (∀i ∈ ℤ. Forge.Loop.ForgedBlock{slot = i} ⇒ ♢ᵏ (Forge.Loop.AdoptedBlock{slot = i} ∨ Forge.Loop.DidntAdoptBlock{slot = i} ∨ Forge.Loop.ForgedInvalidBlock{slot = i}))`
+   Every forged block must be followed by an adoption verdict within `k` steps.
 
 3. **Failure diagnostics lead to cannot-forge**
-   `☐ ((SlotIsImmutable ∨ BlockFromFuture ∨ NoLedgerState ∨ NoLedgerView ∨ ForgeStateUpdateError) ⇒ ◯(k) NodeCannotForge)`
-   Ensures that every recorded failure reason triggers the explicit `NodeCannotForge` event, preventing silent drops.
+   `☐ ᪲ ((Forge.Loop.SlotIsImmutable{} ∨ Forge.Loop.BlockFromFuture{} ∨ Forge.Loop.NoLedgerState{} ∨ Forge.Loop.NoLedgerView{} ∨ Forge.Loop.ForgeStateUpdateError{}) ⇒ ♢ᵏ Forge.Loop.NodeCannotForge{})`
+   Every recorded failure reason must trigger the explicit `NodeCannotForge` event, preventing silent drops.
 
 4. **Ledger ticking and mempool snapshot sequence**
-   `∀ slot. ☐ (NodeIsLeader(slot) ⇒ ◯(k) ForgeTickedLedgerState(slot))`
-   `∀ slot. ☐ (ForgeTickedLedgerState(slot) ⇒ ◯(k) ForgingMempoolSnapshot(slot))`
-   `∀ slot. ☐ (ForgingMempoolSnapshot(slot) ⇒ ◯(k) ForgedBlock(slot))`
-   These bindings force the per-slot forging pipeline to respect the documented ordering, matching the flowchart published in the consensus repository.
+   `☐ ᪲ (∀i ∈ ℤ. Forge.Loop.NodeIsLeader{slot = i} ⇒ ♢ᵏ Forge.Loop.ForgeTickedLedgerState{slot = i})`
+   `☐ ᪲ (∀i ∈ ℤ. Forge.Loop.ForgeTickedLedgerState{slot = i} ⇒ ♢ᵏ Forge.Loop.ForgingMempoolSnapshot{slot = i})`
+   `☐ ᪲ (∀i ∈ ℤ. Forge.Loop.ForgingMempoolSnapshot{slot = i} ⇒ ♢ᵏ Forge.Loop.ForgedBlock{slot = i})`
+   The per-slot forging pipeline must proceed in the documented order; slot quantification ensures each chain is tracked independently.
 
 5. **Consensus flow edges**
-   `☐ (BlockContext ⇒ ◯(k) (LedgerState ∨ NoLedgerState))`
-   `☐ (LedgerState ⇒ ◯(k) (LedgerView ∨ NoLedgerView))`
-   `☐ (LedgerView ⇒ ◯(k) (ForgeStateUpdateError ∨ NodeCannotForge ∨ NodeNotLeader ∨ NodeIsLeader))`
+   `☐ ᪲ (Forge.Loop.BlockContext{} ⇒ ♢ᵏ (Forge.Loop.LedgerState{} ∨ Forge.Loop.NoLedgerState{}))`
+   `☐ ᪲ (Forge.Loop.LedgerState{} ⇒ ♢ᵏ (Forge.Loop.LedgerView{} ∨ Forge.Loop.NoLedgerView{}))`
+   `☐ ᪲ (Forge.Loop.LedgerView{} ⇒ ♢ᵏ (Forge.Loop.ForgeStateUpdateError{} ∨ Forge.Loop.NodeCannotForge{} ∨ Forge.Loop.NodeNotLeader{} ∨ Forge.Loop.NodeIsLeader{}))`
    Encodes each edge in the forging diagram so that missing or reordered messages are caught immediately.
 
 6. **Immutable or future tip aborts the slot**
-   `☐ ((SlotIsImmutable ∨ BlockFromFuture) ⇒ ◯(k) NodeNotLeader)`
-   Mirroring the early branches in `Ouroboros/Consensus/Node/Tracers.hs`, the node must record that it will not lead the slot whenever the tip inhabits the same/future slot, preventing it from silently forging on stale ancestors.
+   `☐ ᪲ ((Forge.Loop.SlotIsImmutable{} ∨ Forge.Loop.BlockFromFuture{}) ⇒ ♢ᵏ Forge.Loop.NodeNotLeader{})`
+   The node must record that it will not lead the slot whenever the tip inhabits the same or a future slot.
 
 7. **Adoption thread crashes bubble up**
-   `☐ (AdoptionThreadDied ⇒ ◯(k) NodeCannotForge)`
-   If the adoption worker dies (e.g., due to an async exception) the forger cannot safely continue; this invariant forces an explicit `NodeCannotForge` so operators see the failure instead of a quiet stall.
+   `☐ ᪲ (Forge.Loop.AdoptionThreadDied{} ⇒ ♢ᵏ Forge.Loop.NodeCannotForge{})`
+   If the adoption worker dies, an explicit `NodeCannotForge` must follow so operators see the failure instead of a quiet stall.
 
 8. **Invalid forge triggers a fresh leadership cycle**
-   `∀ slot. ∀ block. ☐ (ForgedInvalidBlock(slot, block) ⇒ ◯(k) (NodeCannotForge(slot) ∧ ◯(m) StartLeadershipCheck(slot+1)))`
-   Use the slot numbers embedded in the trace payload to bind the next leadership check to the successor slot. This captures the expectation that forging an invalid block should immediately halt forging for that slot and restart the leadership pipeline for the next slot.
+   `☐ ᪲ (∀i ∈ ℤ. ∀h ∈ Text. Forge.Loop.ForgedInvalidBlock{slot = i, hash = h} ⇒ ♢ᵏ (Forge.Loop.NodeCannotForge{slot = i} ∧ ♢ᵐ Forge.Loop.StartLeadershipCheck{slot = i + 1}))`
+   Forging an invalid block must halt forging for that slot and restart the pipeline for the successor slot.
 
 9. **Ledger anchor consistency**
-   `∀ slot. ∀ point. LedgerState(slot, point) ⇒ ◯(k) ForgeTickedLedgerState(slot, point)`
-   Both events expose the anchor point; comparing the `point` fields ensures the ticker processes exactly the ledger snapshot that was previously fetched, matching the code path between `TraceLedgerState` and `TraceForgeTickedLedgerState`.
+   `☐ ᪲ (∀i ∈ ℤ. ∀p ∈ Text. Forge.Loop.LedgerState{slot = i, point = p} ⇒ ♢ᵏ Forge.Loop.ForgeTickedLedgerState{slot = i, point = p})`
+   Comparing the `point` field across both events ensures the ticker processes exactly the ledger snapshot that was previously fetched.
