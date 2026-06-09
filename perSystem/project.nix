@@ -14,6 +14,7 @@
 
         modules = [{
           packages.trace-dispatcher.ghcOptions = [ "-Werror" "-fno-ignore-asserts" ];
+          packages.hermod-recon-framework.ghcOptions = [ "-Werror" "-fno-ignore-asserts" ];
         }];
       });
     in

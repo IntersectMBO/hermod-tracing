@@ -1,0 +1,77 @@
+{- HLINT ignore "Redundant map" -}
+module Hermod.ReCon.Integration.Suite (integrationTests) where
+
+import           Hermod.ReCon.LTL.Formula (Formula, OnMissingKey (..), interpTimeunit)
+import           Hermod.ReCon.LTL.Formula.Parser (Context (..))
+import qualified Hermod.ReCon.LTL.Formula.Parser as Parser
+import           Hermod.ReCon.LTL.Formula.Yaml (readFormulas, readPropValues)
+import           Hermod.ReCon.LTL.Satisfy (SatisfactionResult (..), satisfies)
+import           Hermod.ReCon.Trace.Event ()
+import qualified Hermod.ReCon.Trace.Feed as Feed
+import           Hermod.ReCon.Trace.Feed (TemporalEvent)
+
+import           Control.Monad (forM_)
+import qualified Data.Map as Map
+import           Data.Text (Text)
+import qualified Data.Text as Text
+import           Paths_hermod_recon_framework (getDataDir)
+import           System.Exit (die)
+import           System.FilePath ((</>))
+import           Test.Tasty
+import           Test.Tasty.HUnit
+
+eventDuration :: Word
+eventDuration = 10          -- μs per event bucket (= --duration 10)
+
+second :: Word
+second = 1_000_000          -- μs                 (= --timeunit second)
+
+integrationTests :: IO TestTree
+integrationTests = do
+  dataDir  <- getDataDir
+  let formulasFile = dataDir </> "examples" </> "cfgs" </> "formulas.yaml"
+  let contextFile  = dataDir </> "examples" </> "cfgs" </> "context.yaml"
+  let tracesDir    = dataDir </> "examples" </> "extracts"
+  ctx      <- readPropValues contextFile >>= orDie
+  formulas <- readFormulas formulasFile
+                (Context { interpDomain = Map.toList ctx, varKinds = Map.empty })
+                Parser.name
+                >>= orDie
+  let fs = map (interpTimeunit (\u -> u * second `div` eventDuration)) formulas
+  pure $ testGroup "Trace integration"
+    [ testGroup "Positive — every formula must pass"
+        [ mkPositive fs tracesDir "ok-1.txt"
+        , mkPositive fs tracesDir "ok-2.txt"
+        , mkPositive fs tracesDir "ok-3.txt"
+        , mkPositive fs tracesDir "ok-4.txt"
+        , mkPositive fs tracesDir "ok-5.txt"
+        ]
+    , testGroup "Negative — at least one formula must fail"
+        [ mkNegative fs tracesDir "fail-1.txt"
+        , mkNegative fs tracesDir "fail-2.txt"
+        , mkNegative fs tracesDir "fail-3.txt"
+        , mkNegative fs tracesDir "fail-4.txt"
+        , mkNegative fs tracesDir "fail-5.txt"
+        , mkNegative fs tracesDir "fail-6.txt"
+        ]
+    ]
+
+mkPositive :: [Formula TemporalEvent Text] -> FilePath -> String -> TestTree
+mkPositive fs tracesDir name = testCase name $ do
+  events <- Feed.read (tracesDir </> name) eventDuration
+  forM_ fs $ \phi ->
+    satisfies CrashOnMissingKey phi events @?= Satisfied
+
+mkNegative :: [Formula TemporalEvent Text] -> FilePath -> String -> TestTree
+mkNegative fs tracesDir name = testCase name $ do
+  events <- Feed.read (tracesDir </> name) eventDuration
+  assertBool "expected at least one Unsatisfied" $
+    any isUnsatisfied (map (\f -> satisfies CrashOnMissingKey f events) fs)
+
+isUnsatisfied :: SatisfactionResult event ty -> Bool
+isUnsatisfied (Unsatisfied _) = True
+isUnsatisfied _               = False
+
+orDie :: Either Text a -> IO a
+orDie (Right x)  = pure x
+orDie (Left err) = die (Text.unpack err)
