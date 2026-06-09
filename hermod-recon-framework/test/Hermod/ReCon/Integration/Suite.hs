@@ -14,7 +14,7 @@ import           Control.Monad (forM_)
 import qualified Data.Map as Map
 import           Data.Text (Text)
 import qualified Data.Text as Text
-import           Paths_cardano_recon_framework (getDataDir)
+import           Paths_hermod_recon_framework (getDataDir)
 import           System.Exit (die)
 import           System.FilePath ((</>))
 import           Test.Tasty

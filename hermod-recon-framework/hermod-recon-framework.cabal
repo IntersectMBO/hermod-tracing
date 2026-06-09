@@ -1,8 +1,7 @@
 cabal-version:      3.4
-name:               cardano-recon-framework
+name:               hermod-recon-framework
 description:        Re(altime) Con(formance) Framework based on Linear Temporal Logic (LTL).
-category:           Cardano
-                    Testing
+category:           Testing
 copyright:          2026 Intersect.
 version:            1.3.0
 license:            Apache-2.0
@@ -12,8 +11,8 @@ author:             Ruslan Feizerakhmanov, Juergen Nicklisch, Michael Karg
 maintainer:         ruslan.feizerakhmanov@iohk.io
 
 build-type:         Simple
-extra-doc-files:    CHANGELOG.md
-data-files:
+extra-doc-files:
+    CHANGELOG.md
     examples/cfgs/context.yaml
     examples/cfgs/formulas.yaml
     examples/extracts/ok-1.txt
@@ -27,9 +26,10 @@ data-files:
     examples/extracts/fail-4.txt
     examples/extracts/fail-5.txt
     examples/extracts/fail-6.txt
-                    README.md
-                    recon-language-overview.md
-                    docs/*.txt
+    docs/*.txt
+data-files:
+    README.md
+    recon-language-overview.md
 
 flag debug
   description:          Enable some pure verbose debug traces.
@@ -150,7 +150,7 @@ executable hermod-recon
         base
       , text
       , containers
-      , cardano-recon-framework
+      , hermod-recon-framework
       , trace-dispatcher
       , aeson
       , streaming
@@ -181,7 +181,7 @@ executable hermod-recon-grep
       , aeson-pretty
       , mtl
       , time
-      , cardano-recon-framework
+      , hermod-recon-framework
       , trace-dispatcher
       , optparse-applicative
 
@@ -201,7 +201,7 @@ test-suite hermod-recon-test
     , Hermod.ReCon.Presburger.Syntax.Suite
   build-depends:
       base
-    , cardano-recon-framework
+    , hermod-recon-framework
     , containers
     , tasty
     , tasty-hunit
@@ -215,12 +215,12 @@ test-suite hermod-recon-integration-test
   main-is: Hermod/ReCon/Integration.hs
   other-modules:
       Hermod.ReCon.Integration.Suite
-    , Paths_cardano_recon_framework
+    , Paths_hermod_recon_framework
   autogen-modules:
-      Paths_cardano_recon_framework
+      Paths_hermod_recon_framework
   build-depends:
       base
-    , cardano-recon-framework
+    , hermod-recon-framework
     , containers
     , filepath
     , tasty

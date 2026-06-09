@@ -15,7 +15,7 @@ index-state:
 
 packages:
   trace-dispatcher
-  recon-framework
+  hermod-recon-framework
 
 program-options
   ghc-options: -Werror
