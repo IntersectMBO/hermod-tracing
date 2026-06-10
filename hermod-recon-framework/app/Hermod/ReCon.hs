@@ -1,3 +1,9 @@
+{-# LANGUAGE CPP #-}
+
+#if !MIN_VERSION_trace_dispatcher(2,13,0)
+{-# LANGUAGE PackageImports #-}
+#endif
+
 module Main(main) where
 
 import           Cardano.Logging
@@ -41,6 +47,12 @@ import           System.Exit (die)
 import qualified System.Metrics as EKG
 
 import           Streaming
+
+#if   !MIN_VERSION_trace_dispatcher(2,13,0) && !MIN_VERSION_contra_tracer(0,2,0)
+import          "contra-tracer" Control.Tracer (Tracer(..))
+#elif !MIN_VERSION_trace_dispatcher(2,13,0) && MIN_VERSION_contra_tracer(0,2,0)
+import          "contra-tracer" Control.Tracer (mkTracer)
+#endif
 
 
 check :: OnMissingKey -> Bool -> Word -> Trace IO App.TraceMessage -> Formula TemporalEvent Text -> [TemporalEvent] -> IO ()
@@ -117,7 +129,15 @@ setupTraceDispatcher optTraceDispatcherConfigFile = do
   configureTracers configReflection cfg [tr]
   configureTracers configReflection cfg [prometheusSimpleTr]
   for_ (prometheusSimple cfg) $ \ps -> do
-    runPrometheusSimple (mkTracer (traceWith prometheusSimpleTr)) ekgStore ps >>= link
+    let
+
+#if !MIN_VERSION_contra_tracer(0,2,0)
+      t = Tracer (traceWith prometheusSimpleTr)
+#else
+      t = mkTracer (traceWith prometheusSimpleTr)
+#endif
+
+    runPrometheusSimple t ekgStore ps >>= link
   pure tr
   where
     defaultTraceConfig :: TraceConfig
