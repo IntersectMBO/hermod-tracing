@@ -1,0 +1,81 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Hermod.ReCon.Common.Types</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#NatValue"><span class="hs-identifier">NatValue</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#IntValue"><span class="hs-identifier">IntValue</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#VariableIdentifier"><span class="hs-identifier">VariableIdentifier</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#Parser"><span class="hs-identifier">Parser</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#BinRel"><span class="hs-identifier">BinRel</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Int.html"><span class="hs-identifier">Data.Int</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Int.html#Int64"><span class="hs-identifier">Int64</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/text-2.0.2/src/Data.Text.html"><span class="hs-identifier">Data.Text</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/text-2.0.2/src/Data.Text.Internal.html#Text"><span class="hs-identifier">Text</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Void.html"><span class="hs-identifier">Data.Void</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Base.html#Void"><span class="hs-identifier">Void</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Word.html"><span class="hs-identifier">Data.Word</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Word.html#Word64"><span class="hs-identifier">Word64</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><span class="hs-identifier">Text.Megaparsec</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Parsec</span></span><span class="hs-special">)</span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">type</span><span> </span><span id="NatValue"><span class="annot"><a href="Hermod.ReCon.Common.Types.html#NatValue"><span class="hs-identifier hs-var">NatValue</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Word.html#Word64"><span class="hs-identifier hs-type">Word64</span></a></span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- | The numeric type used for integer event property values and polynomial</span><span>
+</span><span id="line-12"></span><span class="hs-comment">--   arithmetic throughout the framework.</span><span>
+</span><span id="line-13"></span><span class="hs-keyword">type</span><span> </span><span id="IntValue"><span class="annot"><a href="Hermod.ReCon.Common.Types.html#IntValue"><span class="hs-identifier hs-var">IntValue</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Int.html#Int64"><span class="hs-identifier hs-type">Int64</span></a></span><span>
+</span><span id="line-14"></span><span>
+</span><span id="line-15"></span><span class="hs-comment">-- | The type of variable identifiers used throughout the framework</span><span>
+</span><span id="line-16"></span><span class="hs-comment">--   (LTL property variables and polynomial integer variables).</span><span>
+</span><span id="line-17"></span><span class="hs-keyword">type</span><span> </span><span id="VariableIdentifier"><span class="annot"><a href="Hermod.ReCon.Common.Types.html#VariableIdentifier"><span class="hs-identifier hs-var">VariableIdentifier</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/text-2.0.2/src/Data.Text.Internal.html#Text"><span class="hs-identifier hs-type">Text</span></a></span><span>
+</span><span id="line-18"></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">type</span><span> </span><span id="Parser"><span class="annot"><a href="Hermod.ReCon.Common.Types.html#Parser"><span class="hs-identifier hs-var">Parser</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Parsec</span></span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Base.html#Void"><span class="hs-identifier hs-type">Void</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/text-2.0.2/src/Data.Text.Internal.html#Text"><span class="hs-identifier hs-type">Text</span></a></span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span class="annot"><span class="hs-comment">-- | Binary comparison relation on an ordered type.</span></span><span>
+</span><span id="line-22"></span><span class="hs-keyword">data</span><span> </span><span id="BinRel"><span class="annot"><a href="Hermod.ReCon.Common.Types.html#BinRel"><span class="hs-identifier hs-var">BinRel</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Eq"><span class="annot"><a href="Hermod.ReCon.Common.Types.html#Eq"><span class="hs-identifier hs-var">Eq</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="Lt"><span class="annot"><a href="Hermod.ReCon.Common.Types.html#Lt"><span class="hs-identifier hs-var">Lt</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="Lte"><span class="annot"><a href="Hermod.ReCon.Common.Types.html#Lte"><span class="hs-identifier hs-var">Lte</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="Gt"><span class="annot"><a href="Hermod.ReCon.Common.Types.html#Gt"><span class="hs-identifier hs-var">Gt</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="Gte"><span class="annot"><a href="Hermod.ReCon.Common.Types.html#Gte"><span class="hs-identifier hs-var">Gte</span></a></span></span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679125265"><span id="local-6989586621679125267"><span id="local-6989586621679125271"><span class="annot"><span class="annottext">Int -&gt; BinRel -&gt; ShowS
+[BinRel] -&gt; ShowS
+BinRel -&gt; String
+(Int -&gt; BinRel -&gt; ShowS)
+-&gt; (BinRel -&gt; String) -&gt; ([BinRel] -&gt; ShowS) -&gt; Show BinRel
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; BinRel -&gt; ShowS
+showsPrec :: Int -&gt; BinRel -&gt; ShowS
+$cshow :: BinRel -&gt; String
+show :: BinRel -&gt; String
+$cshowList :: [BinRel] -&gt; ShowS
+showList :: [BinRel] -&gt; ShowS
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Show.html#Show"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679125275"><span id="local-6989586621679125277"><span class="annot"><span class="annottext">BinRel -&gt; BinRel -&gt; Bool
+(BinRel -&gt; BinRel -&gt; Bool)
+-&gt; (BinRel -&gt; BinRel -&gt; Bool) -&gt; Eq BinRel
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: BinRel -&gt; BinRel -&gt; Bool
+== :: BinRel -&gt; BinRel -&gt; Bool
+$c/= :: BinRel -&gt; BinRel -&gt; Bool
+/= :: BinRel -&gt; BinRel -&gt; Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Classes.html#Eq"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679125284"><span id="local-6989586621679125286"><span id="local-6989586621679125288"><span id="local-6989586621679125292"><span id="local-6989586621679125295"><span id="local-6989586621679125298"><span id="local-6989586621679125301"><span class="annot"><span class="annottext">Eq BinRel
+Eq BinRel =&gt;
+(BinRel -&gt; BinRel -&gt; Ordering)
+-&gt; (BinRel -&gt; BinRel -&gt; Bool)
+-&gt; (BinRel -&gt; BinRel -&gt; Bool)
+-&gt; (BinRel -&gt; BinRel -&gt; Bool)
+-&gt; (BinRel -&gt; BinRel -&gt; Bool)
+-&gt; (BinRel -&gt; BinRel -&gt; BinRel)
+-&gt; (BinRel -&gt; BinRel -&gt; BinRel)
+-&gt; Ord BinRel
+BinRel -&gt; BinRel -&gt; Bool
+BinRel -&gt; BinRel -&gt; Ordering
+BinRel -&gt; BinRel -&gt; BinRel
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+$ccompare :: BinRel -&gt; BinRel -&gt; Ordering
+compare :: BinRel -&gt; BinRel -&gt; Ordering
+$c&lt; :: BinRel -&gt; BinRel -&gt; Bool
+&lt; :: BinRel -&gt; BinRel -&gt; Bool
+$c&lt;= :: BinRel -&gt; BinRel -&gt; Bool
+&lt;= :: BinRel -&gt; BinRel -&gt; Bool
+$c&gt; :: BinRel -&gt; BinRel -&gt; Bool
+&gt; :: BinRel -&gt; BinRel -&gt; Bool
+$c&gt;= :: BinRel -&gt; BinRel -&gt; Bool
+&gt;= :: BinRel -&gt; BinRel -&gt; Bool
+$cmax :: BinRel -&gt; BinRel -&gt; BinRel
+max :: BinRel -&gt; BinRel -&gt; BinRel
+$cmin :: BinRel -&gt; BinRel -&gt; BinRel
+min :: BinRel -&gt; BinRel -&gt; BinRel
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Classes.html#Ord"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-23"></span></pre></body></html>

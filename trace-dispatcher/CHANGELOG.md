@@ -8,6 +8,11 @@
 * Snoc a namespace separator `.` to the metrics prefix config value when missing.
 * Provide `Cardano.Logging.Prometheus.Exposition.asPrometheusMetricName`, creating an external (Prometheus naming schemal compliant) metric name from an internal one.
 * Rename `NodeStartupInfo.suiEra` to `suiLatestSupportedEra`.
+* `TCPServer.hs`: `Content-Length` is now computed from byte count of the UTF-8 encoded body, not the character count.
+* `TracerInfoConfig` namespace form is now identical to constructor.
+* Limiter name is now included in the machine-readable trace output for high detail levels.
+* New exception type `HermodException` - currently only used for config errors.
+* Safeguard ceiling for PrometheusSimple response size, corresponding to roughly 56,000 distinct application metrics.
 
 ## 2.12.1 -- Apr 2026
 

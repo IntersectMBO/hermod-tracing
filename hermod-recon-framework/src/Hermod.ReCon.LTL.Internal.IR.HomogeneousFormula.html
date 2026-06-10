@@ -1,0 +1,955 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-2"></span><span>    </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#HomogeneousFormula"><span class="hs-identifier">HomogeneousFormula</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-3"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#Extended"><span class="hs-identifier">Extended</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-4"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier">toFormula</span></a></span><span>
+</span><span id="line-5"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier">lower</span></a></span><span>
+</span><span id="line-6"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#eval"><span class="hs-identifier">eval</span></a></span><span>
+</span><span id="line-7"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#quote"><span class="hs-identifier">quote</span></a></span><span>
+</span><span id="line-8"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#equiv"><span class="hs-identifier">equiv</span></a></span><span>
+</span><span id="line-9"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#retract"><span class="hs-identifier">retract</span></a></span><span>
+</span><span id="line-10"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#normaliseHomogeneous"><span class="hs-identifier">normaliseHomogeneous</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html"><span class="hs-identifier">Hermod.ReCon.Common.Types</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#BinRel"><span class="hs-identifier">BinRel</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html"><span class="hs-identifier">Hermod.ReCon.LTL.Formula</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Formula"><span class="hs-identifier">Formula</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Hermod.ReCon.Integer.Polynomial.Term.html#IntTerm"><span class="hs-identifier">IntTerm</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#IntValue"><span class="hs-identifier">IntValue</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#TextTerm"><span class="hs-identifier">TextTerm</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-14"></span><span>                   </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#VariableIdentifier"><span class="hs-identifier">VariableIdentifier</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html"><span class="hs-identifier">Hermod.ReCon.LTL.Formula</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">F</span></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html"><span class="hs-identifier">Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#Extended"><span class="hs-identifier">Extended</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html"><span class="hs-identifier">Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">FinFree</span></span><span>
+</span><span id="line-18"></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Function.html"><span class="hs-identifier">Data.Function</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Function.html#on"><span class="hs-identifier">on</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-20"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.html"><span class="hs-identifier">Data.Set</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.Internal.html#Set"><span class="hs-identifier">Set</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.html"><span class="hs-identifier">Data.Set</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Set</span></span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/text-2.0.2/src/Data.Text.html"><span class="hs-identifier">Data.Text</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/text-2.0.2/src/Data.Text.Internal.html#Text"><span class="hs-identifier">Text</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span class="hs-comment">-- | A `Formula` with no temporal operators and no atoms.</span><span>
+</span><span id="line-25"></span><span class="hs-comment">--   Equivalence of two `HomogeneousFormula`s is decidable.</span><span>
+</span><span id="line-26"></span><span class="hs-keyword">data</span><span> </span><span id="HomogeneousFormula"><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#HomogeneousFormula"><span class="hs-identifier hs-var">HomogeneousFormula</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-27"></span><span>   </span><span class="hs-comment">------------ Connective -------------</span><span>
+</span><span id="line-28"></span><span>     </span><span id="Or"><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#Or"><span class="hs-identifier hs-var">Or</span></a></span></span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#HomogeneousFormula"><span class="hs-identifier hs-type">HomogeneousFormula</span></a></span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#HomogeneousFormula"><span class="hs-identifier hs-type">HomogeneousFormula</span></a></span><span>
+</span><span id="line-29"></span><span>   </span><span class="hs-glyph">|</span><span> </span><span id="And"><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#And"><span class="hs-identifier hs-var">And</span></a></span></span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#HomogeneousFormula"><span class="hs-identifier hs-type">HomogeneousFormula</span></a></span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#HomogeneousFormula"><span class="hs-identifier hs-type">HomogeneousFormula</span></a></span><span>
+</span><span id="line-30"></span><span>   </span><span class="hs-glyph">|</span><span> </span><span id="Not"><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#Not"><span class="hs-identifier hs-var">Not</span></a></span></span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#HomogeneousFormula"><span class="hs-identifier hs-type">HomogeneousFormula</span></a></span><span>
+</span><span id="line-31"></span><span>   </span><span class="hs-glyph">|</span><span> </span><span id="Implies"><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#Implies"><span class="hs-identifier hs-var">Implies</span></a></span></span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#HomogeneousFormula"><span class="hs-identifier hs-type">HomogeneousFormula</span></a></span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#HomogeneousFormula"><span class="hs-identifier hs-type">HomogeneousFormula</span></a></span><span>
+</span><span id="line-32"></span><span>   </span><span class="hs-glyph">|</span><span> </span><span id="Top"><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span></span><span>
+</span><span id="line-33"></span><span>   </span><span class="hs-glyph">|</span><span> </span><span id="Bottom"><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span></span><span>
+</span><span id="line-34"></span><span>   </span><span class="hs-comment">-------------------------------------</span><span>
+</span><span id="line-35"></span><span>
+</span><span id="line-36"></span><span>   </span><span class="hs-comment">----------- Event property ----------</span><span>
+</span><span id="line-37"></span><span>   </span><span class="hs-glyph">|</span><span> </span><span id="PropIntForall"><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropIntForall"><span class="hs-identifier hs-var">PropIntForall</span></a></span></span><span>   </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#VariableIdentifier"><span class="hs-identifier hs-type">VariableIdentifier</span></a></span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#HomogeneousFormula"><span class="hs-identifier hs-type">HomogeneousFormula</span></a></span><span>
+</span><span id="line-38"></span><span>   </span><span class="hs-glyph">|</span><span> </span><span id="PropTextForall"><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropTextForall"><span class="hs-identifier hs-var">PropTextForall</span></a></span></span><span>  </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#VariableIdentifier"><span class="hs-identifier hs-type">VariableIdentifier</span></a></span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#HomogeneousFormula"><span class="hs-identifier hs-type">HomogeneousFormula</span></a></span><span>
+</span><span id="line-39"></span><span>   </span><span class="hs-glyph">|</span><span> </span><span id="PropIntForallN"><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropIntForallN"><span class="hs-identifier hs-var">PropIntForallN</span></a></span></span><span>  </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#VariableIdentifier"><span class="hs-identifier hs-type">VariableIdentifier</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.Internal.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#IntValue"><span class="hs-identifier hs-type">IntValue</span></a></span><span class="hs-special">)</span><span>  </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#HomogeneousFormula"><span class="hs-identifier hs-type">HomogeneousFormula</span></a></span><span>
+</span><span id="line-40"></span><span>   </span><span class="hs-glyph">|</span><span> </span><span id="PropTextForallN"><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropTextForallN"><span class="hs-identifier hs-var">PropTextForallN</span></a></span></span><span> </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#VariableIdentifier"><span class="hs-identifier hs-type">VariableIdentifier</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.Internal.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/text-2.0.2/src/Data.Text.Internal.html#Text"><span class="hs-identifier hs-type">Text</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#HomogeneousFormula"><span class="hs-identifier hs-type">HomogeneousFormula</span></a></span><span>
+</span><span id="line-41"></span><span>   </span><span class="hs-glyph">|</span><span> </span><span id="PropIntExists"><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropIntExists"><span class="hs-identifier hs-var">PropIntExists</span></a></span></span><span>   </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#VariableIdentifier"><span class="hs-identifier hs-type">VariableIdentifier</span></a></span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#HomogeneousFormula"><span class="hs-identifier hs-type">HomogeneousFormula</span></a></span><span>
+</span><span id="line-42"></span><span>   </span><span class="hs-glyph">|</span><span> </span><span id="PropTextExists"><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropTextExists"><span class="hs-identifier hs-var">PropTextExists</span></a></span></span><span>  </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#VariableIdentifier"><span class="hs-identifier hs-type">VariableIdentifier</span></a></span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#HomogeneousFormula"><span class="hs-identifier hs-type">HomogeneousFormula</span></a></span><span>
+</span><span id="line-43"></span><span>   </span><span class="hs-glyph">|</span><span> </span><span id="PropIntExistsN"><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropIntExistsN"><span class="hs-identifier hs-var">PropIntExistsN</span></a></span></span><span>  </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#VariableIdentifier"><span class="hs-identifier hs-type">VariableIdentifier</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.Internal.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#IntValue"><span class="hs-identifier hs-type">IntValue</span></a></span><span class="hs-special">)</span><span>  </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#HomogeneousFormula"><span class="hs-identifier hs-type">HomogeneousFormula</span></a></span><span>
+</span><span id="line-44"></span><span>   </span><span class="hs-glyph">|</span><span> </span><span id="PropTextExistsN"><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropTextExistsN"><span class="hs-identifier hs-var">PropTextExistsN</span></a></span></span><span> </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#VariableIdentifier"><span class="hs-identifier hs-type">VariableIdentifier</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.Internal.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/text-2.0.2/src/Data.Text.Internal.html#Text"><span class="hs-identifier hs-type">Text</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#HomogeneousFormula"><span class="hs-identifier hs-type">HomogeneousFormula</span></a></span><span>
+</span><span id="line-45"></span><span>   </span><span class="hs-glyph">|</span><span> </span><span id="PropIntBinRel"><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropIntBinRel"><span class="hs-identifier hs-var">PropIntBinRel</span></a></span></span><span> </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#BinRel"><span class="hs-identifier hs-type">BinRel</span></a></span><span> </span><span class="annot"><a href="Hermod.ReCon.Integer.Polynomial.Term.html#IntTerm"><span class="hs-identifier hs-type">IntTerm</span></a></span><span>  </span><span class="annot"><a href="Hermod.ReCon.Integer.Polynomial.Term.html#IntTerm"><span class="hs-identifier hs-type">IntTerm</span></a></span><span>
+</span><span id="line-46"></span><span>   </span><span class="hs-glyph">|</span><span> </span><span id="PropTextEq"><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropTextEq"><span class="hs-identifier hs-var">PropTextEq</span></a></span></span><span>    </span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#TextTerm"><span class="hs-identifier hs-type">TextTerm</span></a></span><span>  </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/text-2.0.2/src/Data.Text.Internal.html#Text"><span class="hs-identifier hs-type">Text</span></a></span><span>
+</span><span id="line-47"></span><span>   </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679131203"><span id="local-6989586621679131259"><span id="local-6989586621679131262"><span class="annot"><span class="annottext">Int -&gt; HomogeneousFormula -&gt; ShowS
+[HomogeneousFormula] -&gt; ShowS
+HomogeneousFormula -&gt; String
+(Int -&gt; HomogeneousFormula -&gt; ShowS)
+-&gt; (HomogeneousFormula -&gt; String)
+-&gt; ([HomogeneousFormula] -&gt; ShowS)
+-&gt; Show HomogeneousFormula
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; HomogeneousFormula -&gt; ShowS
+showsPrec :: Int -&gt; HomogeneousFormula -&gt; ShowS
+$cshow :: HomogeneousFormula -&gt; String
+show :: HomogeneousFormula -&gt; String
+$cshowList :: [HomogeneousFormula] -&gt; ShowS
+showList :: [HomogeneousFormula] -&gt; ShowS
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Show.html#Show"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679131267"><span id="local-6989586621679131308"><span class="annot"><span class="annottext">HomogeneousFormula -&gt; HomogeneousFormula -&gt; Bool
+(HomogeneousFormula -&gt; HomogeneousFormula -&gt; Bool)
+-&gt; (HomogeneousFormula -&gt; HomogeneousFormula -&gt; Bool)
+-&gt; Eq HomogeneousFormula
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: HomogeneousFormula -&gt; HomogeneousFormula -&gt; Bool
+== :: HomogeneousFormula -&gt; HomogeneousFormula -&gt; Bool
+$c/= :: HomogeneousFormula -&gt; HomogeneousFormula -&gt; Bool
+/= :: HomogeneousFormula -&gt; HomogeneousFormula -&gt; Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Classes.html#Eq"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679131315"><span id="local-6989586621679131356"><span id="local-6989586621679131359"><span id="local-6989586621679131362"><span id="local-6989586621679131365"><span id="local-6989586621679131368"><span id="local-6989586621679131371"><span class="annot"><span class="annottext">Eq HomogeneousFormula
+Eq HomogeneousFormula =&gt;
+(HomogeneousFormula -&gt; HomogeneousFormula -&gt; Ordering)
+-&gt; (HomogeneousFormula -&gt; HomogeneousFormula -&gt; Bool)
+-&gt; (HomogeneousFormula -&gt; HomogeneousFormula -&gt; Bool)
+-&gt; (HomogeneousFormula -&gt; HomogeneousFormula -&gt; Bool)
+-&gt; (HomogeneousFormula -&gt; HomogeneousFormula -&gt; Bool)
+-&gt; (HomogeneousFormula -&gt; HomogeneousFormula -&gt; HomogeneousFormula)
+-&gt; (HomogeneousFormula -&gt; HomogeneousFormula -&gt; HomogeneousFormula)
+-&gt; Ord HomogeneousFormula
+HomogeneousFormula -&gt; HomogeneousFormula -&gt; Bool
+HomogeneousFormula -&gt; HomogeneousFormula -&gt; Ordering
+HomogeneousFormula -&gt; HomogeneousFormula -&gt; HomogeneousFormula
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+$ccompare :: HomogeneousFormula -&gt; HomogeneousFormula -&gt; Ordering
+compare :: HomogeneousFormula -&gt; HomogeneousFormula -&gt; Ordering
+$c&lt; :: HomogeneousFormula -&gt; HomogeneousFormula -&gt; Bool
+&lt; :: HomogeneousFormula -&gt; HomogeneousFormula -&gt; Bool
+$c&lt;= :: HomogeneousFormula -&gt; HomogeneousFormula -&gt; Bool
+&lt;= :: HomogeneousFormula -&gt; HomogeneousFormula -&gt; Bool
+$c&gt; :: HomogeneousFormula -&gt; HomogeneousFormula -&gt; Bool
+&gt; :: HomogeneousFormula -&gt; HomogeneousFormula -&gt; Bool
+$c&gt;= :: HomogeneousFormula -&gt; HomogeneousFormula -&gt; Bool
+&gt;= :: HomogeneousFormula -&gt; HomogeneousFormula -&gt; Bool
+$cmax :: HomogeneousFormula -&gt; HomogeneousFormula -&gt; HomogeneousFormula
+max :: HomogeneousFormula -&gt; HomogeneousFormula -&gt; HomogeneousFormula
+$cmin :: HomogeneousFormula -&gt; HomogeneousFormula -&gt; HomogeneousFormula
+min :: HomogeneousFormula -&gt; HomogeneousFormula -&gt; HomogeneousFormula
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Classes.html#Ord"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-48"></span><span>   </span><span class="hs-comment">-------------------------------------</span><span>
+</span><span id="line-49"></span><span>
+</span><span id="line-50"></span><span id="local-6989586621679131127"><span id="local-6989586621679131128"><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-type">toFormula</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#HomogeneousFormula"><span class="hs-identifier hs-type">HomogeneousFormula</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Formula"><span class="hs-identifier hs-type">Formula</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679131127"><span class="hs-identifier hs-type">event</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679131128"><span class="hs-identifier hs-type">ty</span></a></span></span></span><span>
+</span><span id="line-51"></span><span id="toFormula"><span class="annot"><span class="annottext">toFormula :: forall event ty. HomogeneousFormula -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var hs-var">toFormula</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#And"><span class="hs-identifier hs-type">And</span></a></span><span> </span><span id="local-6989586621679131375"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131375"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679131376"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131376"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span>                    </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+Formula event ty -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#And"><span class="hs-identifier hs-var">F.And</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; Formula event ty
+forall event ty. HomogeneousFormula -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131375"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; Formula event ty
+forall event ty. HomogeneousFormula -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131376"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-52"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#Or"><span class="hs-identifier hs-type">Or</span></a></span><span> </span><span id="local-6989586621679131378"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131378"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679131379"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131379"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span>                     </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+Formula event ty -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Or"><span class="hs-identifier hs-var">F.Or</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; Formula event ty
+forall event ty. HomogeneousFormula -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131378"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; Formula event ty
+forall event ty. HomogeneousFormula -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131379"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-53"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#Implies"><span class="hs-identifier hs-type">Implies</span></a></span><span> </span><span id="local-6989586621679131381"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131381"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679131382"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131382"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span>                </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+Formula event ty -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Implies"><span class="hs-identifier hs-var">F.Implies</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; Formula event ty
+forall event ty. HomogeneousFormula -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131381"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; Formula event ty
+forall event ty. HomogeneousFormula -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131382"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-54"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#Not"><span class="hs-identifier hs-type">Not</span></a></span><span> </span><span id="local-6989586621679131384"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131384"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span>                      </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall event ty. Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Not"><span class="hs-identifier hs-var">F.Not</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; Formula event ty
+forall event ty. HomogeneousFormula -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131384"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-55"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>                       </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">F.Bottom</span></a></span><span>
+</span><span id="line-56"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>                          </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">F.Top</span></a></span><span>
+</span><span id="line-57"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropIntBinRel"><span class="hs-identifier hs-type">PropIntBinRel</span></a></span><span> </span><span id="local-6989586621679131388"><span class="annot"><span class="annottext">BinRel
+</span><a href="#local-6989586621679131388"><span class="hs-identifier hs-var">rel</span></a></span></span><span> </span><span id="local-6989586621679131389"><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679131389"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679131390"><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679131390"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span>       </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BinRel
+-&gt; Relevance event ty -&gt; IntTerm -&gt; IntTerm -&gt; Formula event ty
+forall event ty.
+BinRel
+-&gt; Relevance event ty -&gt; IntTerm -&gt; IntTerm -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#PropIntBinRel"><span class="hs-identifier hs-var">F.PropIntBinRel</span></a></span><span> </span><span class="annot"><span class="annottext">BinRel
+</span><a href="#local-6989586621679131388"><span class="hs-identifier hs-var">rel</span></a></span><span> </span><span class="annot"><span class="annottext">Relevance event ty
+forall a. Set a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.Internal.html#empty"><span class="hs-identifier hs-var">Set.empty</span></a></span><span> </span><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679131389"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679131390"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-58"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropTextEq"><span class="hs-identifier hs-type">PropTextEq</span></a></span><span> </span><span id="local-6989586621679131393"><span class="annot"><span class="annottext">TextTerm
+</span><a href="#local-6989586621679131393"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679131394"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131394"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span>             </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Relevance event ty
+-&gt; TextTerm -&gt; VariableIdentifier -&gt; Formula event ty
+forall event ty.
+Relevance event ty
+-&gt; TextTerm -&gt; VariableIdentifier -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#PropTextEq"><span class="hs-identifier hs-var">F.PropTextEq</span></a></span><span> </span><span class="annot"><span class="annottext">Relevance event ty
+forall a. Set a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.Internal.html#empty"><span class="hs-identifier hs-var">Set.empty</span></a></span><span> </span><span class="annot"><span class="annottext">TextTerm
+</span><a href="#local-6989586621679131393"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131394"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-59"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropIntForall"><span class="hs-identifier hs-type">PropIntForall</span></a></span><span> </span><span id="local-6989586621679131396"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131396"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131397"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131397"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span>        </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#PropIntForall"><span class="hs-identifier hs-var">F.PropIntForall</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131396"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; Formula event ty
+forall event ty. HomogeneousFormula -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131397"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-60"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropTextForall"><span class="hs-identifier hs-type">PropTextForall</span></a></span><span> </span><span id="local-6989586621679131399"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131399"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131400"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131400"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span>       </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#PropTextForall"><span class="hs-identifier hs-var">F.PropTextForall</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131399"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; Formula event ty
+forall event ty. HomogeneousFormula -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131400"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-61"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropIntForallN"><span class="hs-identifier hs-type">PropIntForallN</span></a></span><span> </span><span id="local-6989586621679131402"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131402"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131403"><span class="annot"><span class="annottext">Set IntValue
+</span><a href="#local-6989586621679131403"><span class="hs-identifier hs-var">dom</span></a></span></span><span> </span><span id="local-6989586621679131404"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131404"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span>   </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+-&gt; Set IntValue -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+VariableIdentifier
+-&gt; Set IntValue -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#PropIntForallN"><span class="hs-identifier hs-var">F.PropIntForallN</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131402"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Set IntValue
+</span><a href="#local-6989586621679131403"><span class="hs-identifier hs-var">dom</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; Formula event ty
+forall event ty. HomogeneousFormula -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131404"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-62"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropTextForallN"><span class="hs-identifier hs-type">PropTextForallN</span></a></span><span> </span><span id="local-6989586621679131406"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131406"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131407"><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131407"><span class="hs-identifier hs-var">dom</span></a></span></span><span> </span><span id="local-6989586621679131408"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131408"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+-&gt; Set VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+VariableIdentifier
+-&gt; Set VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#PropTextForallN"><span class="hs-identifier hs-var">F.PropTextForallN</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131406"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131407"><span class="hs-identifier hs-var">dom</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; Formula event ty
+forall event ty. HomogeneousFormula -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131408"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-63"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropIntExists"><span class="hs-identifier hs-type">PropIntExists</span></a></span><span> </span><span id="local-6989586621679131410"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131410"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131411"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131411"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span>        </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#PropIntExists"><span class="hs-identifier hs-var">F.PropIntExists</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131410"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; Formula event ty
+forall event ty. HomogeneousFormula -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131411"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-64"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropTextExists"><span class="hs-identifier hs-type">PropTextExists</span></a></span><span> </span><span id="local-6989586621679131413"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131413"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131414"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131414"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span>       </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#PropTextExists"><span class="hs-identifier hs-var">F.PropTextExists</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131413"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; Formula event ty
+forall event ty. HomogeneousFormula -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131414"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-65"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropIntExistsN"><span class="hs-identifier hs-type">PropIntExistsN</span></a></span><span> </span><span id="local-6989586621679131416"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131416"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131417"><span class="annot"><span class="annottext">Set IntValue
+</span><a href="#local-6989586621679131417"><span class="hs-identifier hs-var">dom</span></a></span></span><span> </span><span id="local-6989586621679131418"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131418"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span>   </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+-&gt; Set IntValue -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+VariableIdentifier
+-&gt; Set IntValue -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#PropIntExistsN"><span class="hs-identifier hs-var">F.PropIntExistsN</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131416"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Set IntValue
+</span><a href="#local-6989586621679131417"><span class="hs-identifier hs-var">dom</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; Formula event ty
+forall event ty. HomogeneousFormula -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131418"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-66"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropTextExistsN"><span class="hs-identifier hs-type">PropTextExistsN</span></a></span><span> </span><span id="local-6989586621679131420"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131420"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131421"><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131421"><span class="hs-identifier hs-var">dom</span></a></span></span><span> </span><span id="local-6989586621679131422"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131422"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+-&gt; Set VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+VariableIdentifier
+-&gt; Set VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#PropTextExistsN"><span class="hs-identifier hs-var">F.PropTextExistsN</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131420"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131421"><span class="hs-identifier hs-var">dom</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; Formula event ty
+forall event ty. HomogeneousFormula -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131422"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-67"></span><span>
+</span><span id="line-68"></span><span class="hs-comment">-- | Lower a `HomogeneousFormula` to `FinFree` by eliminating all finite-domain</span><span>
+</span><span id="line-69"></span><span class="hs-comment">--   quantifiers.  Finite universal (&#8704;x &#8712; dom) unfolds to a conjunction; finite</span><span>
+</span><span id="line-70"></span><span class="hs-comment">--   existential (&#8707;x &#8712; dom) unfolds to a disjunction.</span><span>
+</span><span id="line-71"></span><span class="hs-comment">--</span><span>
+</span><span id="line-72"></span><span class="hs-comment">--   @'eval' = 'FinFree.eval' . 'lower'@</span><span>
+</span><span id="line-73"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-type">lower</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#HomogeneousFormula"><span class="hs-identifier hs-type">HomogeneousFormula</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#FinFree"><span class="hs-identifier hs-type">FinFree.FinFree</span></a></span><span>
+</span><span id="line-74"></span><span id="lower"><span class="annot"><span class="annottext">lower :: HomogeneousFormula -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var hs-var">lower</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#Or"><span class="hs-identifier hs-type">Or</span></a></span><span> </span><span id="local-6989586621679131425"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131425"><span class="hs-identifier hs-var">phi</span></a></span></span><span> </span><span id="local-6989586621679131426"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131426"><span class="hs-identifier hs-var">psi</span></a></span></span><span class="hs-special">)</span><span>      </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FinFree -&gt; FinFree -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#Or"><span class="hs-identifier hs-var">FinFree.Or</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131425"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131426"><span class="hs-identifier hs-var">psi</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-75"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#And"><span class="hs-identifier hs-type">And</span></a></span><span> </span><span id="local-6989586621679131428"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131428"><span class="hs-identifier hs-var">phi</span></a></span></span><span> </span><span id="local-6989586621679131429"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131429"><span class="hs-identifier hs-var">psi</span></a></span></span><span class="hs-special">)</span><span>     </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FinFree -&gt; FinFree -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#And"><span class="hs-identifier hs-var">FinFree.And</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131428"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131429"><span class="hs-identifier hs-var">psi</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-76"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#Not"><span class="hs-identifier hs-type">Not</span></a></span><span> </span><span id="local-6989586621679131431"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131431"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span>         </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FinFree -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#Not"><span class="hs-identifier hs-var">FinFree.Not</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131431"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-77"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#Implies"><span class="hs-identifier hs-type">Implies</span></a></span><span> </span><span id="local-6989586621679131433"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131433"><span class="hs-identifier hs-var">phi</span></a></span></span><span> </span><span id="local-6989586621679131434"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131434"><span class="hs-identifier hs-var">psi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FinFree -&gt; FinFree -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#Implies"><span class="hs-identifier hs-var">FinFree.Implies</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131433"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131434"><span class="hs-identifier hs-var">psi</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-78"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>               </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#Top"><span class="hs-identifier hs-var">FinFree.Top</span></a></span><span>
+</span><span id="line-79"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>            </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#Bottom"><span class="hs-identifier hs-var">FinFree.Bottom</span></a></span><span>
+</span><span id="line-80"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropIntForall"><span class="hs-identifier hs-type">PropIntForall</span></a></span><span>  </span><span id="local-6989586621679131438"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131438"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131439"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131439"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier -&gt; FinFree -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#PropIntForall"><span class="hs-identifier hs-var">FinFree.PropIntForall</span></a></span><span>  </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131438"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131439"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-81"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropTextForall"><span class="hs-identifier hs-type">PropTextForall</span></a></span><span> </span><span id="local-6989586621679131441"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131441"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131442"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131442"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier -&gt; FinFree -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#PropTextForall"><span class="hs-identifier hs-var">FinFree.PropTextForall</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131441"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131442"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-82"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropIntExists"><span class="hs-identifier hs-type">PropIntExists</span></a></span><span>  </span><span id="local-6989586621679131444"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131444"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131445"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131445"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier -&gt; FinFree -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#PropIntExists"><span class="hs-identifier hs-var">FinFree.PropIntExists</span></a></span><span>  </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131444"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131445"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-83"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropTextExists"><span class="hs-identifier hs-type">PropTextExists</span></a></span><span> </span><span id="local-6989586621679131447"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131447"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131448"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131448"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier -&gt; FinFree -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#PropTextExists"><span class="hs-identifier hs-var">FinFree.PropTextExists</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131447"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131448"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-84"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropIntBinRel"><span class="hs-identifier hs-type">PropIntBinRel</span></a></span><span> </span><span id="local-6989586621679131450"><span class="annot"><span class="annottext">BinRel
+</span><a href="#local-6989586621679131450"><span class="hs-identifier hs-var">rel</span></a></span></span><span> </span><span id="local-6989586621679131451"><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679131451"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679131452"><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679131452"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BinRel -&gt; IntTerm -&gt; IntTerm -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#PropIntBinRel"><span class="hs-identifier hs-var">FinFree.PropIntBinRel</span></a></span><span> </span><span class="annot"><span class="annottext">BinRel
+</span><a href="#local-6989586621679131450"><span class="hs-identifier hs-var">rel</span></a></span><span> </span><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679131451"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679131452"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-85"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropTextEq"><span class="hs-identifier hs-type">PropTextEq</span></a></span><span> </span><span id="local-6989586621679131454"><span class="annot"><span class="annottext">TextTerm
+</span><a href="#local-6989586621679131454"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679131455"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131455"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span>        </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TextTerm -&gt; VariableIdentifier -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#PropTextEq"><span class="hs-identifier hs-var">FinFree.PropTextEq</span></a></span><span> </span><span class="annot"><span class="annottext">TextTerm
+</span><a href="#local-6989586621679131454"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131455"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-86"></span><span class="hs-comment">-- &#8704;x &#8712; {v&#8321;,...,v&#8345;}. &#966;  &#8801;  &#966;[v&#8321;/x] &#8743; ... &#8743; &#966;[v&#8345;/x]   (&#8868; when dom is empty)</span><span>
+</span><span id="line-87"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropIntForallN"><span class="hs-identifier hs-type">PropIntForallN</span></a></span><span> </span><span id="local-6989586621679131457"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131457"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131458"><span class="annot"><span class="annottext">Set IntValue
+</span><a href="#local-6989586621679131458"><span class="hs-identifier hs-var">dom</span></a></span></span><span> </span><span id="local-6989586621679131459"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131459"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-88"></span><span>  </span><span class="annot"><span class="annottext">(IntValue -&gt; FinFree -&gt; FinFree)
+-&gt; FinFree -&gt; [IntValue] -&gt; FinFree
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; [a] -&gt; b
+forall (t :: * -&gt; *) a b.
+Foldable t =&gt;
+(a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Foldable.html#foldr"><span class="hs-identifier hs-var">foldr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FinFree -&gt; FinFree -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#And"><span class="hs-identifier hs-var">FinFree.And</span></a></span><span> </span><span class="annot"><span class="annottext">(FinFree -&gt; FinFree -&gt; FinFree)
+-&gt; (IntValue -&gt; FinFree) -&gt; IntValue -&gt; FinFree -&gt; FinFree
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Base.html#."><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679131462"><span class="annot"><span class="annottext">IntValue
+</span><a href="#local-6989586621679131462"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">IntValue -&gt; VariableIdentifier -&gt; FinFree -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#substInt"><span class="hs-identifier hs-var">FinFree.substInt</span></a></span><span>  </span><span class="annot"><span class="annottext">IntValue
+</span><a href="#local-6989586621679131462"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131457"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131459"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#Top"><span class="hs-identifier hs-var">FinFree.Top</span></a></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Set IntValue -&gt; [IntValue]
+forall a. Set a -&gt; [a]
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.Internal.html#toList"><span class="hs-identifier hs-var">Set.toList</span></a></span><span> </span><span class="annot"><span class="annottext">Set IntValue
+</span><a href="#local-6989586621679131458"><span class="hs-identifier hs-var">dom</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-89"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropTextForallN"><span class="hs-identifier hs-type">PropTextForallN</span></a></span><span> </span><span id="local-6989586621679131465"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131465"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131466"><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131466"><span class="hs-identifier hs-var">dom</span></a></span></span><span> </span><span id="local-6989586621679131467"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131467"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-90"></span><span>  </span><span class="annot"><span class="annottext">(VariableIdentifier -&gt; FinFree -&gt; FinFree)
+-&gt; FinFree -&gt; [VariableIdentifier] -&gt; FinFree
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; [a] -&gt; b
+forall (t :: * -&gt; *) a b.
+Foldable t =&gt;
+(a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Foldable.html#foldr"><span class="hs-identifier hs-var">foldr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FinFree -&gt; FinFree -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#And"><span class="hs-identifier hs-var">FinFree.And</span></a></span><span> </span><span class="annot"><span class="annottext">(FinFree -&gt; FinFree -&gt; FinFree)
+-&gt; (VariableIdentifier -&gt; FinFree)
+-&gt; VariableIdentifier
+-&gt; FinFree
+-&gt; FinFree
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Base.html#."><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679131468"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131468"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Extended VariableIdentifier
+-&gt; VariableIdentifier -&gt; FinFree -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#substText"><span class="hs-identifier hs-var">FinFree.substText</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VariableIdentifier -&gt; Extended VariableIdentifier
+forall a. a -&gt; Extended a
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#Val"><span class="hs-identifier hs-var">Val</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131468"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131465"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131467"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#Top"><span class="hs-identifier hs-var">FinFree.Top</span></a></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Set VariableIdentifier -&gt; [VariableIdentifier]
+forall a. Set a -&gt; [a]
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.Internal.html#toList"><span class="hs-identifier hs-var">Set.toList</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131466"><span class="hs-identifier hs-var">dom</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-91"></span><span class="hs-comment">-- &#8707;x &#8712; {v&#8321;,...,v&#8345;}. &#966;  &#8801;  &#966;[v&#8321;/x] &#8744; ... &#8744; &#966;[v&#8345;/x]   (&#8869; when dom is empty)</span><span>
+</span><span id="line-92"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropIntExistsN"><span class="hs-identifier hs-type">PropIntExistsN</span></a></span><span> </span><span id="local-6989586621679131471"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131471"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131472"><span class="annot"><span class="annottext">Set IntValue
+</span><a href="#local-6989586621679131472"><span class="hs-identifier hs-var">dom</span></a></span></span><span> </span><span id="local-6989586621679131473"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131473"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-93"></span><span>  </span><span class="annot"><span class="annottext">(IntValue -&gt; FinFree -&gt; FinFree)
+-&gt; FinFree -&gt; [IntValue] -&gt; FinFree
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; [a] -&gt; b
+forall (t :: * -&gt; *) a b.
+Foldable t =&gt;
+(a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Foldable.html#foldr"><span class="hs-identifier hs-var">foldr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FinFree -&gt; FinFree -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#Or"><span class="hs-identifier hs-var">FinFree.Or</span></a></span><span>  </span><span class="annot"><span class="annottext">(FinFree -&gt; FinFree -&gt; FinFree)
+-&gt; (IntValue -&gt; FinFree) -&gt; IntValue -&gt; FinFree -&gt; FinFree
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Base.html#."><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679131474"><span class="annot"><span class="annottext">IntValue
+</span><a href="#local-6989586621679131474"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">IntValue -&gt; VariableIdentifier -&gt; FinFree -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#substInt"><span class="hs-identifier hs-var">FinFree.substInt</span></a></span><span>  </span><span class="annot"><span class="annottext">IntValue
+</span><a href="#local-6989586621679131474"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131471"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131473"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#Bottom"><span class="hs-identifier hs-var">FinFree.Bottom</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Set IntValue -&gt; [IntValue]
+forall a. Set a -&gt; [a]
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.Internal.html#toList"><span class="hs-identifier hs-var">Set.toList</span></a></span><span> </span><span class="annot"><span class="annottext">Set IntValue
+</span><a href="#local-6989586621679131472"><span class="hs-identifier hs-var">dom</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-94"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropTextExistsN"><span class="hs-identifier hs-type">PropTextExistsN</span></a></span><span> </span><span id="local-6989586621679131475"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131475"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131476"><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131476"><span class="hs-identifier hs-var">dom</span></a></span></span><span> </span><span id="local-6989586621679131477"><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131477"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-95"></span><span>  </span><span class="annot"><span class="annottext">(VariableIdentifier -&gt; FinFree -&gt; FinFree)
+-&gt; FinFree -&gt; [VariableIdentifier] -&gt; FinFree
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; [a] -&gt; b
+forall (t :: * -&gt; *) a b.
+Foldable t =&gt;
+(a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Foldable.html#foldr"><span class="hs-identifier hs-var">foldr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FinFree -&gt; FinFree -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#Or"><span class="hs-identifier hs-var">FinFree.Or</span></a></span><span>  </span><span class="annot"><span class="annottext">(FinFree -&gt; FinFree -&gt; FinFree)
+-&gt; (VariableIdentifier -&gt; FinFree)
+-&gt; VariableIdentifier
+-&gt; FinFree
+-&gt; FinFree
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Base.html#."><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679131478"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131478"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Extended VariableIdentifier
+-&gt; VariableIdentifier -&gt; FinFree -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#substText"><span class="hs-identifier hs-var">FinFree.substText</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VariableIdentifier -&gt; Extended VariableIdentifier
+forall a. a -&gt; Extended a
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#Val"><span class="hs-identifier hs-var">Val</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131478"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131475"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="#local-6989586621679131477"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#Bottom"><span class="hs-identifier hs-var">FinFree.Bottom</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Set VariableIdentifier -&gt; [VariableIdentifier]
+forall a. Set a -&gt; [a]
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.Internal.html#toList"><span class="hs-identifier hs-var">Set.toList</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131476"><span class="hs-identifier hs-var">dom</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-96"></span><span>
+</span><span id="line-97"></span><span class="annot"><span class="hs-comment">-- | Evaluate the `HomogeneousFormula` onto `Bool`.</span></span><span>
+</span><span id="line-98"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#eval"><span class="hs-identifier hs-type">eval</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#HomogeneousFormula"><span class="hs-identifier hs-type">HomogeneousFormula</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Types.html#Bool"><span class="hs-identifier hs-type">Bool</span></a></span><span>
+</span><span id="line-99"></span><span id="eval"><span class="annot"><span class="annottext">eval :: HomogeneousFormula -&gt; Bool
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#eval"><span class="hs-identifier hs-var hs-var">eval</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FinFree -&gt; Bool
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.FinFree.html#eval"><span class="hs-identifier hs-var">FinFree.eval</span></a></span><span> </span><span class="annot"><span class="annottext">(FinFree -&gt; Bool)
+-&gt; (HomogeneousFormula -&gt; FinFree) -&gt; HomogeneousFormula -&gt; Bool
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Base.html#."><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; FinFree
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#lower"><span class="hs-identifier hs-var">lower</span></a></span><span>
+</span><span id="line-100"></span><span>
+</span><span id="line-101"></span><span class="annot"><span class="hs-comment">-- | This is the &quot;easy&quot; part of the iso: `HomogeneousFormula` &#8773; `Bool`</span></span><span>
+</span><span id="line-102"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#quote"><span class="hs-identifier hs-type">quote</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Types.html#Bool"><span class="hs-identifier hs-type">Bool</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#HomogeneousFormula"><span class="hs-identifier hs-type">HomogeneousFormula</span></a></span><span>
+</span><span id="line-103"></span><span id="quote"><span class="annot"><span class="annottext">quote :: Bool -&gt; HomogeneousFormula
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#quote"><span class="hs-identifier hs-var hs-var">quote</span></a></span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Types.html#True"><span class="hs-identifier hs-var">True</span></a></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>
+</span><span id="line-104"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#quote"><span class="hs-identifier hs-var">quote</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Types.html#False"><span class="hs-identifier hs-var">False</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>
+</span><span id="line-105"></span><span>
+</span><span id="line-106"></span><span class="annot"><span class="hs-comment">-- | Check equivalence of two `HomogeneousFormula`s.</span></span><span>
+</span><span id="line-107"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#equiv"><span class="hs-identifier hs-type">equiv</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#HomogeneousFormula"><span class="hs-identifier hs-type">HomogeneousFormula</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#HomogeneousFormula"><span class="hs-identifier hs-type">HomogeneousFormula</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Types.html#Bool"><span class="hs-identifier hs-type">Bool</span></a></span><span>
+</span><span id="line-108"></span><span id="equiv"><span class="annot"><span class="annottext">equiv :: HomogeneousFormula -&gt; HomogeneousFormula -&gt; Bool
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#equiv"><span class="hs-identifier hs-var hs-var">equiv</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; Bool -&gt; Bool)
+-&gt; (HomogeneousFormula -&gt; Bool)
+-&gt; HomogeneousFormula
+-&gt; HomogeneousFormula
+-&gt; Bool
+forall b c a. (b -&gt; b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; a -&gt; c
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Function.html#on"><span class="hs-identifier hs-var">on</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Classes.html#%3D%3D"><span class="hs-operator hs-var">(==)</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; Bool
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#eval"><span class="hs-identifier hs-var">eval</span></a></span><span>
+</span><span id="line-109"></span><span>
+</span><span id="line-110"></span><span id="local-6989586621679131149"><span id="local-6989586621679131150"><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#retract"><span class="hs-identifier hs-type">retract</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Formula"><span class="hs-identifier hs-type">Formula</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679131149"><span class="hs-identifier hs-type">event</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679131150"><span class="hs-identifier hs-type">ty</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Maybe.html#Maybe"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#HomogeneousFormula"><span class="hs-identifier hs-type">HomogeneousFormula</span></a></span></span></span><span>
+</span><span id="line-111"></span><span id="retract"><span class="annot"><span class="annottext">retract :: forall event ty. Formula event ty -&gt; Maybe HomogeneousFormula
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#retract"><span class="hs-identifier hs-var hs-var">retract</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+forall event ty.
+Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+</span><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+forall a. Set a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.Internal.html#empty"><span class="hs-identifier hs-var">Set.empty</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-112"></span><span>  </span><span id="local-6989586621679131153"><span id="local-6989586621679131154"><span class="annot"><a href="#local-6989586621679131480"><span class="hs-identifier hs-type">go</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.Internal.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#VariableIdentifier"><span class="hs-identifier hs-type">VariableIdentifier</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Formula"><span class="hs-identifier hs-type">Formula</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679131153"><span class="hs-identifier hs-type">event</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679131154"><span class="hs-identifier hs-type">ty</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Maybe.html#Maybe"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#HomogeneousFormula"><span class="hs-identifier hs-type">HomogeneousFormula</span></a></span></span></span><span>
+</span><span id="line-113"></span><span>  </span><span id="local-6989586621679131480"><span class="annot"><span class="annottext">go :: forall event ty.
+Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+</span><a href="#local-6989586621679131480"><span class="hs-identifier hs-var hs-var">go</span></a></span></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><span class="hs-identifier">_</span></span><span>     </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#ForallN"><span class="hs-identifier hs-type">F.ForallN</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span>                   </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe HomogeneousFormula
+forall a. Maybe a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Maybe.html#Nothing"><span class="hs-identifier hs-var">Nothing</span></a></span><span>
+</span><span id="line-114"></span><span>  </span><span class="annot"><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><span class="hs-identifier">_</span></span><span>     </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#ExistsN"><span class="hs-identifier hs-type">F.ExistsN</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span>                   </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe HomogeneousFormula
+forall a. Maybe a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Maybe.html#Nothing"><span class="hs-identifier hs-var">Nothing</span></a></span><span>
+</span><span id="line-115"></span><span>  </span><span class="annot"><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><span class="hs-identifier">_</span></span><span>     </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Forall"><span class="hs-identifier hs-type">F.Forall</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span>                    </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe HomogeneousFormula
+forall a. Maybe a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Maybe.html#Nothing"><span class="hs-identifier hs-var">Nothing</span></a></span><span>
+</span><span id="line-116"></span><span>  </span><span class="annot"><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><span class="hs-identifier">_</span></span><span>     </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#NextN"><span class="hs-identifier hs-type">F.NextN</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span>                     </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe HomogeneousFormula
+forall a. Maybe a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Maybe.html#Nothing"><span class="hs-identifier hs-var">Nothing</span></a></span><span>
+</span><span id="line-117"></span><span>  </span><span class="annot"><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><span class="hs-identifier">_</span></span><span>     </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#UntilN"><span class="hs-identifier hs-type">F.UntilN</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span>                    </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe HomogeneousFormula
+forall a. Maybe a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Maybe.html#Nothing"><span class="hs-identifier hs-var">Nothing</span></a></span><span>
+</span><span id="line-118"></span><span>  </span><span class="annot"><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><span class="hs-identifier">_</span></span><span>     </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Atom"><span class="hs-identifier hs-type">F.Atom</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span>                      </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe HomogeneousFormula
+forall a. Maybe a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Maybe.html#Nothing"><span class="hs-identifier hs-var">Nothing</span></a></span><span>
+</span><span id="line-119"></span><span>  </span><span class="annot"><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><span class="hs-identifier">_</span></span><span>     </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Next"><span class="hs-identifier hs-type">F.Next</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span>                       </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe HomogeneousFormula
+forall a. Maybe a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Maybe.html#Nothing"><span class="hs-identifier hs-var">Nothing</span></a></span><span>
+</span><span id="line-120"></span><span>  </span><span class="annot"><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span id="local-6989586621679131514"><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131514"><span class="hs-identifier hs-var">bound</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#And"><span class="hs-identifier hs-type">F.And</span></a></span><span> </span><span id="local-6989586621679131515"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131515"><span class="hs-identifier hs-var">phi</span></a></span></span><span> </span><span id="local-6989586621679131516"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131516"><span class="hs-identifier hs-var">psi</span></a></span></span><span class="hs-special">)</span><span>                  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; HomogeneousFormula -&gt; HomogeneousFormula
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#And"><span class="hs-identifier hs-var">And</span></a></span><span> </span><span class="annot"><span class="annottext">(HomogeneousFormula -&gt; HomogeneousFormula -&gt; HomogeneousFormula)
+-&gt; Maybe HomogeneousFormula
+-&gt; Maybe (HomogeneousFormula -&gt; HomogeneousFormula)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Functor.html#%3C%24%3E"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+forall event ty.
+Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+</span><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131514"><span class="hs-identifier hs-var">bound</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131515"><span class="hs-identifier hs-var">phi</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe (HomogeneousFormula -&gt; HomogeneousFormula)
+-&gt; Maybe HomogeneousFormula -&gt; Maybe HomogeneousFormula
+forall a b. Maybe (a -&gt; b) -&gt; Maybe a -&gt; Maybe b
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Base.html#%3C%2A%3E"><span class="hs-operator hs-var">&lt;*&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+forall event ty.
+Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+</span><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131514"><span class="hs-identifier hs-var">bound</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131516"><span class="hs-identifier hs-var">psi</span></a></span><span>
+</span><span id="line-121"></span><span>  </span><span class="annot"><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span id="local-6989586621679131518"><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131518"><span class="hs-identifier hs-var">bound</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Or"><span class="hs-identifier hs-type">F.Or</span></a></span><span> </span><span id="local-6989586621679131519"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131519"><span class="hs-identifier hs-var">phi</span></a></span></span><span> </span><span id="local-6989586621679131520"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131520"><span class="hs-identifier hs-var">psi</span></a></span></span><span class="hs-special">)</span><span>                   </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; HomogeneousFormula -&gt; HomogeneousFormula
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#Or"><span class="hs-identifier hs-var">Or</span></a></span><span> </span><span class="annot"><span class="annottext">(HomogeneousFormula -&gt; HomogeneousFormula -&gt; HomogeneousFormula)
+-&gt; Maybe HomogeneousFormula
+-&gt; Maybe (HomogeneousFormula -&gt; HomogeneousFormula)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Functor.html#%3C%24%3E"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+forall event ty.
+Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+</span><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131518"><span class="hs-identifier hs-var">bound</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131519"><span class="hs-identifier hs-var">phi</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe (HomogeneousFormula -&gt; HomogeneousFormula)
+-&gt; Maybe HomogeneousFormula -&gt; Maybe HomogeneousFormula
+forall a b. Maybe (a -&gt; b) -&gt; Maybe a -&gt; Maybe b
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Base.html#%3C%2A%3E"><span class="hs-operator hs-var">&lt;*&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+forall event ty.
+Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+</span><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131518"><span class="hs-identifier hs-var">bound</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131520"><span class="hs-identifier hs-var">psi</span></a></span><span>
+</span><span id="line-122"></span><span>  </span><span class="annot"><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span id="local-6989586621679131521"><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131521"><span class="hs-identifier hs-var">bound</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Implies"><span class="hs-identifier hs-type">F.Implies</span></a></span><span> </span><span id="local-6989586621679131522"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131522"><span class="hs-identifier hs-var">phi</span></a></span></span><span> </span><span id="local-6989586621679131523"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131523"><span class="hs-identifier hs-var">psi</span></a></span></span><span class="hs-special">)</span><span>              </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; HomogeneousFormula -&gt; HomogeneousFormula
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#Implies"><span class="hs-identifier hs-var">Implies</span></a></span><span> </span><span class="annot"><span class="annottext">(HomogeneousFormula -&gt; HomogeneousFormula -&gt; HomogeneousFormula)
+-&gt; Maybe HomogeneousFormula
+-&gt; Maybe (HomogeneousFormula -&gt; HomogeneousFormula)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Functor.html#%3C%24%3E"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+forall event ty.
+Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+</span><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131521"><span class="hs-identifier hs-var">bound</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131522"><span class="hs-identifier hs-var">phi</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe (HomogeneousFormula -&gt; HomogeneousFormula)
+-&gt; Maybe HomogeneousFormula -&gt; Maybe HomogeneousFormula
+forall a b. Maybe (a -&gt; b) -&gt; Maybe a -&gt; Maybe b
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Base.html#%3C%2A%3E"><span class="hs-operator hs-var">&lt;*&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+forall event ty.
+Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+</span><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131521"><span class="hs-identifier hs-var">bound</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131523"><span class="hs-identifier hs-var">psi</span></a></span><span>
+</span><span id="line-123"></span><span>  </span><span class="annot"><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span id="local-6989586621679131524"><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131524"><span class="hs-identifier hs-var">bound</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Not"><span class="hs-identifier hs-type">F.Not</span></a></span><span> </span><span id="local-6989586621679131525"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131525"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span>                      </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; HomogeneousFormula
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#Not"><span class="hs-identifier hs-var">Not</span></a></span><span> </span><span class="annot"><span class="annottext">(HomogeneousFormula -&gt; HomogeneousFormula)
+-&gt; Maybe HomogeneousFormula -&gt; Maybe HomogeneousFormula
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Functor.html#%3C%24%3E"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+forall event ty.
+Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+</span><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131524"><span class="hs-identifier hs-var">bound</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131525"><span class="hs-identifier hs-var">phi</span></a></span><span>
+</span><span id="line-124"></span><span>  </span><span class="annot"><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><span class="hs-identifier">_</span></span><span>     </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">F.Bottom</span></a></span><span>                         </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; Maybe HomogeneousFormula
+forall a. a -&gt; Maybe a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Maybe.html#Just"><span class="hs-identifier hs-var">Just</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>
+</span><span id="line-125"></span><span>  </span><span class="annot"><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><span class="hs-identifier">_</span></span><span>     </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">F.Top</span></a></span><span>                            </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; Maybe HomogeneousFormula
+forall a. a -&gt; Maybe a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Maybe.html#Just"><span class="hs-identifier hs-var">Just</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>
+</span><span id="line-126"></span><span>  </span><span class="annot"><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span id="local-6989586621679131526"><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131526"><span class="hs-identifier hs-var">bound</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropIntBinRel"><span class="hs-identifier hs-type">F.PropIntBinRel</span></a></span><span> </span><span id="local-6989586621679131527"><span class="annot"><span class="annottext">BinRel
+</span><a href="#local-6989586621679131527"><span class="hs-identifier hs-var">rel</span></a></span></span><span> </span><span class="annot"><span class="annottext">Relevance event ty
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679131528"><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679131528"><span class="hs-identifier hs-var">lhs</span></a></span></span><span> </span><span id="local-6989586621679131529"><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679131529"><span class="hs-identifier hs-var">rhs</span></a></span></span><span class="hs-special">)</span><span>
+</span><span id="line-127"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier -&gt; IntTerm -&gt; Bool
+</span><a href="#local-6989586621679131530"><span class="hs-identifier hs-var">groundTerm</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131526"><span class="hs-identifier hs-var">bound</span></a></span><span> </span><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679131528"><span class="hs-identifier hs-var">lhs</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Classes.html#%26%26"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier -&gt; IntTerm -&gt; Bool
+</span><a href="#local-6989586621679131530"><span class="hs-identifier hs-var">groundTerm</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131526"><span class="hs-identifier hs-var">bound</span></a></span><span> </span><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679131529"><span class="hs-identifier hs-var">rhs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; Maybe HomogeneousFormula
+forall a. a -&gt; Maybe a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Maybe.html#Just"><span class="hs-identifier hs-var">Just</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">BinRel -&gt; IntTerm -&gt; IntTerm -&gt; HomogeneousFormula
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropIntBinRel"><span class="hs-identifier hs-var">PropIntBinRel</span></a></span><span> </span><span class="annot"><span class="annottext">BinRel
+</span><a href="#local-6989586621679131527"><span class="hs-identifier hs-var">rel</span></a></span><span> </span><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679131528"><span class="hs-identifier hs-var">lhs</span></a></span><span> </span><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679131529"><span class="hs-identifier hs-var">rhs</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-128"></span><span>  </span><span class="annot"><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><span class="hs-identifier">_</span></span><span>     </span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropIntBinRel"><span class="hs-identifier hs-type">F.PropIntBinRel</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span>               </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe HomogeneousFormula
+forall a. Maybe a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Maybe.html#Nothing"><span class="hs-identifier hs-var">Nothing</span></a></span><span>
+</span><span id="line-129"></span><span>  </span><span class="annot"><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><span class="hs-identifier">_</span></span><span>     </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropTextEq"><span class="hs-identifier hs-type">F.PropTextEq</span></a></span><span> </span><span class="annot"><span class="annottext">Relevance event ty
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#TextConst"><span class="hs-identifier hs-type">TextConst</span></a></span><span> </span><span id="local-6989586621679131533"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131533"><span class="hs-identifier hs-var">c</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679131534"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131534"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; Maybe HomogeneousFormula
+forall a. a -&gt; Maybe a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Maybe.html#Just"><span class="hs-identifier hs-var">Just</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TextTerm -&gt; VariableIdentifier -&gt; HomogeneousFormula
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropTextEq"><span class="hs-identifier hs-var">PropTextEq</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VariableIdentifier -&gt; TextTerm
+</span><a href="Hermod.ReCon.LTL.Formula.html#TextConst"><span class="hs-identifier hs-var">TextConst</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131533"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131534"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-130"></span><span>  </span><span class="annot"><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span id="local-6989586621679131535"><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131535"><span class="hs-identifier hs-var">bound</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropTextEq"><span class="hs-identifier hs-type">F.PropTextEq</span></a></span><span> </span><span class="annot"><span class="annottext">Relevance event ty
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#TextVar"><span class="hs-identifier hs-type">TextVar</span></a></span><span> </span><span id="local-6989586621679131537"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131537"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679131538"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131538"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span>
+</span><span id="line-131"></span><span>                </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier -&gt; Set VariableIdentifier -&gt; Bool
+forall a. Ord a =&gt; a -&gt; Set a -&gt; Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.Internal.html#member"><span class="hs-identifier hs-var">Set.member</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131537"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131535"><span class="hs-identifier hs-var">bound</span></a></span><span>        </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; Maybe HomogeneousFormula
+forall a. a -&gt; Maybe a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Maybe.html#Just"><span class="hs-identifier hs-var">Just</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TextTerm -&gt; VariableIdentifier -&gt; HomogeneousFormula
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropTextEq"><span class="hs-identifier hs-var">PropTextEq</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VariableIdentifier -&gt; TextTerm
+</span><a href="Hermod.ReCon.LTL.Formula.html#TextVar"><span class="hs-identifier hs-var">TextVar</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131537"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131538"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-132"></span><span>  </span><span class="annot"><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><span class="hs-identifier">_</span></span><span>     </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropTextEq"><span class="hs-identifier hs-type">F.PropTextEq</span></a></span><span> </span><span class="annot"><span class="annottext">Relevance event ty
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#TextVar"><span class="hs-identifier hs-type">TextVar</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span>   </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe HomogeneousFormula
+forall a. Maybe a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Maybe.html#Nothing"><span class="hs-identifier hs-var">Nothing</span></a></span><span>
+</span><span id="line-133"></span><span>  </span><span class="annot"><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span id="local-6989586621679131540"><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131540"><span class="hs-identifier hs-var">bound</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropIntForall"><span class="hs-identifier hs-type">F.PropIntForall</span></a></span><span> </span><span id="local-6989586621679131541"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131541"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131542"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131542"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span>           </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier -&gt; HomogeneousFormula -&gt; HomogeneousFormula
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropIntForall"><span class="hs-identifier hs-var">PropIntForall</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131541"><span class="hs-identifier hs-var">x</span></a></span><span>   </span><span class="annot"><span class="annottext">(HomogeneousFormula -&gt; HomogeneousFormula)
+-&gt; Maybe HomogeneousFormula -&gt; Maybe HomogeneousFormula
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Functor.html#%3C%24%3E"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+forall event ty.
+Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+</span><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VariableIdentifier
+-&gt; Set VariableIdentifier -&gt; Set VariableIdentifier
+forall a. Ord a =&gt; a -&gt; Set a -&gt; Set a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.Internal.html#insert"><span class="hs-identifier hs-var">Set.insert</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131541"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131540"><span class="hs-identifier hs-var">bound</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131542"><span class="hs-identifier hs-var">phi</span></a></span><span>
+</span><span id="line-134"></span><span>  </span><span class="annot"><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span id="local-6989586621679131544"><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131544"><span class="hs-identifier hs-var">bound</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropTextForall"><span class="hs-identifier hs-type">F.PropTextForall</span></a></span><span> </span><span id="local-6989586621679131545"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131545"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131546"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131546"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span>          </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier -&gt; HomogeneousFormula -&gt; HomogeneousFormula
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropTextForall"><span class="hs-identifier hs-var">PropTextForall</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131545"><span class="hs-identifier hs-var">x</span></a></span><span>  </span><span class="annot"><span class="annottext">(HomogeneousFormula -&gt; HomogeneousFormula)
+-&gt; Maybe HomogeneousFormula -&gt; Maybe HomogeneousFormula
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Functor.html#%3C%24%3E"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+forall event ty.
+Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+</span><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VariableIdentifier
+-&gt; Set VariableIdentifier -&gt; Set VariableIdentifier
+forall a. Ord a =&gt; a -&gt; Set a -&gt; Set a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.Internal.html#insert"><span class="hs-identifier hs-var">Set.insert</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131545"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131544"><span class="hs-identifier hs-var">bound</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131546"><span class="hs-identifier hs-var">phi</span></a></span><span>
+</span><span id="line-135"></span><span>  </span><span class="annot"><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span id="local-6989586621679131547"><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131547"><span class="hs-identifier hs-var">bound</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropIntForallN"><span class="hs-identifier hs-type">F.PropIntForallN</span></a></span><span> </span><span id="local-6989586621679131548"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131548"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131549"><span class="annot"><span class="annottext">Set IntValue
+</span><a href="#local-6989586621679131549"><span class="hs-identifier hs-var">dom</span></a></span></span><span> </span><span id="local-6989586621679131550"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131550"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span>      </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+-&gt; Set IntValue -&gt; HomogeneousFormula -&gt; HomogeneousFormula
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropIntForallN"><span class="hs-identifier hs-var">PropIntForallN</span></a></span><span>  </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131548"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Set IntValue
+</span><a href="#local-6989586621679131549"><span class="hs-identifier hs-var">dom</span></a></span><span> </span><span class="annot"><span class="annottext">(HomogeneousFormula -&gt; HomogeneousFormula)
+-&gt; Maybe HomogeneousFormula -&gt; Maybe HomogeneousFormula
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Functor.html#%3C%24%3E"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+forall event ty.
+Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+</span><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VariableIdentifier
+-&gt; Set VariableIdentifier -&gt; Set VariableIdentifier
+forall a. Ord a =&gt; a -&gt; Set a -&gt; Set a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.Internal.html#insert"><span class="hs-identifier hs-var">Set.insert</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131548"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131547"><span class="hs-identifier hs-var">bound</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131550"><span class="hs-identifier hs-var">phi</span></a></span><span>
+</span><span id="line-136"></span><span>  </span><span class="annot"><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span id="local-6989586621679131551"><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131551"><span class="hs-identifier hs-var">bound</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropTextForallN"><span class="hs-identifier hs-type">F.PropTextForallN</span></a></span><span> </span><span id="local-6989586621679131552"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131552"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131553"><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131553"><span class="hs-identifier hs-var">dom</span></a></span></span><span> </span><span id="local-6989586621679131554"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131554"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span>     </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+-&gt; Set VariableIdentifier
+-&gt; HomogeneousFormula
+-&gt; HomogeneousFormula
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropTextForallN"><span class="hs-identifier hs-var">PropTextForallN</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131552"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131553"><span class="hs-identifier hs-var">dom</span></a></span><span> </span><span class="annot"><span class="annottext">(HomogeneousFormula -&gt; HomogeneousFormula)
+-&gt; Maybe HomogeneousFormula -&gt; Maybe HomogeneousFormula
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Functor.html#%3C%24%3E"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+forall event ty.
+Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+</span><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VariableIdentifier
+-&gt; Set VariableIdentifier -&gt; Set VariableIdentifier
+forall a. Ord a =&gt; a -&gt; Set a -&gt; Set a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.Internal.html#insert"><span class="hs-identifier hs-var">Set.insert</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131552"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131551"><span class="hs-identifier hs-var">bound</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131554"><span class="hs-identifier hs-var">phi</span></a></span><span>
+</span><span id="line-137"></span><span>  </span><span class="annot"><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span id="local-6989586621679131555"><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131555"><span class="hs-identifier hs-var">bound</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropIntExists"><span class="hs-identifier hs-type">F.PropIntExists</span></a></span><span> </span><span id="local-6989586621679131556"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131556"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131557"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131557"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span>           </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier -&gt; HomogeneousFormula -&gt; HomogeneousFormula
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropIntExists"><span class="hs-identifier hs-var">PropIntExists</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131556"><span class="hs-identifier hs-var">x</span></a></span><span>   </span><span class="annot"><span class="annottext">(HomogeneousFormula -&gt; HomogeneousFormula)
+-&gt; Maybe HomogeneousFormula -&gt; Maybe HomogeneousFormula
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Functor.html#%3C%24%3E"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+forall event ty.
+Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+</span><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VariableIdentifier
+-&gt; Set VariableIdentifier -&gt; Set VariableIdentifier
+forall a. Ord a =&gt; a -&gt; Set a -&gt; Set a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.Internal.html#insert"><span class="hs-identifier hs-var">Set.insert</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131556"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131555"><span class="hs-identifier hs-var">bound</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131557"><span class="hs-identifier hs-var">phi</span></a></span><span>
+</span><span id="line-138"></span><span>  </span><span class="annot"><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span id="local-6989586621679131558"><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131558"><span class="hs-identifier hs-var">bound</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropTextExists"><span class="hs-identifier hs-type">F.PropTextExists</span></a></span><span> </span><span id="local-6989586621679131559"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131559"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131560"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131560"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span>          </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier -&gt; HomogeneousFormula -&gt; HomogeneousFormula
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropTextExists"><span class="hs-identifier hs-var">PropTextExists</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131559"><span class="hs-identifier hs-var">x</span></a></span><span>  </span><span class="annot"><span class="annottext">(HomogeneousFormula -&gt; HomogeneousFormula)
+-&gt; Maybe HomogeneousFormula -&gt; Maybe HomogeneousFormula
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Functor.html#%3C%24%3E"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+forall event ty.
+Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+</span><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VariableIdentifier
+-&gt; Set VariableIdentifier -&gt; Set VariableIdentifier
+forall a. Ord a =&gt; a -&gt; Set a -&gt; Set a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.Internal.html#insert"><span class="hs-identifier hs-var">Set.insert</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131559"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131558"><span class="hs-identifier hs-var">bound</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131560"><span class="hs-identifier hs-var">phi</span></a></span><span>
+</span><span id="line-139"></span><span>  </span><span class="annot"><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span id="local-6989586621679131561"><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131561"><span class="hs-identifier hs-var">bound</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropIntExistsN"><span class="hs-identifier hs-type">F.PropIntExistsN</span></a></span><span> </span><span id="local-6989586621679131562"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131562"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131563"><span class="annot"><span class="annottext">Set IntValue
+</span><a href="#local-6989586621679131563"><span class="hs-identifier hs-var">dom</span></a></span></span><span> </span><span id="local-6989586621679131564"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131564"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span>      </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+-&gt; Set IntValue -&gt; HomogeneousFormula -&gt; HomogeneousFormula
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropIntExistsN"><span class="hs-identifier hs-var">PropIntExistsN</span></a></span><span>  </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131562"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Set IntValue
+</span><a href="#local-6989586621679131563"><span class="hs-identifier hs-var">dom</span></a></span><span> </span><span class="annot"><span class="annottext">(HomogeneousFormula -&gt; HomogeneousFormula)
+-&gt; Maybe HomogeneousFormula -&gt; Maybe HomogeneousFormula
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Functor.html#%3C%24%3E"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+forall event ty.
+Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+</span><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VariableIdentifier
+-&gt; Set VariableIdentifier -&gt; Set VariableIdentifier
+forall a. Ord a =&gt; a -&gt; Set a -&gt; Set a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.Internal.html#insert"><span class="hs-identifier hs-var">Set.insert</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131562"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131561"><span class="hs-identifier hs-var">bound</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131564"><span class="hs-identifier hs-var">phi</span></a></span><span>
+</span><span id="line-140"></span><span>  </span><span class="annot"><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span id="local-6989586621679131565"><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131565"><span class="hs-identifier hs-var">bound</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropTextExistsN"><span class="hs-identifier hs-type">F.PropTextExistsN</span></a></span><span> </span><span id="local-6989586621679131566"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131566"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131567"><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131567"><span class="hs-identifier hs-var">dom</span></a></span></span><span> </span><span id="local-6989586621679131568"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131568"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span>     </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+-&gt; Set VariableIdentifier
+-&gt; HomogeneousFormula
+-&gt; HomogeneousFormula
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#PropTextExistsN"><span class="hs-identifier hs-var">PropTextExistsN</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131566"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131567"><span class="hs-identifier hs-var">dom</span></a></span><span> </span><span class="annot"><span class="annottext">(HomogeneousFormula -&gt; HomogeneousFormula)
+-&gt; Maybe HomogeneousFormula -&gt; Maybe HomogeneousFormula
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Functor.html#%3C%24%3E"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+forall event ty.
+Set VariableIdentifier
+-&gt; Formula event ty -&gt; Maybe HomogeneousFormula
+</span><a href="#local-6989586621679131480"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VariableIdentifier
+-&gt; Set VariableIdentifier -&gt; Set VariableIdentifier
+forall a. Ord a =&gt; a -&gt; Set a -&gt; Set a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.Internal.html#insert"><span class="hs-identifier hs-var">Set.insert</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131566"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131565"><span class="hs-identifier hs-var">bound</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131568"><span class="hs-identifier hs-var">phi</span></a></span><span>
+</span><span id="line-141"></span><span>  </span><span class="annot"><a href="#local-6989586621679131530"><span class="hs-identifier hs-type">groundTerm</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.Internal.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#VariableIdentifier"><span class="hs-identifier hs-type">VariableIdentifier</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Hermod.ReCon.Integer.Polynomial.Term.html#IntTerm"><span class="hs-identifier hs-type">IntTerm</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Types.html#Bool"><span class="hs-identifier hs-type">Bool</span></a></span><span>
+</span><span id="line-142"></span><span>  </span><span id="local-6989586621679131530"><span class="annot"><span class="annottext">groundTerm :: Set VariableIdentifier -&gt; IntTerm -&gt; Bool
+</span><a href="#local-6989586621679131530"><span class="hs-identifier hs-var hs-var">groundTerm</span></a></span></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><span class="hs-identifier">_</span></span><span>      </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.Integer.Polynomial.Term.html#IntConst"><span class="hs-identifier hs-type">IntConst</span></a></span><span> </span><span class="annot"><span class="annottext">IntValue
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span>   </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Types.html#True"><span class="hs-identifier hs-var">True</span></a></span><span>
+</span><span id="line-143"></span><span>  </span><span class="annot"><a href="#local-6989586621679131530"><span class="hs-identifier hs-var">groundTerm</span></a></span><span> </span><span id="local-6989586621679131570"><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131570"><span class="hs-identifier hs-var">bound'</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.Integer.Polynomial.Term.html#IntVar"><span class="hs-identifier hs-type">IntVar</span></a></span><span> </span><span class="annot"><span class="annottext">IntValue
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679131572"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131572"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span>   </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier -&gt; Set VariableIdentifier -&gt; Bool
+forall a. Ord a =&gt; a -&gt; Set a -&gt; Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.Internal.html#member"><span class="hs-identifier hs-var">Set.member</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131572"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131570"><span class="hs-identifier hs-var">bound'</span></a></span><span>
+</span><span id="line-144"></span><span>  </span><span class="annot"><a href="#local-6989586621679131530"><span class="hs-identifier hs-var">groundTerm</span></a></span><span> </span><span id="local-6989586621679131573"><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131573"><span class="hs-identifier hs-var">bound'</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.Integer.Polynomial.Term.html#IntSum"><span class="hs-identifier hs-type">IntSum</span></a></span><span> </span><span id="local-6989586621679131575"><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679131575"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679131576"><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679131576"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span>   </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier -&gt; IntTerm -&gt; Bool
+</span><a href="#local-6989586621679131530"><span class="hs-identifier hs-var">groundTerm</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131573"><span class="hs-identifier hs-var">bound'</span></a></span><span> </span><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679131575"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Classes.html#%26%26"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier -&gt; IntTerm -&gt; Bool
+</span><a href="#local-6989586621679131530"><span class="hs-identifier hs-var">groundTerm</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131573"><span class="hs-identifier hs-var">bound'</span></a></span><span> </span><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679131576"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-145"></span><span>
+</span><span id="line-146"></span><span id="local-6989586621679131166"><span id="local-6989586621679131167"><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#normaliseHomogeneous"><span class="hs-identifier hs-type">normaliseHomogeneous</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Formula"><span class="hs-identifier hs-type">Formula</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679131166"><span class="hs-identifier hs-type">event</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679131167"><span class="hs-identifier hs-type">ty</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Maybe.html#Maybe"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Formula"><span class="hs-identifier hs-type">Formula</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679131166"><span class="hs-identifier hs-type">event</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679131167"><span class="hs-identifier hs-type">ty</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-147"></span><span id="normaliseHomogeneous"><span class="annot"><span class="annottext">normaliseHomogeneous :: forall event ty. Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#normaliseHomogeneous"><span class="hs-identifier hs-var hs-var">normaliseHomogeneous</span></a></span></span><span> </span><span id="local-6989586621679131578"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131578"><span class="hs-identifier hs-var">phi</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-148"></span><span>  </span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; Formula event ty
+forall event ty. HomogeneousFormula -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#toFormula"><span class="hs-identifier hs-var">toFormula</span></a></span><span> </span><span class="annot"><span class="annottext">(HomogeneousFormula -&gt; Formula event ty)
+-&gt; (HomogeneousFormula -&gt; HomogeneousFormula)
+-&gt; HomogeneousFormula
+-&gt; Formula event ty
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Base.html#."><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; HomogeneousFormula
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#quote"><span class="hs-identifier hs-var">quote</span></a></span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; HomogeneousFormula)
+-&gt; (HomogeneousFormula -&gt; Bool)
+-&gt; HomogeneousFormula
+-&gt; HomogeneousFormula
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Base.html#."><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">HomogeneousFormula -&gt; Bool
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#eval"><span class="hs-identifier hs-var">eval</span></a></span><span> </span><span class="annot"><span class="annottext">(HomogeneousFormula -&gt; Formula event ty)
+-&gt; Maybe HomogeneousFormula -&gt; Maybe (Formula event ty)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Functor.html#%3C%24%3E"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe HomogeneousFormula
+forall event ty. Formula event ty -&gt; Maybe HomogeneousFormula
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#retract"><span class="hs-identifier hs-var">retract</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131578"><span class="hs-identifier hs-var">phi</span></a></span><span>
+</span><span id="line-149"></span></pre></body></html>

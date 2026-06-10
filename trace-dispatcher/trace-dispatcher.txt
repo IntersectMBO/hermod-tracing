@@ -31,39 +31,64 @@ class LogFormatting a
 
 -- | Machine readable representation with the possibility to represent with
 --   varying serialisations based on the detail level. This will result in
---   JSON formatted log output. A <a>forMachine</a> implementation is
+--   JSON formatted log output. A <tt>forMachine</tt> implementation is
 --   required for any instance definition.
 forMachine :: LogFormatting a => DetailLevel -> a -> Object
 
 -- | Human-readable representation. The empty text indicates there's no
 --   specific human-readable formatting for that type - this is the default
---   implementation. If however human-readble output is explicitly
---   requested, e.g. by logs, the system will fall back to a JSON object
---   conforming to the <a>forMachine</a> definition, and rendering it as a
---   value in `{"data": <a>value</a>}`. Leaving out <a>forHuman</a> in some
+--   implementation.
+--   
+--   If however human-readble output is explicitly requested, e.g. by logs,
+--   the system will fall back to a JSON object conforming to the
+--   <tt>forMachine</tt> definition, and rendering it as a value in
+--   <i>{"data": <a>value</a>}`</i> Leaving out <tt>forHuman</tt> in some
 --   instance definition will not lead to loss of log information that way.
 forHuman :: LogFormatting a => a -> Text
 
 -- | Metrics representation. The default indicates that no metric is based
 --   on trace occurrences of that type.
 asMetrics :: LogFormatting a => a -> [Metric]
+
+-- | This type defines metrics, and how to update them.
+--   
+--   The <tt>Text</tt> field always contains the metric name. Metric names
+--   are recommended to conform to the <a>Prometheus data model</a>. If you
+--   want to structure your metrics in namespaces, please use a dot
+--   separator, such as <tt>"name.space.metricName"</tt>.
+--   
+--   Example, defining three metrics based on the occurrence of a single
+--   trace event:
+--   
+--   <pre>
+--   data Trace = BatchProcessed { batchSize :: Int }
+--   
+--   instance LogFormatting Trace where
+--     asMetrics (BatchProcessed size) =
+--       [ IntM       "batch.current" (fromIntegral size)        -- element count of the most recent batch
+--       , CounterM   "batchesTotal"  Nothing                    -- total batches processed (increment by 1)
+--       , CounterM   "batch.total"   (Just $ fromIntegral size) -- total elements processed
+--       ]
+--   </pre>
 data Metric
 
--- | An integer metric. Text is used to name the metric
+-- | An integer gauge metric. Gauges are variable values.
 IntM :: Text -> Integer -> Metric
 
--- | A double metric. Text is used to name the metric
+-- | A floating-point gauge metric. Gauges are variable values.
 DoubleM :: Text -> Double -> Metric
 
--- | A counter metric. Text is used to name the metric
+-- | A counter metric. Counters are non-negative, monotonically increasing
+--   values.
 CounterM :: Text -> Maybe Int -> Metric
 
--- | A prometheus metric with key label pairs. Text is used to name the
---   metric [(Text, Text)] is used to represent the key label pairs The
---   value of the metric will always be "1" e.g. if you have a prometheus
---   metric with the name "prometheus_metric" and the key label pairs
---   [("key1", "value1"), ("key2", "value2")] the metric will be
---   represented as "prometheus_metric{key1="value1",key2="value2"} 1"
+-- | A label set containing the specified key-value pairs. The OpenMetrics
+--   standard permits empty label sets; the value of this labeled metric
+--   will always be "1".
+--   
+--   For instance, a <tt>PrometheusM "foo" [("key1", "value1"), ("key2",
+--   "value2")]</tt> will be exposed as
+--   <i>"foo{key1="value1",key2="value2"} 1"</i>
 PrometheusM :: Text -> [(Text, Text)] -> Metric
 getMetricName :: Metric -> Text
 
@@ -102,7 +127,9 @@ documentFor :: MetaTrace a => Namespace a -> Maybe Text
 metricsDocFor :: MetaTrace a => Namespace a -> [(Text, Text)]
 allNamespaces :: MetaTrace a => [Namespace a]
 
--- | Formerly known as verbosity
+-- | The detail level facilitates rendering the same trace value to
+--   messages with varying verbosities in its <tt>instance
+--   LogFormatting</tt>.
 data DetailLevel
 DMinimal :: DetailLevel
 DNormal :: DetailLevel
@@ -118,16 +145,20 @@ Confidential :: Privacy
 -- | can be public.
 Public :: Privacy
 
--- | Severity of a message
+-- | Severity of a message. These are defined alongside message namespaces
+--   in an <tt>instance MetaTrace</tt>.
+--   
+--   The severities and their semantics adhere to those defined in the
+--   <a>Syslog Protocol</a>.
 data SeverityS
 
 -- | Debug messages
 Debug :: SeverityS
 
--- | Information
+-- | Informational - confirmation the program is working as expected
 Info :: SeverityS
 
--- | Normal runtime Conditions
+-- | Normal, but significant conditions - may require special handling
 Notice :: SeverityS
 
 -- | General Warnings
@@ -145,8 +176,13 @@ Alert :: SeverityS
 -- | System is unusable
 Emergency :: SeverityS
 
--- | Severity for a filter Nothing means don't show anything (Silence) Just
---   level means show messages with severity &gt;= level
+-- | Severity for a filter. These are supplied by a concrete configuration
+--   of how to filter the entire message namespace at runtime.
+--   
+--   <tt>Nothing</tt> means: filter everything (<tt>Silence</tt>).
+--   
+--   <tt>Just severity</tt> means: render messages with <tt>SeverityS &gt;=
+--   severity</tt>.
 newtype SeverityF
 SeverityF :: Maybe SeverityS -> SeverityF
 data ConfigOption
@@ -702,7 +738,7 @@ metricsFormatter :: forall a m. (LogFormatting a, MonadIO m) => Trace m Formatte
 -- | Transform this trace to a preformatted message, so that double
 --   serialization is avoided
 preFormatted :: (LogFormatting a, MonadIO m) => Bool -> Trace m PreFormatted -> m (Trace m a)
-forwardFormatter :: forall a m. MonadIO m => LogFormatting a => Trace m FormattedMessage -> m (Trace m a)
+forwardFormatter :: forall a m. (MonadIO m, LogFormatting a) => Trace m FormattedMessage -> m (Trace m a)
 
 -- | Format this trace as TraceObject for the trace forwarder
 forwardFormatter' :: forall m. MonadIO m => Trace m FormattedMessage -> Trace m PreFormatted
@@ -715,7 +751,7 @@ cborFormatter :: forall a m. (MonadIO m, LogFormatting a) => Trace m FormattedMe
 
 -- | Format this trace in binary serialisation (CBOR)
 cborFormatter' :: forall m. MonadIO m => Trace m FormattedMessage -> Trace m PreFormatted
-humanFormatter :: forall a m. MonadIO m => LogFormatting a => Bool -> Trace m FormattedMessage -> m (Trace m a)
+humanFormatter :: forall a m. (MonadIO m, LogFormatting a) => Bool -> Trace m FormattedMessage -> m (Trace m a)
 
 -- | Format this trace in human readable text output
 humanFormatter' :: forall m. MonadIO m => Bool -> Trace m FormattedMessage -> Trace m PreFormatted
@@ -724,9 +760,10 @@ module Cardano.Logging.Utils
 threadLabelMe :: String -> IO ()
 
 -- | Run an IO action which may throw an exception in a loop. On exception,
---   the action will be re-run after a pause. That pause doubles which each
---   exception, but is reset when the action runs long enough.
-runInLoop :: IO () -> (SomeException -> IO ()) -> Word -> Word -> IO ()
+--   the action will be re-run after a pause (the delay parameters
+--   represent seconds). That pause doubles which each exception, but is
+--   reset when the action runs long enough.
+runInLoop :: IO () -> (SomeException -> IO ()) -> Word64 -> Word64 -> IO ()
 
 -- | Convenience function for a Show instance to be converted to text
 --   immediately
@@ -853,6 +890,9 @@ ConfigReflection :: IORef (Set [Text]) -> IORef (Set [Text]) -> IORef (Set [Text
 [crSilent] :: ConfigReflection -> IORef (Set [Text])
 [crNoMetrics] :: ConfigReflection -> IORef (Set [Text])
 [crAllTracers] :: ConfigReflection -> IORef (Set [Text])
+data HermodException
+HermodConfigException :: String -> HermodException
+[excMessage] :: HermodException -> String
 emptyConfigReflection :: IO ConfigReflection
 
 -- | Call this function at initialisation, and later for reconfiguration.
@@ -898,9 +938,11 @@ getDetails :: TraceConfig -> Namespace a -> DetailLevel
 -- | If no backends can be found in the config, it is set to [EKGBackend,
 --   Forwarder, Stdout HumanFormatColoured]
 getBackends :: TraceConfig -> Namespace a -> [BackendConfig]
+instance GHC.Show.Show Cardano.Logging.Configuration.HermodException
 instance GHC.Classes.Eq (Cardano.Logging.Configuration.Limiter m a)
 instance GHC.Classes.Ord (Cardano.Logging.Configuration.Limiter m a)
 instance GHC.Show.Show (Cardano.Logging.Configuration.Limiter m a)
+instance GHC.Exception.Type.Exception Cardano.Logging.Configuration.HermodException
 
 module Cardano.Logging.Tracer.Composed
 
@@ -1091,6 +1133,9 @@ ConfigReflection :: IORef (Set [Text]) -> IORef (Set [Text]) -> IORef (Set [Text
 [crSilent] :: ConfigReflection -> IORef (Set [Text])
 [crNoMetrics] :: ConfigReflection -> IORef (Set [Text])
 [crAllTracers] :: ConfigReflection -> IORef (Set [Text])
+data HermodException
+HermodConfigException :: String -> HermodException
+[excMessage] :: HermodException -> String
 
 -- | Warnings as a list of text
 type NSWarnings = [Text]
@@ -1111,39 +1156,64 @@ class LogFormatting a
 
 -- | Machine readable representation with the possibility to represent with
 --   varying serialisations based on the detail level. This will result in
---   JSON formatted log output. A <a>forMachine</a> implementation is
+--   JSON formatted log output. A <tt>forMachine</tt> implementation is
 --   required for any instance definition.
 forMachine :: LogFormatting a => DetailLevel -> a -> Object
 
 -- | Human-readable representation. The empty text indicates there's no
 --   specific human-readable formatting for that type - this is the default
---   implementation. If however human-readble output is explicitly
---   requested, e.g. by logs, the system will fall back to a JSON object
---   conforming to the <a>forMachine</a> definition, and rendering it as a
---   value in `{"data": <a>value</a>}`. Leaving out <a>forHuman</a> in some
+--   implementation.
+--   
+--   If however human-readble output is explicitly requested, e.g. by logs,
+--   the system will fall back to a JSON object conforming to the
+--   <tt>forMachine</tt> definition, and rendering it as a value in
+--   <i>{"data": <a>value</a>}`</i> Leaving out <tt>forHuman</tt> in some
 --   instance definition will not lead to loss of log information that way.
 forHuman :: LogFormatting a => a -> Text
 
 -- | Metrics representation. The default indicates that no metric is based
 --   on trace occurrences of that type.
 asMetrics :: LogFormatting a => a -> [Metric]
+
+-- | This type defines metrics, and how to update them.
+--   
+--   The <tt>Text</tt> field always contains the metric name. Metric names
+--   are recommended to conform to the <a>Prometheus data model</a>. If you
+--   want to structure your metrics in namespaces, please use a dot
+--   separator, such as <tt>"name.space.metricName"</tt>.
+--   
+--   Example, defining three metrics based on the occurrence of a single
+--   trace event:
+--   
+--   <pre>
+--   data Trace = BatchProcessed { batchSize :: Int }
+--   
+--   instance LogFormatting Trace where
+--     asMetrics (BatchProcessed size) =
+--       [ IntM       "batch.current" (fromIntegral size)        -- element count of the most recent batch
+--       , CounterM   "batchesTotal"  Nothing                    -- total batches processed (increment by 1)
+--       , CounterM   "batch.total"   (Just $ fromIntegral size) -- total elements processed
+--       ]
+--   </pre>
 data Metric
 
--- | An integer metric. Text is used to name the metric
+-- | An integer gauge metric. Gauges are variable values.
 IntM :: Text -> Integer -> Metric
 
--- | A double metric. Text is used to name the metric
+-- | A floating-point gauge metric. Gauges are variable values.
 DoubleM :: Text -> Double -> Metric
 
--- | A counter metric. Text is used to name the metric
+-- | A counter metric. Counters are non-negative, monotonically increasing
+--   values.
 CounterM :: Text -> Maybe Int -> Metric
 
--- | A prometheus metric with key label pairs. Text is used to name the
---   metric [(Text, Text)] is used to represent the key label pairs The
---   value of the metric will always be "1" e.g. if you have a prometheus
---   metric with the name "prometheus_metric" and the key label pairs
---   [("key1", "value1"), ("key2", "value2")] the metric will be
---   represented as "prometheus_metric{key1="value1",key2="value2"} 1"
+-- | A label set containing the specified key-value pairs. The OpenMetrics
+--   standard permits empty label sets; the value of this labeled metric
+--   will always be "1".
+--   
+--   For instance, a <tt>PrometheusM "foo" [("key1", "value1"), ("key2",
+--   "value2")]</tt> will be exposed as
+--   <i>"foo{key1="value1",key2="value2"} 1"</i>
 PrometheusM :: Text -> [(Text, Text)] -> Metric
 
 -- | Context any log message carries
@@ -1172,7 +1242,9 @@ documentFor :: MetaTrace a => Namespace a -> Maybe Text
 metricsDocFor :: MetaTrace a => Namespace a -> [(Text, Text)]
 allNamespaces :: MetaTrace a => [Namespace a]
 
--- | Formerly known as verbosity
+-- | The detail level facilitates rendering the same trace value to
+--   messages with varying verbosities in its <tt>instance
+--   LogFormatting</tt>.
 data DetailLevel
 DMinimal :: DetailLevel
 DNormal :: DetailLevel
@@ -1188,16 +1260,20 @@ Confidential :: Privacy
 -- | can be public.
 Public :: Privacy
 
--- | Severity of a message
+-- | Severity of a message. These are defined alongside message namespaces
+--   in an <tt>instance MetaTrace</tt>.
+--   
+--   The severities and their semantics adhere to those defined in the
+--   <a>Syslog Protocol</a>.
 data SeverityS
 
 -- | Debug messages
 Debug :: SeverityS
 
--- | Information
+-- | Informational - confirmation the program is working as expected
 Info :: SeverityS
 
--- | Normal runtime Conditions
+-- | Normal, but significant conditions - may require special handling
 Notice :: SeverityS
 
 -- | General Warnings
@@ -1215,8 +1291,13 @@ Alert :: SeverityS
 -- | System is unusable
 Emergency :: SeverityS
 
--- | Severity for a filter Nothing means don't show anything (Silence) Just
---   level means show messages with severity &gt;= level
+-- | Severity for a filter. These are supplied by a concrete configuration
+--   of how to filter the entire message namespace at runtime.
+--   
+--   <tt>Nothing</tt> means: filter everything (<tt>Silence</tt>).
+--   
+--   <tt>Just severity</tt> means: render messages with <tt>SeverityS &gt;=
+--   severity</tt>.
 newtype SeverityF
 SeverityF :: Maybe SeverityS -> SeverityF
 data ConfigOption
@@ -1530,7 +1611,7 @@ metricsFormatter :: forall a m. (LogFormatting a, MonadIO m) => Trace m Formatte
 -- | Transform this trace to a preformatted message, so that double
 --   serialization is avoided
 preFormatted :: (LogFormatting a, MonadIO m) => Bool -> Trace m PreFormatted -> m (Trace m a)
-forwardFormatter :: forall a m. MonadIO m => LogFormatting a => Trace m FormattedMessage -> m (Trace m a)
+forwardFormatter :: forall a m. (MonadIO m, LogFormatting a) => Trace m FormattedMessage -> m (Trace m a)
 
 -- | Format this trace as TraceObject for the trace forwarder
 forwardFormatter' :: forall m. MonadIO m => Trace m FormattedMessage -> Trace m PreFormatted
@@ -1543,16 +1624,17 @@ cborFormatter :: forall a m. (MonadIO m, LogFormatting a) => Trace m FormattedMe
 
 -- | Format this trace in binary serialisation (CBOR)
 cborFormatter' :: forall m. MonadIO m => Trace m FormattedMessage -> Trace m PreFormatted
-humanFormatter :: forall a m. MonadIO m => LogFormatting a => Bool -> Trace m FormattedMessage -> m (Trace m a)
+humanFormatter :: forall a m. (MonadIO m, LogFormatting a) => Bool -> Trace m FormattedMessage -> m (Trace m a)
 
 -- | Format this trace in human readable text output
 humanFormatter' :: forall m. MonadIO m => Bool -> Trace m FormattedMessage -> Trace m PreFormatted
 threadLabelMe :: String -> IO ()
 
 -- | Run an IO action which may throw an exception in a loop. On exception,
---   the action will be re-run after a pause. That pause doubles which each
---   exception, but is reset when the action runs long enough.
-runInLoop :: IO () -> (SomeException -> IO ()) -> Word -> Word -> IO ()
+--   the action will be re-run after a pause (the delay parameters
+--   represent seconds). That pause doubles which each exception, but is
+--   reset when the action runs long enough.
+runInLoop :: IO () -> (SomeException -> IO ()) -> Word64 -> Word64 -> IO ()
 
 -- | Convenience function for a Show instance to be converted to text
 --   immediately

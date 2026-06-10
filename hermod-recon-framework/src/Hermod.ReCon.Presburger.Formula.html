@@ -1,0 +1,106 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# HLINT ignore &quot;Eta reduce&quot; #-}</span><span>
+</span><span id="line-3"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Hermod.ReCon.Presburger.Formula</span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#BinRel"><span class="hs-identifier">BinRel</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Hermod.ReCon.Presburger.Formula.html#Formula"><span class="hs-identifier">Formula</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Hermod.ReCon.Presburger.Formula.html#unfoldImplies"><span class="hs-identifier">unfoldImplies</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-4"></span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html"><span class="hs-identifier">Hermod.ReCon.Common.Types</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#BinRel"><span class="hs-identifier">BinRel</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#NatValue"><span class="hs-identifier">NatValue</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="Hermod.ReCon.Integer.Polynomial.Term.html"><span class="hs-identifier">Hermod.ReCon.Integer.Polynomial.Term</span></a></span><span>
+</span><span id="line-7"></span><span>
+</span><span id="line-8"></span><span class="hs-comment">-- | Formulae of Presburger arithmetic &#8212; the first-order theory of the integers</span><span>
+</span><span id="line-9"></span><span class="hs-comment">--   under addition (@+@), integer constants, and the standard comparison</span><span>
+</span><span id="line-10"></span><span class="hs-comment">--   relations (@=@, @&lt;@, @&#8804;@, @&gt;@, @&#8805;@), extended with the divisibility</span><span>
+</span><span id="line-11"></span><span class="hs-comment">--   predicate @d | t@ (&quot;@d@ divides @t@&quot;).</span><span>
+</span><span id="line-12"></span><span class="hs-comment">--</span><span>
+</span><span id="line-13"></span><span class="hs-comment">--   Quantifiers range over &#8484; only.  There are no free variables: every</span><span>
+</span><span id="line-14"></span><span class="hs-comment">--   well-formed formula is a closed sentence whose truth value is decidable</span><span>
+</span><span id="line-15"></span><span class="hs-comment">--   via Cooper's quantifier-elimination procedure</span><span>
+</span><span id="line-16"></span><span class="hs-comment">--   ('Hermod.ReCon.Presburger.Decide.decide').</span><span>
+</span><span id="line-17"></span><span class="hs-keyword">data</span><span> </span><span id="Formula"><span class="annot"><a href="Hermod.ReCon.Presburger.Formula.html#Formula"><span class="hs-identifier hs-var">Formula</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-18"></span><span>     </span><span class="annot"><span class="hs-comment">-- | &#966; &#8744; &#968;</span></span><span>
+</span><span id="line-19"></span><span>     </span><span id="Or"><span class="annot"><a href="Hermod.ReCon.Presburger.Formula.html#Or"><span class="hs-identifier hs-var">Or</span></a></span></span><span> </span><span class="annot"><a href="Hermod.ReCon.Presburger.Formula.html#Formula"><span class="hs-identifier hs-type">Formula</span></a></span><span> </span><span class="annot"><a href="Hermod.ReCon.Presburger.Formula.html#Formula"><span class="hs-identifier hs-type">Formula</span></a></span><span>
+</span><span id="line-20"></span><span>     </span><span class="annot"><span class="hs-comment">-- | &#966; &#8743; &#968;</span></span><span>
+</span><span id="line-21"></span><span>   </span><span class="hs-glyph">|</span><span> </span><span id="And"><span class="annot"><a href="Hermod.ReCon.Presburger.Formula.html#And"><span class="hs-identifier hs-var">And</span></a></span></span><span> </span><span class="annot"><a href="Hermod.ReCon.Presburger.Formula.html#Formula"><span class="hs-identifier hs-type">Formula</span></a></span><span> </span><span class="annot"><a href="Hermod.ReCon.Presburger.Formula.html#Formula"><span class="hs-identifier hs-type">Formula</span></a></span><span>
+</span><span id="line-22"></span><span>     </span><span class="annot"><span class="hs-comment">-- | &#172; &#966;</span></span><span>
+</span><span id="line-23"></span><span>   </span><span class="hs-glyph">|</span><span> </span><span id="Not"><span class="annot"><a href="Hermod.ReCon.Presburger.Formula.html#Not"><span class="hs-identifier hs-var">Not</span></a></span></span><span> </span><span class="annot"><a href="Hermod.ReCon.Presburger.Formula.html#Formula"><span class="hs-identifier hs-type">Formula</span></a></span><span>
+</span><span id="line-24"></span><span>     </span><span class="annot"><span class="hs-comment">-- | &#966; &#8658; &#968;</span></span><span>
+</span><span id="line-25"></span><span>   </span><span class="hs-glyph">|</span><span> </span><span id="Implies"><span class="annot"><a href="Hermod.ReCon.Presburger.Formula.html#Implies"><span class="hs-identifier hs-var">Implies</span></a></span></span><span> </span><span class="annot"><a href="Hermod.ReCon.Presburger.Formula.html#Formula"><span class="hs-identifier hs-type">Formula</span></a></span><span> </span><span class="annot"><a href="Hermod.ReCon.Presburger.Formula.html#Formula"><span class="hs-identifier hs-type">Formula</span></a></span><span>
+</span><span id="line-26"></span><span>     </span><span class="annot"><span class="hs-comment">-- | T</span></span><span>
+</span><span id="line-27"></span><span>   </span><span class="hs-glyph">|</span><span> </span><span id="Top"><span class="annot"><a href="Hermod.ReCon.Presburger.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span></span><span>
+</span><span id="line-28"></span><span>     </span><span class="annot"><span class="hs-comment">-- | &#8869;</span></span><span>
+</span><span id="line-29"></span><span>   </span><span class="hs-glyph">|</span><span> </span><span id="Bottom"><span class="annot"><a href="Hermod.ReCon.Presburger.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span></span><span>
+</span><span id="line-30"></span><span>     </span><span class="annot"><span class="hs-comment">-- | &#8704;x : &#8484;. &#966;</span></span><span>
+</span><span id="line-31"></span><span>   </span><span class="hs-glyph">|</span><span> </span><span id="IntForall"><span class="annot"><a href="Hermod.ReCon.Presburger.Formula.html#IntForall"><span class="hs-identifier hs-var">IntForall</span></a></span></span><span> </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#VariableIdentifier"><span class="hs-identifier hs-type">VariableIdentifier</span></a></span><span> </span><span class="annot"><a href="Hermod.ReCon.Presburger.Formula.html#Formula"><span class="hs-identifier hs-type">Formula</span></a></span><span>
+</span><span id="line-32"></span><span>     </span><span class="annot"><span class="hs-comment">-- | &#8707;x : &#8484;. &#966;</span></span><span>
+</span><span id="line-33"></span><span>   </span><span class="hs-glyph">|</span><span> </span><span id="IntExists"><span class="annot"><a href="Hermod.ReCon.Presburger.Formula.html#IntExists"><span class="hs-identifier hs-var">IntExists</span></a></span></span><span> </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#VariableIdentifier"><span class="hs-identifier hs-type">VariableIdentifier</span></a></span><span> </span><span class="annot"><a href="Hermod.ReCon.Presburger.Formula.html#Formula"><span class="hs-identifier hs-type">Formula</span></a></span><span>
+</span><span id="line-34"></span><span>     </span><span class="annot"><span class="hs-comment">-- | i = i | i &lt; i | i &#8804; i | i &gt; i | i &#8805; i</span></span><span>
+</span><span id="line-35"></span><span>   </span><span class="hs-glyph">|</span><span> </span><span id="IntBinRel"><span class="annot"><a href="Hermod.ReCon.Presburger.Formula.html#IntBinRel"><span class="hs-identifier hs-var">IntBinRel</span></a></span></span><span> </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#BinRel"><span class="hs-identifier hs-type">BinRel</span></a></span><span> </span><span class="annot"><a href="Hermod.ReCon.Integer.Polynomial.Term.html#IntTerm"><span class="hs-identifier hs-type">IntTerm</span></a></span><span> </span><span class="annot"><a href="Hermod.ReCon.Integer.Polynomial.Term.html#IntTerm"><span class="hs-identifier hs-type">IntTerm</span></a></span><span>
+</span><span id="line-36"></span><span>     </span><span class="annot"><span class="hs-comment">-- | &#8469;&#8314; \| i  (divisibility relation, first argument is a non-zero &#8469;)</span></span><span>
+</span><span id="line-37"></span><span>   </span><span class="hs-glyph">|</span><span> </span><span id="IntDiv"><span class="annot"><a href="Hermod.ReCon.Presburger.Formula.html#IntDiv"><span class="hs-identifier hs-var">IntDiv</span></a></span></span><span> </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#NatValue"><span class="hs-identifier hs-type">NatValue</span></a></span><span> </span><span class="annot"><a href="Hermod.ReCon.Integer.Polynomial.Term.html#IntTerm"><span class="hs-identifier hs-type">IntTerm</span></a></span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679128994"><span id="local-6989586621679129026"><span id="local-6989586621679129029"><span class="annot"><span class="annottext">Int -&gt; Formula -&gt; ShowS
+[Formula] -&gt; ShowS
+Formula -&gt; String
+(Int -&gt; Formula -&gt; ShowS)
+-&gt; (Formula -&gt; String) -&gt; ([Formula] -&gt; ShowS) -&gt; Show Formula
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; Formula -&gt; ShowS
+showsPrec :: Int -&gt; Formula -&gt; ShowS
+$cshow :: Formula -&gt; String
+show :: Formula -&gt; String
+$cshowList :: [Formula] -&gt; ShowS
+showList :: [Formula] -&gt; ShowS
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Show.html#Show"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679129033"><span id="local-6989586621679129056"><span class="annot"><span class="annottext">Formula -&gt; Formula -&gt; Bool
+(Formula -&gt; Formula -&gt; Bool)
+-&gt; (Formula -&gt; Formula -&gt; Bool) -&gt; Eq Formula
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: Formula -&gt; Formula -&gt; Bool
+== :: Formula -&gt; Formula -&gt; Bool
+$c/= :: Formula -&gt; Formula -&gt; Bool
+/= :: Formula -&gt; Formula -&gt; Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Classes.html#Eq"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679129062"><span id="local-6989586621679129085"><span id="local-6989586621679129088"><span id="local-6989586621679129091"><span id="local-6989586621679129094"><span id="local-6989586621679129097"><span id="local-6989586621679129100"><span class="annot"><span class="annottext">Eq Formula
+Eq Formula =&gt;
+(Formula -&gt; Formula -&gt; Ordering)
+-&gt; (Formula -&gt; Formula -&gt; Bool)
+-&gt; (Formula -&gt; Formula -&gt; Bool)
+-&gt; (Formula -&gt; Formula -&gt; Bool)
+-&gt; (Formula -&gt; Formula -&gt; Bool)
+-&gt; (Formula -&gt; Formula -&gt; Formula)
+-&gt; (Formula -&gt; Formula -&gt; Formula)
+-&gt; Ord Formula
+Formula -&gt; Formula -&gt; Bool
+Formula -&gt; Formula -&gt; Ordering
+Formula -&gt; Formula -&gt; Formula
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+$ccompare :: Formula -&gt; Formula -&gt; Ordering
+compare :: Formula -&gt; Formula -&gt; Ordering
+$c&lt; :: Formula -&gt; Formula -&gt; Bool
+&lt; :: Formula -&gt; Formula -&gt; Bool
+$c&lt;= :: Formula -&gt; Formula -&gt; Bool
+&lt;= :: Formula -&gt; Formula -&gt; Bool
+$c&gt; :: Formula -&gt; Formula -&gt; Bool
+&gt; :: Formula -&gt; Formula -&gt; Bool
+$c&gt;= :: Formula -&gt; Formula -&gt; Bool
+&gt;= :: Formula -&gt; Formula -&gt; Bool
+$cmax :: Formula -&gt; Formula -&gt; Formula
+max :: Formula -&gt; Formula -&gt; Formula
+$cmin :: Formula -&gt; Formula -&gt; Formula
+min :: Formula -&gt; Formula -&gt; Formula
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Classes.html#Ord"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-38"></span><span>
+</span><span id="line-39"></span><span class="annot"><a href="Hermod.ReCon.Presburger.Formula.html#unfoldImplies"><span class="hs-identifier hs-type">unfoldImplies</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Hermod.ReCon.Presburger.Formula.html#Formula"><span class="hs-identifier hs-type">Formula</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Hermod.ReCon.Presburger.Formula.html#Formula"><span class="hs-identifier hs-type">Formula</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Hermod.ReCon.Presburger.Formula.html#Formula"><span class="hs-identifier hs-type">Formula</span></a></span><span>
+</span><span id="line-40"></span><span id="unfoldImplies"><span class="annot"><span class="annottext">unfoldImplies :: Formula -&gt; Formula -&gt; Formula
+</span><a href="Hermod.ReCon.Presburger.Formula.html#unfoldImplies"><span class="hs-identifier hs-var hs-var">unfoldImplies</span></a></span></span><span> </span><span id="local-6989586621679129103"><span class="annot"><span class="annottext">Formula
+</span><a href="#local-6989586621679129103"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679129104"><span class="annot"><span class="annottext">Formula
+</span><a href="#local-6989586621679129104"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula -&gt; Formula -&gt; Formula
+</span><a href="Hermod.ReCon.Presburger.Formula.html#Or"><span class="hs-identifier hs-var">Or</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula -&gt; Formula
+</span><a href="Hermod.ReCon.Presburger.Formula.html#Not"><span class="hs-identifier hs-var">Not</span></a></span><span> </span><span class="annot"><span class="annottext">Formula
+</span><a href="#local-6989586621679129103"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Formula
+</span><a href="#local-6989586621679129104"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-41"></span></pre></body></html>

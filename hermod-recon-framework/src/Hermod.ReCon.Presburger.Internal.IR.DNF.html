@@ -1,0 +1,193 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Hermod.ReCon.Presburger.Internal.IR.DNF</span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#DNFConjunct"><span class="hs-identifier">DNFConjunct</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#DNFDisjunct"><span class="hs-identifier">DNFDisjunct</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#DNF"><span class="hs-identifier">DNF</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#fromCompNF"><span class="hs-identifier">fromCompNF</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#quoteDNF"><span class="hs-identifier">quoteDNF</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html"><span class="hs-identifier">Hermod.ReCon.Common.Types</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#NatValue"><span class="hs-identifier">NatValue</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="Hermod.ReCon.Integer.Polynomial.Term.html"><span class="hs-identifier">Hermod.ReCon.Integer.Polynomial.Term</span></a></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Hermod.ReCon.Presburger.Formula.html"><span class="hs-identifier">Hermod.ReCon.Presburger.Formula</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Rel</span></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.CompNF.html"><span class="hs-identifier">Hermod.ReCon.Presburger.Internal.IR.CompNF</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.CompNF.html#CompNF"><span class="hs-identifier">CompNF</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.CompNF.html"><span class="hs-identifier">Hermod.ReCon.Presburger.Internal.IR.CompNF</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">C</span></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.QuantifierFree.html"><span class="hs-identifier">Hermod.ReCon.Presburger.Internal.IR.QuantifierFree</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.QuantifierFree.html#QuantifierFree"><span class="hs-identifier">QuantifierFree</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.QuantifierFree.html"><span class="hs-identifier">Hermod.ReCon.Presburger.Internal.IR.QuantifierFree</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Q</span></span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- | A single conjunct in a DNF clause: either a strict less-than inequality</span><span>
+</span><span id="line-13"></span><span class="hs-comment">--   or a (possibly negated) divisibility atom.  All comparison relations have</span><span>
+</span><span id="line-14"></span><span class="hs-comment">--   already been reduced to @&lt;@ (see</span><span>
+</span><span id="line-15"></span><span class="hs-comment">--   'Hermod.ReCon.Presburger.Internal.IR.CompNF.CompNF').</span><span>
+</span><span id="line-16"></span><span class="hs-comment">--</span><span>
+</span><span id="line-17"></span><span class="hs-comment">--   A 'DNF' is a disjunction (@[DNFDisjunct]@) of conjunctions</span><span>
+</span><span id="line-18"></span><span class="hs-comment">--   (@[DNFConjunct]@).  The empty disjunct list represents &#8869;; a list</span><span>
+</span><span id="line-19"></span><span class="hs-comment">--   containing one empty conjunct represents &#8868;.</span><span>
+</span><span id="line-20"></span><span class="hs-keyword">data</span><span> </span><span id="DNFConjunct"><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#DNFConjunct"><span class="hs-identifier hs-var">DNFConjunct</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-21"></span><span>     </span><span class="annot"><span class="hs-comment">-- | i &lt; i</span></span><span>
+</span><span id="line-22"></span><span>     </span><span id="IntLt"><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#IntLt"><span class="hs-identifier hs-var">IntLt</span></a></span></span><span> </span><span class="annot"><a href="Hermod.ReCon.Integer.Polynomial.Term.html#IntTerm"><span class="hs-identifier hs-type">IntTerm</span></a></span><span> </span><span class="annot"><a href="Hermod.ReCon.Integer.Polynomial.Term.html#IntTerm"><span class="hs-identifier hs-type">IntTerm</span></a></span><span>
+</span><span id="line-23"></span><span>     </span><span class="annot"><span class="hs-comment">-- | &#8469;&#8314; \| i  (divisibility relation, first argument is a non-zero &#8469;)</span></span><span>
+</span><span id="line-24"></span><span>   </span><span class="hs-glyph">|</span><span> </span><span id="IntDiv"><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#IntDiv"><span class="hs-identifier hs-var">IntDiv</span></a></span></span><span> </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#NatValue"><span class="hs-identifier hs-type">NatValue</span></a></span><span> </span><span class="annot"><a href="Hermod.ReCon.Integer.Polynomial.Term.html#IntTerm"><span class="hs-identifier hs-type">IntTerm</span></a></span><span>
+</span><span id="line-25"></span><span>     </span><span class="annot"><span class="hs-comment">-- | &#172; (&#8469;&#8314; \| i)</span></span><span>
+</span><span id="line-26"></span><span>   </span><span class="hs-glyph">|</span><span> </span><span id="IntNegDiv"><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#IntNegDiv"><span class="hs-identifier hs-var">IntNegDiv</span></a></span></span><span> </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#NatValue"><span class="hs-identifier hs-type">NatValue</span></a></span><span> </span><span class="annot"><a href="Hermod.ReCon.Integer.Polynomial.Term.html#IntTerm"><span class="hs-identifier hs-type">IntTerm</span></a></span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679129790"><span id="local-6989586621679129804"><span id="local-6989586621679129808"><span class="annot"><span class="annottext">Int -&gt; DNFConjunct -&gt; ShowS
+[DNFConjunct] -&gt; ShowS
+DNFConjunct -&gt; String
+(Int -&gt; DNFConjunct -&gt; ShowS)
+-&gt; (DNFConjunct -&gt; String)
+-&gt; ([DNFConjunct] -&gt; ShowS)
+-&gt; Show DNFConjunct
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; DNFConjunct -&gt; ShowS
+showsPrec :: Int -&gt; DNFConjunct -&gt; ShowS
+$cshow :: DNFConjunct -&gt; String
+show :: DNFConjunct -&gt; String
+$cshowList :: [DNFConjunct] -&gt; ShowS
+showList :: [DNFConjunct] -&gt; ShowS
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Show.html#Show"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679129812"><span id="local-6989586621679129822"><span class="annot"><span class="annottext">DNFConjunct -&gt; DNFConjunct -&gt; Bool
+(DNFConjunct -&gt; DNFConjunct -&gt; Bool)
+-&gt; (DNFConjunct -&gt; DNFConjunct -&gt; Bool) -&gt; Eq DNFConjunct
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: DNFConjunct -&gt; DNFConjunct -&gt; Bool
+== :: DNFConjunct -&gt; DNFConjunct -&gt; Bool
+$c/= :: DNFConjunct -&gt; DNFConjunct -&gt; Bool
+/= :: DNFConjunct -&gt; DNFConjunct -&gt; Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Classes.html#Eq"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679129829"><span id="local-6989586621679129839"><span id="local-6989586621679129847"><span id="local-6989586621679129851"><span id="local-6989586621679129854"><span id="local-6989586621679129857"><span id="local-6989586621679129860"><span class="annot"><span class="annottext">Eq DNFConjunct
+Eq DNFConjunct =&gt;
+(DNFConjunct -&gt; DNFConjunct -&gt; Ordering)
+-&gt; (DNFConjunct -&gt; DNFConjunct -&gt; Bool)
+-&gt; (DNFConjunct -&gt; DNFConjunct -&gt; Bool)
+-&gt; (DNFConjunct -&gt; DNFConjunct -&gt; Bool)
+-&gt; (DNFConjunct -&gt; DNFConjunct -&gt; Bool)
+-&gt; (DNFConjunct -&gt; DNFConjunct -&gt; DNFConjunct)
+-&gt; (DNFConjunct -&gt; DNFConjunct -&gt; DNFConjunct)
+-&gt; Ord DNFConjunct
+DNFConjunct -&gt; DNFConjunct -&gt; Bool
+DNFConjunct -&gt; DNFConjunct -&gt; Ordering
+DNFConjunct -&gt; DNFConjunct -&gt; DNFConjunct
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+$ccompare :: DNFConjunct -&gt; DNFConjunct -&gt; Ordering
+compare :: DNFConjunct -&gt; DNFConjunct -&gt; Ordering
+$c&lt; :: DNFConjunct -&gt; DNFConjunct -&gt; Bool
+&lt; :: DNFConjunct -&gt; DNFConjunct -&gt; Bool
+$c&lt;= :: DNFConjunct -&gt; DNFConjunct -&gt; Bool
+&lt;= :: DNFConjunct -&gt; DNFConjunct -&gt; Bool
+$c&gt; :: DNFConjunct -&gt; DNFConjunct -&gt; Bool
+&gt; :: DNFConjunct -&gt; DNFConjunct -&gt; Bool
+$c&gt;= :: DNFConjunct -&gt; DNFConjunct -&gt; Bool
+&gt;= :: DNFConjunct -&gt; DNFConjunct -&gt; Bool
+$cmax :: DNFConjunct -&gt; DNFConjunct -&gt; DNFConjunct
+max :: DNFConjunct -&gt; DNFConjunct -&gt; DNFConjunct
+$cmin :: DNFConjunct -&gt; DNFConjunct -&gt; DNFConjunct
+min :: DNFConjunct -&gt; DNFConjunct -&gt; DNFConjunct
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Classes.html#Ord"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">type</span><span> </span><span id="DNFDisjunct"><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#DNFDisjunct"><span class="hs-identifier hs-var">DNFDisjunct</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#DNFConjunct"><span class="hs-identifier hs-type">DNFConjunct</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-29"></span><span class="hs-keyword">type</span><span> </span><span id="DNF"><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#DNF"><span class="hs-identifier hs-var">DNF</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#DNFDisjunct"><span class="hs-identifier hs-type">DNFDisjunct</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-30"></span><span>
+</span><span id="line-31"></span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#fromCompNF"><span class="hs-identifier hs-type">fromCompNF</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.CompNF.html#CompNF"><span class="hs-identifier hs-type">CompNF</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#DNF"><span class="hs-identifier hs-type">DNF</span></a></span><span>
+</span><span id="line-32"></span><span id="fromCompNF"><span class="annot"><span class="annottext">fromCompNF :: CompNF -&gt; DNF
+</span><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#fromCompNF"><span class="hs-identifier hs-var hs-var">fromCompNF</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.CompNF.html#Or"><span class="hs-identifier hs-type">C.Or</span></a></span><span> </span><span id="local-6989586621679129864"><span class="annot"><span class="annottext">CompNF
+</span><a href="#local-6989586621679129864"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679129865"><span class="annot"><span class="annottext">CompNF
+</span><a href="#local-6989586621679129865"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">CompNF -&gt; DNF
+</span><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#fromCompNF"><span class="hs-identifier hs-var">fromCompNF</span></a></span><span> </span><span class="annot"><span class="annottext">CompNF
+</span><a href="#local-6989586621679129864"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">DNF -&gt; DNF -&gt; DNF
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Base.html#%2B%2B"><span class="hs-operator hs-var">++</span></a></span><span> </span><span class="annot"><span class="annottext">CompNF -&gt; DNF
+</span><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#fromCompNF"><span class="hs-identifier hs-var">fromCompNF</span></a></span><span> </span><span class="annot"><span class="annottext">CompNF
+</span><a href="#local-6989586621679129865"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-33"></span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#fromCompNF"><span class="hs-identifier hs-var">fromCompNF</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.CompNF.html#And"><span class="hs-identifier hs-type">C.And</span></a></span><span> </span><span id="local-6989586621679129867"><span class="annot"><span class="annottext">CompNF
+</span><a href="#local-6989586621679129867"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679129868"><span class="annot"><span class="annottext">CompNF
+</span><a href="#local-6989586621679129868"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">[DNFConjunct]
+</span><a href="#local-6989586621679129869"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">[DNFConjunct] -&gt; [DNFConjunct] -&gt; [DNFConjunct]
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Base.html#%2B%2B"><span class="hs-operator hs-var">++</span></a></span><span> </span><span class="annot"><span class="annottext">[DNFConjunct]
+</span><a href="#local-6989586621679129870"><span class="hs-identifier hs-var">q</span></a></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679129869"><span class="annot"><span class="annottext">[DNFConjunct]
+</span><a href="#local-6989586621679129869"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">CompNF -&gt; DNF
+</span><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#fromCompNF"><span class="hs-identifier hs-var">fromCompNF</span></a></span><span> </span><span class="annot"><span class="annottext">CompNF
+</span><a href="#local-6989586621679129867"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679129870"><span class="annot"><span class="annottext">[DNFConjunct]
+</span><a href="#local-6989586621679129870"><span class="hs-identifier hs-var">q</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">CompNF -&gt; DNF
+</span><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#fromCompNF"><span class="hs-identifier hs-var">fromCompNF</span></a></span><span> </span><span class="annot"><span class="annottext">CompNF
+</span><a href="#local-6989586621679129868"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-34"></span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#fromCompNF"><span class="hs-identifier hs-var">fromCompNF</span></a></span><span> </span><span class="annot"><span class="annottext">CompNF
+</span><a href="Hermod.ReCon.Presburger.Internal.IR.CompNF.html#Top"><span class="hs-identifier hs-var">C.Top</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">]</span><span>
+</span><span id="line-35"></span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#fromCompNF"><span class="hs-identifier hs-var">fromCompNF</span></a></span><span> </span><span class="annot"><span class="annottext">CompNF
+</span><a href="Hermod.ReCon.Presburger.Internal.IR.CompNF.html#Bottom"><span class="hs-identifier hs-var">C.Bottom</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-36"></span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#fromCompNF"><span class="hs-identifier hs-var">fromCompNF</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.CompNF.html#IntLt"><span class="hs-identifier hs-type">C.IntLt</span></a></span><span> </span><span id="local-6989586621679129874"><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679129874"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span id="local-6989586621679129875"><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679129875"><span class="hs-identifier hs-var">j</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">[</span><span class="annot"><span class="annottext">IntTerm -&gt; IntTerm -&gt; DNFConjunct
+</span><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#IntLt"><span class="hs-identifier hs-var">IntLt</span></a></span><span> </span><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679129874"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679129875"><span class="hs-identifier hs-var">j</span></a></span><span class="hs-special">]</span><span class="hs-special">]</span><span>
+</span><span id="line-37"></span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#fromCompNF"><span class="hs-identifier hs-var">fromCompNF</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.CompNF.html#IntDiv"><span class="hs-identifier hs-type">C.IntDiv</span></a></span><span> </span><span id="local-6989586621679129877"><span class="annot"><span class="annottext">NatValue
+</span><a href="#local-6989586621679129877"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621679129878"><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679129878"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">[</span><span class="annot"><span class="annottext">NatValue -&gt; IntTerm -&gt; DNFConjunct
+</span><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#IntDiv"><span class="hs-identifier hs-var">IntDiv</span></a></span><span> </span><span class="annot"><span class="annottext">NatValue
+</span><a href="#local-6989586621679129877"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679129878"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">]</span><span class="hs-special">]</span><span>
+</span><span id="line-38"></span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#fromCompNF"><span class="hs-identifier hs-var">fromCompNF</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.CompNF.html#IntNegDiv"><span class="hs-identifier hs-type">C.IntNegDiv</span></a></span><span> </span><span id="local-6989586621679129880"><span class="annot"><span class="annottext">NatValue
+</span><a href="#local-6989586621679129880"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621679129881"><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679129881"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">[</span><span class="annot"><span class="annottext">NatValue -&gt; IntTerm -&gt; DNFConjunct
+</span><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#IntNegDiv"><span class="hs-identifier hs-var">IntNegDiv</span></a></span><span> </span><span class="annot"><span class="annottext">NatValue
+</span><a href="#local-6989586621679129880"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679129881"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">]</span><span class="hs-special">]</span><span>
+</span><span id="line-39"></span><span>
+</span><span id="line-40"></span><span class="hs-comment">-- | Embed a DNF back into QuantifierFree.</span><span>
+</span><span id="line-41"></span><span class="hs-comment">-- [] (empty disjunct list) = &#8869;</span><span>
+</span><span id="line-42"></span><span class="hs-comment">-- [[]] (one empty conjunct) = &#8868;</span><span>
+</span><span id="line-43"></span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#quoteDNF"><span class="hs-identifier hs-type">quoteDNF</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#DNF"><span class="hs-identifier hs-type">DNF</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.QuantifierFree.html#QuantifierFree"><span class="hs-identifier hs-type">QuantifierFree</span></a></span><span>
+</span><span id="line-44"></span><span id="quoteDNF"><span class="annot"><span class="annottext">quoteDNF :: DNF -&gt; QuantifierFree
+</span><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#quoteDNF"><span class="hs-identifier hs-var hs-var">quoteDNF</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">QuantifierFree
+</span><a href="Hermod.ReCon.Presburger.Internal.IR.QuantifierFree.html#Bottom"><span class="hs-identifier hs-var">Q.Bottom</span></a></span><span>
+</span><span id="line-45"></span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#quoteDNF"><span class="hs-identifier hs-var">quoteDNF</span></a></span><span> </span><span id="local-6989586621679129883"><span class="annot"><span class="annottext">DNF
+</span><a href="#local-6989586621679129883"><span class="hs-identifier hs-var">xss</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(QuantifierFree -&gt; QuantifierFree -&gt; QuantifierFree)
+-&gt; [QuantifierFree] -&gt; QuantifierFree
+forall a. (a -&gt; a -&gt; a) -&gt; [a] -&gt; a
+forall (t :: * -&gt; *) a. Foldable t =&gt; (a -&gt; a -&gt; a) -&gt; t a -&gt; a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Foldable.html#foldr1"><span class="hs-identifier hs-var">foldr1</span></a></span><span> </span><span class="annot"><span class="annottext">QuantifierFree -&gt; QuantifierFree -&gt; QuantifierFree
+</span><a href="Hermod.ReCon.Presburger.Internal.IR.QuantifierFree.html#Or"><span class="hs-identifier hs-var">Q.Or</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">([DNFConjunct] -&gt; QuantifierFree) -&gt; DNF -&gt; [QuantifierFree]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Base.html#map"><span class="hs-identifier hs-var">map</span></a></span><span> </span><span class="annot"><span class="annottext">[DNFConjunct] -&gt; QuantifierFree
+</span><a href="#local-6989586621679129886"><span class="hs-identifier hs-var">quoteDisjunct</span></a></span><span> </span><span class="annot"><span class="annottext">DNF
+</span><a href="#local-6989586621679129883"><span class="hs-identifier hs-var">xss</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-46"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-47"></span><span>    </span><span id="local-6989586621679129886"><span class="annot"><span class="annottext">quoteDisjunct :: [DNFConjunct] -&gt; QuantifierFree
+</span><a href="#local-6989586621679129886"><span class="hs-identifier hs-var hs-var">quoteDisjunct</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">QuantifierFree
+</span><a href="Hermod.ReCon.Presburger.Internal.IR.QuantifierFree.html#Top"><span class="hs-identifier hs-var">Q.Top</span></a></span><span>
+</span><span id="line-48"></span><span>    </span><span class="annot"><a href="#local-6989586621679129886"><span class="hs-identifier hs-var">quoteDisjunct</span></a></span><span> </span><span id="local-6989586621679129889"><span class="annot"><span class="annottext">[DNFConjunct]
+</span><a href="#local-6989586621679129889"><span class="hs-identifier hs-var">cs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(QuantifierFree -&gt; QuantifierFree -&gt; QuantifierFree)
+-&gt; [QuantifierFree] -&gt; QuantifierFree
+forall a. (a -&gt; a -&gt; a) -&gt; [a] -&gt; a
+forall (t :: * -&gt; *) a. Foldable t =&gt; (a -&gt; a -&gt; a) -&gt; t a -&gt; a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Foldable.html#foldr1"><span class="hs-identifier hs-var">foldr1</span></a></span><span> </span><span class="annot"><span class="annottext">QuantifierFree -&gt; QuantifierFree -&gt; QuantifierFree
+</span><a href="Hermod.ReCon.Presburger.Internal.IR.QuantifierFree.html#And"><span class="hs-identifier hs-var">Q.And</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(DNFConjunct -&gt; QuantifierFree)
+-&gt; [DNFConjunct] -&gt; [QuantifierFree]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Base.html#map"><span class="hs-identifier hs-var">map</span></a></span><span> </span><span class="annot"><span class="annottext">DNFConjunct -&gt; QuantifierFree
+</span><a href="#local-6989586621679129891"><span class="hs-identifier hs-var">quoteConjunct</span></a></span><span> </span><span class="annot"><span class="annottext">[DNFConjunct]
+</span><a href="#local-6989586621679129889"><span class="hs-identifier hs-var">cs</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span><span>    </span><span id="local-6989586621679129891"><span class="annot"><span class="annottext">quoteConjunct :: DNFConjunct -&gt; QuantifierFree
+</span><a href="#local-6989586621679129891"><span class="hs-identifier hs-var hs-var">quoteConjunct</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#IntLt"><span class="hs-identifier hs-type">IntLt</span></a></span><span> </span><span id="local-6989586621679129892"><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679129892"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span id="local-6989586621679129893"><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679129893"><span class="hs-identifier hs-var">j</span></a></span></span><span class="hs-special">)</span><span>     </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BinRel -&gt; IntTerm -&gt; IntTerm -&gt; QuantifierFree
+</span><a href="Hermod.ReCon.Presburger.Internal.IR.QuantifierFree.html#IntBinRel"><span class="hs-identifier hs-var">Q.IntBinRel</span></a></span><span> </span><span class="annot"><span class="annottext">BinRel
+</span><a href="Hermod.ReCon.Common.Types.html#Lt"><span class="hs-identifier hs-var">Rel.Lt</span></a></span><span> </span><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679129892"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679129893"><span class="hs-identifier hs-var">j</span></a></span><span>
+</span><span id="line-50"></span><span>    </span><span class="annot"><a href="#local-6989586621679129891"><span class="hs-identifier hs-var">quoteConjunct</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#IntDiv"><span class="hs-identifier hs-type">IntDiv</span></a></span><span> </span><span id="local-6989586621679129896"><span class="annot"><span class="annottext">NatValue
+</span><a href="#local-6989586621679129896"><span class="hs-identifier hs-var">h</span></a></span></span><span> </span><span id="local-6989586621679129897"><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679129897"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span>    </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">NatValue -&gt; IntTerm -&gt; QuantifierFree
+</span><a href="Hermod.ReCon.Presburger.Internal.IR.QuantifierFree.html#IntDiv"><span class="hs-identifier hs-var">Q.IntDiv</span></a></span><span> </span><span class="annot"><span class="annottext">NatValue
+</span><a href="#local-6989586621679129896"><span class="hs-identifier hs-var">h</span></a></span><span> </span><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679129897"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-51"></span><span>    </span><span class="annot"><a href="#local-6989586621679129891"><span class="hs-identifier hs-var">quoteConjunct</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.Presburger.Internal.IR.DNF.html#IntNegDiv"><span class="hs-identifier hs-type">IntNegDiv</span></a></span><span> </span><span id="local-6989586621679129899"><span class="annot"><span class="annottext">NatValue
+</span><a href="#local-6989586621679129899"><span class="hs-identifier hs-var">h</span></a></span></span><span> </span><span id="local-6989586621679129900"><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679129900"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">QuantifierFree -&gt; QuantifierFree
+</span><a href="Hermod.ReCon.Presburger.Internal.IR.QuantifierFree.html#Not"><span class="hs-identifier hs-var">Q.Not</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">NatValue -&gt; IntTerm -&gt; QuantifierFree
+</span><a href="Hermod.ReCon.Presburger.Internal.IR.QuantifierFree.html#IntDiv"><span class="hs-identifier hs-var">Q.IntDiv</span></a></span><span> </span><span class="annot"><span class="annottext">NatValue
+</span><a href="#local-6989586621679129899"><span class="hs-identifier hs-var">h</span></a></span><span> </span><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679129900"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-52"></span></pre></body></html>

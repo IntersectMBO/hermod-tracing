@@ -1,0 +1,1031 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Hermod.ReCon.LTL.Internal.Rewrite</span><span class="hs-special">(</span><span>
+</span><span id="line-2"></span><span>  </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteHomogeneous"><span class="hs-identifier">rewriteHomogeneous</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-3"></span><span>  </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier">rewriteIdentity</span></a></span><span>
+</span><span id="line-4"></span><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html"><span class="hs-identifier">Hermod.ReCon.LTL.Formula</span></a></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html"><span class="hs-identifier">Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#normaliseHomogeneous"><span class="hs-identifier">normaliseHomogeneous</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Maybe.html"><span class="hs-identifier">Data.Maybe</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Maybe.html#fromMaybe"><span class="hs-identifier">fromMaybe</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.html"><span class="hs-identifier">Data.Set</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Set</span></span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- This file concerns applying rewrite rules to a formula.</span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- The rewrite rules must be logical identities, hence all rewrites here produce logically equivalent formulas.</span><span>
+</span><span id="line-14"></span><span>
+</span><span id="line-15"></span><span class="hs-comment">-- | Call the given function on all sub-expressions of the formula recursively</span><span>
+</span><span id="line-16"></span><span class="hs-comment">--   up to any temporal operator (= heterogeneous fragment), exclusively.</span><span>
+</span><span id="line-17"></span><span id="local-6989586621679131580"><span id="local-6989586621679131581"><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-type">recurseHomogeneous</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Formula"><span class="hs-identifier hs-type">Formula</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679131580"><span class="hs-identifier hs-type">event</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679131581"><span class="hs-identifier hs-type">ty</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Maybe.html#Maybe"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Formula"><span class="hs-identifier hs-type">Formula</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679131580"><span class="hs-identifier hs-type">event</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679131581"><span class="hs-identifier hs-type">ty</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Formula"><span class="hs-identifier hs-type">Formula</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679131580"><span class="hs-identifier hs-type">event</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679131581"><span class="hs-identifier hs-type">ty</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Formula"><span class="hs-identifier hs-type">Formula</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679131580"><span class="hs-identifier hs-type">event</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679131581"><span class="hs-identifier hs-type">ty</span></a></span></span></span><span>
+</span><span id="line-18"></span><span id="recurseHomogeneous"><span class="annot"><span class="annottext">recurseHomogeneous :: forall event ty.
+(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var hs-var">recurseHomogeneous</span></a></span></span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679131613"><span class="annot"><span class="annottext">self :: Formula event ty
+</span><a href="#local-6989586621679131613"><span class="hs-identifier hs-var">self</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Atom"><span class="hs-identifier hs-type">Atom</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span>     </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131613"><span class="hs-identifier hs-var">self</span></a></span><span>
+</span><span id="line-19"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679131615"><span class="annot"><span class="annottext">self :: Formula event ty
+</span><a href="#local-6989586621679131615"><span class="hs-identifier hs-var">self</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Forall"><span class="hs-identifier hs-type">Forall</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span>   </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131615"><span class="hs-identifier hs-var">self</span></a></span><span>
+</span><span id="line-20"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679131617"><span class="annot"><span class="annottext">self :: Formula event ty
+</span><a href="#local-6989586621679131617"><span class="hs-identifier hs-var">self</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#ExistsN"><span class="hs-identifier hs-type">ExistsN</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131617"><span class="hs-identifier hs-var">self</span></a></span><span>
+</span><span id="line-21"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679131619"><span class="annot"><span class="annottext">self :: Formula event ty
+</span><a href="#local-6989586621679131619"><span class="hs-identifier hs-var">self</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#ForallN"><span class="hs-identifier hs-type">ForallN</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131619"><span class="hs-identifier hs-var">self</span></a></span><span>
+</span><span id="line-22"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679131621"><span class="annot"><span class="annottext">self :: Formula event ty
+</span><a href="#local-6989586621679131621"><span class="hs-identifier hs-var">self</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#UntilN"><span class="hs-identifier hs-type">UntilN</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span>   </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131621"><span class="hs-identifier hs-var">self</span></a></span><span>
+</span><span id="line-23"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679131623"><span class="annot"><span class="annottext">self :: Formula event ty
+</span><a href="#local-6989586621679131623"><span class="hs-identifier hs-var">self</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#NextN"><span class="hs-identifier hs-type">NextN</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span>    </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131623"><span class="hs-identifier hs-var">self</span></a></span><span>
+</span><span id="line-24"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679131625"><span class="annot"><span class="annottext">self :: Formula event ty
+</span><a href="#local-6989586621679131625"><span class="hs-identifier hs-var">self</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Next"><span class="hs-identifier hs-type">Next</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span>      </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131625"><span class="hs-identifier hs-var">self</span></a></span><span>
+</span><span id="line-25"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span id="local-6989586621679131627"><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131627"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679131628"><span class="annot"><span class="annottext">self :: Formula event ty
+</span><a href="#local-6989586621679131628"><span class="hs-identifier hs-var">self</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#And"><span class="hs-identifier hs-type">And</span></a></span><span> </span><span id="local-6989586621679131630"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131630"><span class="hs-identifier hs-var">phi</span></a></span></span><span> </span><span id="local-6989586621679131631"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131631"><span class="hs-identifier hs-var">psi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-26"></span><span>  </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty) -&gt; Formula event ty
+forall a. a -&gt; Maybe a -&gt; a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Maybe.html#fromMaybe"><span class="hs-identifier hs-var">fromMaybe</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+Formula event ty -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#And"><span class="hs-identifier hs-var">And</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131627"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131630"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131627"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131631"><span class="hs-identifier hs-var">psi</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131627"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131628"><span class="hs-identifier hs-var">self</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-27"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span id="local-6989586621679131632"><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131632"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679131633"><span class="annot"><span class="annottext">self :: Formula event ty
+</span><a href="#local-6989586621679131633"><span class="hs-identifier hs-var">self</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Or"><span class="hs-identifier hs-type">Or</span></a></span><span> </span><span id="local-6989586621679131635"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131635"><span class="hs-identifier hs-var">phi</span></a></span></span><span> </span><span id="local-6989586621679131636"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131636"><span class="hs-identifier hs-var">psi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-28"></span><span>  </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty) -&gt; Formula event ty
+forall a. a -&gt; Maybe a -&gt; a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Maybe.html#fromMaybe"><span class="hs-identifier hs-var">fromMaybe</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+Formula event ty -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Or"><span class="hs-identifier hs-var">Or</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131632"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131635"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131632"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131636"><span class="hs-identifier hs-var">psi</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131632"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131633"><span class="hs-identifier hs-var">self</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-29"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span id="local-6989586621679131637"><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131637"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679131638"><span class="annot"><span class="annottext">self :: Formula event ty
+</span><a href="#local-6989586621679131638"><span class="hs-identifier hs-var">self</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Implies"><span class="hs-identifier hs-type">Implies</span></a></span><span> </span><span id="local-6989586621679131640"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131640"><span class="hs-identifier hs-var">phi</span></a></span></span><span> </span><span id="local-6989586621679131641"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131641"><span class="hs-identifier hs-var">psi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-30"></span><span>  </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty) -&gt; Formula event ty
+forall a. a -&gt; Maybe a -&gt; a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Maybe.html#fromMaybe"><span class="hs-identifier hs-var">fromMaybe</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+Formula event ty -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Implies"><span class="hs-identifier hs-var">Implies</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131637"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131640"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131637"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131641"><span class="hs-identifier hs-var">psi</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131637"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131638"><span class="hs-identifier hs-var">self</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-31"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span id="local-6989586621679131642"><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131642"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679131643"><span class="annot"><span class="annottext">self :: Formula event ty
+</span><a href="#local-6989586621679131643"><span class="hs-identifier hs-var">self</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Not"><span class="hs-identifier hs-type">Not</span></a></span><span> </span><span id="local-6989586621679131645"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131645"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-32"></span><span>  </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty) -&gt; Formula event ty
+forall a. a -&gt; Maybe a -&gt; a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Maybe.html#fromMaybe"><span class="hs-identifier hs-var">fromMaybe</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall event ty. Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Not"><span class="hs-identifier hs-var">Not</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131642"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131645"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131642"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131643"><span class="hs-identifier hs-var">self</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-33"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span id="local-6989586621679131646"><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131646"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679131647"><span class="annot"><span class="annottext">self :: Formula event ty
+</span><a href="#local-6989586621679131647"><span class="hs-identifier hs-var">self</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>                       </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty) -&gt; Formula event ty
+forall a. a -&gt; Maybe a -&gt; a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Maybe.html#fromMaybe"><span class="hs-identifier hs-var">fromMaybe</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131647"><span class="hs-identifier hs-var">self</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131646"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131647"><span class="hs-identifier hs-var">self</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-34"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span id="local-6989586621679131649"><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131649"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679131650"><span class="annot"><span class="annottext">self :: Formula event ty
+</span><a href="#local-6989586621679131650"><span class="hs-identifier hs-var">self</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>                          </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty) -&gt; Formula event ty
+forall a. a -&gt; Maybe a -&gt; a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Maybe.html#fromMaybe"><span class="hs-identifier hs-var">fromMaybe</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131650"><span class="hs-identifier hs-var">self</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131649"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131650"><span class="hs-identifier hs-var">self</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-35"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span id="local-6989586621679131652"><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131652"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679131653"><span class="annot"><span class="annottext">self :: Formula event ty
+</span><a href="#local-6989586621679131653"><span class="hs-identifier hs-var">self</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropIntBinRel"><span class="hs-identifier hs-type">PropIntBinRel</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span>           </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty) -&gt; Formula event ty
+forall a. a -&gt; Maybe a -&gt; a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Maybe.html#fromMaybe"><span class="hs-identifier hs-var">fromMaybe</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131653"><span class="hs-identifier hs-var">self</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131652"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131653"><span class="hs-identifier hs-var">self</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span id="local-6989586621679131655"><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131655"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679131656"><span class="annot"><span class="annottext">self :: Formula event ty
+</span><a href="#local-6989586621679131656"><span class="hs-identifier hs-var">self</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropTextEq"><span class="hs-identifier hs-type">PropTextEq</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span>              </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty) -&gt; Formula event ty
+forall a. a -&gt; Maybe a -&gt; a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Maybe.html#fromMaybe"><span class="hs-identifier hs-var">fromMaybe</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131656"><span class="hs-identifier hs-var">self</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131655"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131656"><span class="hs-identifier hs-var">self</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-37"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span id="local-6989586621679131658"><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131658"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679131659"><span class="annot"><span class="annottext">self :: Formula event ty
+</span><a href="#local-6989586621679131659"><span class="hs-identifier hs-var">self</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropIntForall"><span class="hs-identifier hs-type">PropIntForall</span></a></span><span> </span><span id="local-6989586621679131661"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131661"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131662"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131662"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span>        </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty) -&gt; Formula event ty
+forall a. a -&gt; Maybe a -&gt; a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Maybe.html#fromMaybe"><span class="hs-identifier hs-var">fromMaybe</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#PropIntForall"><span class="hs-identifier hs-var">PropIntForall</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131661"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131658"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131662"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131658"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131659"><span class="hs-identifier hs-var">self</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-38"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span id="local-6989586621679131663"><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131663"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679131664"><span class="annot"><span class="annottext">self :: Formula event ty
+</span><a href="#local-6989586621679131664"><span class="hs-identifier hs-var">self</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropTextForall"><span class="hs-identifier hs-type">PropTextForall</span></a></span><span> </span><span id="local-6989586621679131666"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131666"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131667"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131667"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span>       </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty) -&gt; Formula event ty
+forall a. a -&gt; Maybe a -&gt; a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Maybe.html#fromMaybe"><span class="hs-identifier hs-var">fromMaybe</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#PropTextForall"><span class="hs-identifier hs-var">PropTextForall</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131666"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131663"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131667"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131663"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131664"><span class="hs-identifier hs-var">self</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span id="local-6989586621679131668"><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131668"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679131669"><span class="annot"><span class="annottext">self :: Formula event ty
+</span><a href="#local-6989586621679131669"><span class="hs-identifier hs-var">self</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropIntForallN"><span class="hs-identifier hs-type">PropIntForallN</span></a></span><span> </span><span id="local-6989586621679131671"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131671"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131672"><span class="annot"><span class="annottext">Set IntValue
+</span><a href="#local-6989586621679131672"><span class="hs-identifier hs-var">dom</span></a></span></span><span> </span><span id="local-6989586621679131673"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131673"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span>   </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty) -&gt; Formula event ty
+forall a. a -&gt; Maybe a -&gt; a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Maybe.html#fromMaybe"><span class="hs-identifier hs-var">fromMaybe</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VariableIdentifier
+-&gt; Set IntValue -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+VariableIdentifier
+-&gt; Set IntValue -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#PropIntForallN"><span class="hs-identifier hs-var">PropIntForallN</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131671"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Set IntValue
+</span><a href="#local-6989586621679131672"><span class="hs-identifier hs-var">dom</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131668"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131673"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131668"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131669"><span class="hs-identifier hs-var">self</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span id="local-6989586621679131674"><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131674"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679131675"><span class="annot"><span class="annottext">self :: Formula event ty
+</span><a href="#local-6989586621679131675"><span class="hs-identifier hs-var">self</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropTextForallN"><span class="hs-identifier hs-type">PropTextForallN</span></a></span><span> </span><span id="local-6989586621679131677"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131677"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131678"><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131678"><span class="hs-identifier hs-var">dom</span></a></span></span><span> </span><span id="local-6989586621679131679"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131679"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty) -&gt; Formula event ty
+forall a. a -&gt; Maybe a -&gt; a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Maybe.html#fromMaybe"><span class="hs-identifier hs-var">fromMaybe</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VariableIdentifier
+-&gt; Set VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+VariableIdentifier
+-&gt; Set VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#PropTextForallN"><span class="hs-identifier hs-var">PropTextForallN</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131677"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131678"><span class="hs-identifier hs-var">dom</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131674"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131679"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131674"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131675"><span class="hs-identifier hs-var">self</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-41"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span id="local-6989586621679131680"><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131680"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679131681"><span class="annot"><span class="annottext">self :: Formula event ty
+</span><a href="#local-6989586621679131681"><span class="hs-identifier hs-var">self</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropIntExists"><span class="hs-identifier hs-type">PropIntExists</span></a></span><span> </span><span id="local-6989586621679131683"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131683"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131684"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131684"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span>        </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty) -&gt; Formula event ty
+forall a. a -&gt; Maybe a -&gt; a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Maybe.html#fromMaybe"><span class="hs-identifier hs-var">fromMaybe</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#PropIntExists"><span class="hs-identifier hs-var">PropIntExists</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131683"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131680"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131684"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131680"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131681"><span class="hs-identifier hs-var">self</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-42"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span id="local-6989586621679131685"><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131685"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679131686"><span class="annot"><span class="annottext">self :: Formula event ty
+</span><a href="#local-6989586621679131686"><span class="hs-identifier hs-var">self</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropTextExists"><span class="hs-identifier hs-type">PropTextExists</span></a></span><span> </span><span id="local-6989586621679131688"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131688"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131689"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131689"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span>       </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty) -&gt; Formula event ty
+forall a. a -&gt; Maybe a -&gt; a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Maybe.html#fromMaybe"><span class="hs-identifier hs-var">fromMaybe</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#PropTextExists"><span class="hs-identifier hs-var">PropTextExists</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131688"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131685"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131689"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131685"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131686"><span class="hs-identifier hs-var">self</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-43"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span id="local-6989586621679131690"><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131690"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679131691"><span class="annot"><span class="annottext">self :: Formula event ty
+</span><a href="#local-6989586621679131691"><span class="hs-identifier hs-var">self</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropIntExistsN"><span class="hs-identifier hs-type">PropIntExistsN</span></a></span><span> </span><span id="local-6989586621679131693"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131693"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131694"><span class="annot"><span class="annottext">Set IntValue
+</span><a href="#local-6989586621679131694"><span class="hs-identifier hs-var">dom</span></a></span></span><span> </span><span id="local-6989586621679131695"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131695"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span>   </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty) -&gt; Formula event ty
+forall a. a -&gt; Maybe a -&gt; a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Maybe.html#fromMaybe"><span class="hs-identifier hs-var">fromMaybe</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VariableIdentifier
+-&gt; Set IntValue -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+VariableIdentifier
+-&gt; Set IntValue -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#PropIntExistsN"><span class="hs-identifier hs-var">PropIntExistsN</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131693"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Set IntValue
+</span><a href="#local-6989586621679131694"><span class="hs-identifier hs-var">dom</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131690"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131695"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131690"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131691"><span class="hs-identifier hs-var">self</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-44"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span id="local-6989586621679131696"><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131696"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679131697"><span class="annot"><span class="annottext">self :: Formula event ty
+</span><a href="#local-6989586621679131697"><span class="hs-identifier hs-var">self</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropTextExistsN"><span class="hs-identifier hs-type">PropTextExistsN</span></a></span><span> </span><span id="local-6989586621679131699"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131699"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131700"><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131700"><span class="hs-identifier hs-var">dom</span></a></span></span><span> </span><span id="local-6989586621679131701"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131701"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty) -&gt; Formula event ty
+forall a. a -&gt; Maybe a -&gt; a
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Maybe.html#fromMaybe"><span class="hs-identifier hs-var">fromMaybe</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VariableIdentifier
+-&gt; Set VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+VariableIdentifier
+-&gt; Set VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#PropTextExistsN"><span class="hs-identifier hs-var">PropTextExistsN</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131699"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131700"><span class="hs-identifier hs-var">dom</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131696"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131701"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="#local-6989586621679131696"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131697"><span class="hs-identifier hs-var">self</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-45"></span><span>
+</span><span id="line-46"></span><span class="annot"><span class="hs-comment">-- | Rewrite the formula by applying the homogeneous fragment retraction &amp; normalisation recursively.</span></span><span>
+</span><span id="line-47"></span><span id="local-6989586621679131702"><span id="local-6989586621679131703"><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteHomogeneous"><span class="hs-identifier hs-type">rewriteHomogeneous</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Formula"><span class="hs-identifier hs-type">Formula</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679131702"><span class="hs-identifier hs-type">event</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679131703"><span class="hs-identifier hs-type">ty</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Formula"><span class="hs-identifier hs-type">Formula</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679131702"><span class="hs-identifier hs-type">event</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679131703"><span class="hs-identifier hs-type">ty</span></a></span></span></span><span>
+</span><span id="line-48"></span><span id="rewriteHomogeneous"><span class="annot"><span class="annottext">rewriteHomogeneous :: forall event ty. Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteHomogeneous"><span class="hs-identifier hs-var hs-var">rewriteHomogeneous</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+(Formula event ty -&gt; Maybe (Formula event ty))
+-&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#recurseHomogeneous"><span class="hs-identifier hs-var">recurseHomogeneous</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Maybe (Formula event ty)
+forall event ty. Formula event ty -&gt; Maybe (Formula event ty)
+</span><a href="Hermod.ReCon.LTL.Internal.IR.HomogeneousFormula.html#normaliseHomogeneous"><span class="hs-identifier hs-var">normaliseHomogeneous</span></a></span><span>
+</span><span id="line-49"></span><span>
+</span><span id="line-50"></span><span class="hs-comment">-- | Rewrites the formula by the following logical identities recursively:</span><span>
+</span><span id="line-51"></span><span class="hs-comment">--   &#9744; &#6834;&#8342; &#8868; = &#8868;</span><span>
+</span><span id="line-52"></span><span class="hs-comment">--   &#9744;&#7503; &#8868; = &#8868;</span><span>
+</span><span id="line-53"></span><span class="hs-comment">--   &#9826;&#7503; &#8869; = &#8869;</span><span>
+</span><span id="line-54"></span><span class="hs-comment">--   &#966; |&#7503; &#8868; = &#8868;</span><span>
+</span><span id="line-55"></span><span class="hs-comment">--   &#966; &#8743; &#8868; = &#966;</span><span>
+</span><span id="line-56"></span><span class="hs-comment">--   &#8868; &#8743; &#966; = &#966;</span><span>
+</span><span id="line-57"></span><span class="hs-comment">--   &#966; &#8743; &#8869; = &#8869;</span><span>
+</span><span id="line-58"></span><span class="hs-comment">--   &#8869; &#8743; &#966; = &#8869;</span><span>
+</span><span id="line-59"></span><span class="hs-comment">--   &#8868; &#8744; &#966; = &#8868;</span><span>
+</span><span id="line-60"></span><span class="hs-comment">--   &#966; &#8744; &#8868; = &#8868;</span><span>
+</span><span id="line-61"></span><span class="hs-comment">--   &#8869; &#8744; &#966; = &#966;</span><span>
+</span><span id="line-62"></span><span class="hs-comment">--   &#966; &#8744; &#8869; = &#966;</span><span>
+</span><span id="line-63"></span><span class="hs-comment">--   &#8868; &#8658; &#966; = &#966;</span><span>
+</span><span id="line-64"></span><span class="hs-comment">--   &#8869; &#8658; &#966; = &#8868;</span><span>
+</span><span id="line-65"></span><span class="hs-comment">--   &#966; &#8658; &#8868; = &#8868;</span><span>
+</span><span id="line-66"></span><span class="hs-comment">--   &#966; &#8658; &#8869; = &#172; &#966;</span><span>
+</span><span id="line-67"></span><span class="hs-comment">--   &#172; (&#172; &#966;) = &#966;</span><span>
+</span><span id="line-68"></span><span class="hs-comment">--   &#172; &#8869; = &#8868;</span><span>
+</span><span id="line-69"></span><span class="hs-comment">--   &#172; &#8868; = &#8869;</span><span>
+</span><span id="line-70"></span><span class="hs-comment">--   (t = t) = &#8868;</span><span>
+</span><span id="line-71"></span><span class="hs-comment">--   (t &#8804; t) = &#8868;</span><span>
+</span><span id="line-72"></span><span class="hs-comment">--   (t &#8805; t) = &#8868;</span><span>
+</span><span id="line-73"></span><span class="hs-comment">--   (t &lt; t) = &#8869;</span><span>
+</span><span id="line-74"></span><span class="hs-comment">--   (t &gt; t) = &#8869;</span><span>
+</span><span id="line-75"></span><span class="hs-comment">--   (n = m) = &#8868; where n = m   (n, m integer constants)</span><span>
+</span><span id="line-76"></span><span class="hs-comment">--   (n = m) = &#8869; where n &#8800; m</span><span>
+</span><span id="line-77"></span><span class="hs-comment">--   (n &lt; m) = &#8868; where n &lt; m</span><span>
+</span><span id="line-78"></span><span class="hs-comment">--   (n &lt; m) = &#8869; where n &#8805; m</span><span>
+</span><span id="line-79"></span><span class="hs-comment">--   (n &#8804; m) = &#8868; where n &#8804; m</span><span>
+</span><span id="line-80"></span><span class="hs-comment">--   (n &#8804; m) = &#8869; where n &gt; m</span><span>
+</span><span id="line-81"></span><span class="hs-comment">--   (n &gt; m) = &#8868; where n &gt; m</span><span>
+</span><span id="line-82"></span><span class="hs-comment">--   (n &gt; m) = &#8869; where n &#8804; m</span><span>
+</span><span id="line-83"></span><span class="hs-comment">--   (n &#8805; m) = &#8868; where n &#8805; m</span><span>
+</span><span id="line-84"></span><span class="hs-comment">--   (n &#8805; m) = &#8869; where n &lt; m</span><span>
+</span><span id="line-85"></span><span class="hs-comment">--   &#8704;x. &#8868; = &#8868;</span><span>
+</span><span id="line-86"></span><span class="hs-comment">--   &#8704;x. &#8869; = &#8869;</span><span>
+</span><span id="line-87"></span><span class="hs-comment">--   &#8707;x. &#8868; = &#8868;</span><span>
+</span><span id="line-88"></span><span class="hs-comment">--   &#8707;x. &#8869; = &#8869;</span><span>
+</span><span id="line-89"></span><span class="hs-comment">--   &#8704;(x &#8712; &#8709;). &#966;       = &#8868;</span><span>
+</span><span id="line-90"></span><span class="hs-comment">--   &#8704;(x &#8712; {v} &#8852; v&#772;). &#8869; = &#8869;</span><span>
+</span><span id="line-91"></span><span class="hs-comment">--   &#8704;(x &#8712; {v} &#8852; v&#772;). &#8868; = &#8868;</span><span>
+</span><span id="line-92"></span><span class="hs-comment">--   &#8707;(x &#8712; &#8709;). &#966;       = &#8869;</span><span>
+</span><span id="line-93"></span><span class="hs-comment">--   &#8707;(x &#8712; {v} &#8852; v&#772;). &#8869; = &#8869;</span><span>
+</span><span id="line-94"></span><span class="hs-comment">--   &#8707;(x &#8712; {v} &#8852; v&#772;). &#8868; = &#8868;</span><span>
+</span><span id="line-95"></span><span class="hs-comment">--   Additionally, unfolds base-cases of finite temporal operators.</span><span>
+</span><span id="line-96"></span><span id="local-6989586621679131595"><span id="local-6989586621679131596"><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-type">rewriteIdentity</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Classes.html#Eq"><span class="hs-identifier hs-type">Eq</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679131595"><span class="hs-identifier hs-type">ty</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Formula"><span class="hs-identifier hs-type">Formula</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679131596"><span class="hs-identifier hs-type">event</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679131595"><span class="hs-identifier hs-type">ty</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Formula"><span class="hs-identifier hs-type">Formula</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679131596"><span class="hs-identifier hs-type">event</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679131595"><span class="hs-identifier hs-type">ty</span></a></span></span></span><span>
+</span><span id="line-97"></span><span id="rewriteIdentity"><span class="annot"><span class="annottext">rewriteIdentity :: forall ty event. Eq ty =&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var hs-var">rewriteIdentity</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Forall"><span class="hs-identifier hs-type">Forall</span></a></span><span> </span><span id="local-6989586621679131753"><span class="annot"><span class="annottext">Word
+</span><a href="#local-6989586621679131753"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span id="local-6989586621679131754"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131754"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-98"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall ty event. Eq ty =&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131754"><span class="hs-identifier hs-var">phi</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-99"></span><span>    </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>
+</span><span id="line-100"></span><span>    </span><span id="local-6989586621679131755"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131755"><span class="hs-identifier hs-var">phi'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Word -&gt; Formula event ty -&gt; Formula event ty
+forall event ty. Word -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Forall"><span class="hs-identifier hs-var">Forall</span></a></span><span> </span><span class="annot"><span class="annottext">Word
+</span><a href="#local-6989586621679131753"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131755"><span class="hs-identifier hs-var">phi'</span></a></span><span>
+</span><span id="line-101"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#ForallN"><span class="hs-identifier hs-type">ForallN</span></a></span><span> </span><span class="annot"><span class="annottext">Word
+</span><span class="hs-number">0</span></span><span> </span><span id="local-6989586621679131756"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131756"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall ty event. Eq ty =&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Word -&gt; Formula event ty -&gt; Formula event ty
+forall event ty. Word -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#unfoldForallN"><span class="hs-identifier hs-var">unfoldForallN</span></a></span><span> </span><span class="annot"><span class="annottext">Word
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131756"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-102"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#ForallN"><span class="hs-identifier hs-type">ForallN</span></a></span><span> </span><span id="local-6989586621679131758"><span class="annot"><span class="annottext">Word
+</span><a href="#local-6989586621679131758"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span id="local-6989586621679131759"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131759"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-103"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall ty event. Eq ty =&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131759"><span class="hs-identifier hs-var">phi</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-104"></span><span>    </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>
+</span><span id="line-105"></span><span>    </span><span id="local-6989586621679131760"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131760"><span class="hs-identifier hs-var">phi'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Word -&gt; Formula event ty -&gt; Formula event ty
+forall event ty. Word -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#ForallN"><span class="hs-identifier hs-var">ForallN</span></a></span><span> </span><span class="annot"><span class="annottext">Word
+</span><a href="#local-6989586621679131758"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131760"><span class="hs-identifier hs-var">phi'</span></a></span><span>
+</span><span id="line-106"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#ExistsN"><span class="hs-identifier hs-type">ExistsN</span></a></span><span> </span><span class="annot"><span class="annottext">Word
+</span><span class="hs-number">0</span></span><span> </span><span id="local-6989586621679131761"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131761"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall ty event. Eq ty =&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Word -&gt; Formula event ty -&gt; Formula event ty
+forall event ty. Word -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#unfoldExistsN"><span class="hs-identifier hs-var">unfoldExistsN</span></a></span><span> </span><span class="annot"><span class="annottext">Word
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131761"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-107"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#ExistsN"><span class="hs-identifier hs-type">ExistsN</span></a></span><span> </span><span id="local-6989586621679131763"><span class="annot"><span class="annottext">Word
+</span><a href="#local-6989586621679131763"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span id="local-6989586621679131764"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131764"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-108"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall ty event. Eq ty =&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131764"><span class="hs-identifier hs-var">phi</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-109"></span><span>    </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>
+</span><span id="line-110"></span><span>    </span><span id="local-6989586621679131765"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131765"><span class="hs-identifier hs-var">phi'</span></a></span></span><span>   </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Word -&gt; Formula event ty -&gt; Formula event ty
+forall event ty. Word -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#ExistsN"><span class="hs-identifier hs-var">ExistsN</span></a></span><span> </span><span class="annot"><span class="annottext">Word
+</span><a href="#local-6989586621679131763"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131765"><span class="hs-identifier hs-var">phi'</span></a></span><span>
+</span><span id="line-111"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Next"><span class="hs-identifier hs-type">Next</span></a></span><span> </span><span id="local-6989586621679131766"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131766"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall event ty. Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Next"><span class="hs-identifier hs-var">Next</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall ty event. Eq ty =&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131766"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-112"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#NextN"><span class="hs-identifier hs-type">NextN</span></a></span><span> </span><span class="annot"><span class="annottext">Word
+</span><span class="hs-number">0</span></span><span> </span><span id="local-6989586621679131767"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131767"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall ty event. Eq ty =&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Word -&gt; Formula event ty -&gt; Formula event ty
+forall event ty. Word -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#unfoldNextN"><span class="hs-identifier hs-var">unfoldNextN</span></a></span><span> </span><span class="annot"><span class="annottext">Word
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131767"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-113"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#NextN"><span class="hs-identifier hs-type">NextN</span></a></span><span> </span><span id="local-6989586621679131769"><span class="annot"><span class="annottext">Word
+</span><a href="#local-6989586621679131769"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span id="local-6989586621679131770"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131770"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Word -&gt; Formula event ty -&gt; Formula event ty
+forall event ty. Word -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#NextN"><span class="hs-identifier hs-var">NextN</span></a></span><span> </span><span class="annot"><span class="annottext">Word
+</span><a href="#local-6989586621679131769"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall ty event. Eq ty =&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131770"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-114"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#UntilN"><span class="hs-identifier hs-type">UntilN</span></a></span><span> </span><span class="annot"><span class="annottext">Word
+</span><span class="hs-number">0</span></span><span> </span><span id="local-6989586621679131771"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131771"><span class="hs-identifier hs-var">phi</span></a></span></span><span> </span><span id="local-6989586621679131772"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131772"><span class="hs-identifier hs-var">psi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall ty event. Eq ty =&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Word -&gt; Formula event ty -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+Word -&gt; Formula event ty -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#unfoldUntilN"><span class="hs-identifier hs-var">unfoldUntilN</span></a></span><span> </span><span class="annot"><span class="annottext">Word
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131771"><span class="hs-identifier hs-var">phi</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131772"><span class="hs-identifier hs-var">psi</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-115"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#UntilN"><span class="hs-identifier hs-type">UntilN</span></a></span><span> </span><span id="local-6989586621679131774"><span class="annot"><span class="annottext">Word
+</span><a href="#local-6989586621679131774"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span id="local-6989586621679131775"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131775"><span class="hs-identifier hs-var">phi</span></a></span></span><span> </span><span id="local-6989586621679131776"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131776"><span class="hs-identifier hs-var">psi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-116"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall ty event. Eq ty =&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131776"><span class="hs-identifier hs-var">psi</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-117"></span><span>    </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>
+</span><span id="line-118"></span><span>    </span><span id="local-6989586621679131777"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131777"><span class="hs-identifier hs-var">psi'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Word -&gt; Formula event ty -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+Word -&gt; Formula event ty -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#UntilN"><span class="hs-identifier hs-var">UntilN</span></a></span><span> </span><span class="annot"><span class="annottext">Word
+</span><a href="#local-6989586621679131774"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall ty event. Eq ty =&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131775"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131777"><span class="hs-identifier hs-var">psi'</span></a></span><span>
+</span><span id="line-119"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#And"><span class="hs-identifier hs-type">And</span></a></span><span> </span><span id="local-6989586621679131778"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131778"><span class="hs-identifier hs-var">phi</span></a></span></span><span> </span><span id="local-6989586621679131779"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131779"><span class="hs-identifier hs-var">psi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-120"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall ty event. Eq ty =&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131778"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall ty event. Eq ty =&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131779"><span class="hs-identifier hs-var">psi</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-121"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span>   </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>
+</span><span id="line-122"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679131780"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131780"><span class="hs-identifier hs-var">psi'</span></a></span></span><span class="hs-special">)</span><span>   </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131780"><span class="hs-identifier hs-var">psi'</span></a></span><span>
+</span><span id="line-123"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span class="hs-special">)</span><span>   </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>
+</span><span id="line-124"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679131781"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131781"><span class="hs-identifier hs-var">phi'</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span class="hs-special">)</span><span>   </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131781"><span class="hs-identifier hs-var">phi'</span></a></span><span>
+</span><span id="line-125"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679131782"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131782"><span class="hs-identifier hs-var">phi'</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679131783"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131783"><span class="hs-identifier hs-var">psi'</span></a></span></span><span class="hs-special">)</span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+Formula event ty -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#And"><span class="hs-identifier hs-var">And</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131782"><span class="hs-identifier hs-var">phi'</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131783"><span class="hs-identifier hs-var">psi'</span></a></span><span>
+</span><span id="line-126"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Or"><span class="hs-identifier hs-type">Or</span></a></span><span> </span><span id="local-6989586621679131784"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131784"><span class="hs-identifier hs-var">phi</span></a></span></span><span> </span><span id="local-6989586621679131785"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131785"><span class="hs-identifier hs-var">psi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-127"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall ty event. Eq ty =&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131784"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall ty event. Eq ty =&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131785"><span class="hs-identifier hs-var">psi</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-128"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679131786"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131786"><span class="hs-identifier hs-var">psi'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131786"><span class="hs-identifier hs-var">psi'</span></a></span><span>
+</span><span id="line-129"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span>       </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>
+</span><span id="line-130"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679131787"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131787"><span class="hs-identifier hs-var">phi'</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131787"><span class="hs-identifier hs-var">phi'</span></a></span><span>
+</span><span id="line-131"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span class="hs-special">)</span><span>       </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>
+</span><span id="line-132"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679131788"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131788"><span class="hs-identifier hs-var">phi'</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679131789"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131789"><span class="hs-identifier hs-var">psi'</span></a></span></span><span class="hs-special">)</span><span>   </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+Formula event ty -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Or"><span class="hs-identifier hs-var">Or</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131788"><span class="hs-identifier hs-var">phi'</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131789"><span class="hs-identifier hs-var">psi'</span></a></span><span>
+</span><span id="line-133"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Implies"><span class="hs-identifier hs-type">Implies</span></a></span><span> </span><span id="local-6989586621679131790"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131790"><span class="hs-identifier hs-var">phi</span></a></span></span><span> </span><span id="local-6989586621679131791"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131791"><span class="hs-identifier hs-var">psi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-134"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall ty event. Eq ty =&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131790"><span class="hs-identifier hs-var">phi</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall ty event. Eq ty =&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131791"><span class="hs-identifier hs-var">psi</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-135"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679131792"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131792"><span class="hs-identifier hs-var">psi'</span></a></span></span><span class="hs-special">)</span><span>     </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131792"><span class="hs-identifier hs-var">psi'</span></a></span><span>
+</span><span id="line-136"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span>     </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>
+</span><span id="line-137"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span class="hs-special">)</span><span>        </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>
+</span><span id="line-138"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679131793"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131793"><span class="hs-identifier hs-var">phi'</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span class="hs-special">)</span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall ty event. Eq ty =&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall event ty. Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Not"><span class="hs-identifier hs-var">Not</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131793"><span class="hs-identifier hs-var">phi'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-139"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679131794"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131794"><span class="hs-identifier hs-var">phi'</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679131795"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131795"><span class="hs-identifier hs-var">psi'</span></a></span></span><span class="hs-special">)</span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+Formula event ty -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Implies"><span class="hs-identifier hs-var">Implies</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131794"><span class="hs-identifier hs-var">phi'</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131795"><span class="hs-identifier hs-var">psi'</span></a></span><span>
+</span><span id="line-140"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Not"><span class="hs-identifier hs-type">Not</span></a></span><span> </span><span id="local-6989586621679131796"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131796"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-141"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall ty event. Eq ty =&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131796"><span class="hs-identifier hs-var">phi</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-142"></span><span>    </span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Not"><span class="hs-identifier hs-type">Not</span></a></span><span> </span><span id="local-6989586621679131797"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131797"><span class="hs-identifier hs-var">phi'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131797"><span class="hs-identifier hs-var">phi'</span></a></span><span>
+</span><span id="line-143"></span><span>    </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>      </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>
+</span><span id="line-144"></span><span>    </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>   </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>
+</span><span id="line-145"></span><span>    </span><span id="local-6989586621679131798"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131798"><span class="hs-identifier hs-var">phi'</span></a></span></span><span>      </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall event ty. Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Not"><span class="hs-identifier hs-var">Not</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131798"><span class="hs-identifier hs-var">phi'</span></a></span><span>
+</span><span id="line-146"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>
+</span><span id="line-147"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>
+</span><span id="line-148"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropIntBinRel"><span class="hs-identifier hs-type">PropIntBinRel</span></a></span><span> </span><span id="local-6989586621679131799"><span class="annot"><span class="annottext">BinRel
+</span><a href="#local-6989586621679131799"><span class="hs-identifier hs-var">rel</span></a></span></span><span> </span><span class="annot"><span class="annottext">Relevance event ty
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679131800"><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679131800"><span class="hs-identifier hs-var">lhs</span></a></span></span><span> </span><span id="local-6989586621679131801"><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679131801"><span class="hs-identifier hs-var">rhs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679131800"><span class="hs-identifier hs-var">lhs</span></a></span><span> </span><span class="annot"><span class="annottext">IntTerm -&gt; IntTerm -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Classes.html#%3D%3D"><span class="hs-operator hs-var">==</span></a></span><span> </span><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679131801"><span class="hs-identifier hs-var">rhs</span></a></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-149"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">BinRel
+</span><a href="#local-6989586621679131799"><span class="hs-identifier hs-var">rel</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-150"></span><span>    </span><span class="annot"><span class="annottext">BinRel
+</span><a href="Hermod.ReCon.Common.Types.html#Eq"><span class="hs-identifier hs-var">Eq</span></a></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>
+</span><span id="line-151"></span><span>    </span><span class="annot"><span class="annottext">BinRel
+</span><a href="Hermod.ReCon.Common.Types.html#Lte"><span class="hs-identifier hs-var">Lte</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>
+</span><span id="line-152"></span><span>    </span><span class="annot"><span class="annottext">BinRel
+</span><a href="Hermod.ReCon.Common.Types.html#Gte"><span class="hs-identifier hs-var">Gte</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>
+</span><span id="line-153"></span><span>    </span><span class="annot"><span class="annottext">BinRel
+</span><a href="Hermod.ReCon.Common.Types.html#Lt"><span class="hs-identifier hs-var">Lt</span></a></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>
+</span><span id="line-154"></span><span>    </span><span class="annot"><span class="annottext">BinRel
+</span><a href="Hermod.ReCon.Common.Types.html#Gt"><span class="hs-identifier hs-var">Gt</span></a></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>
+</span><span id="line-155"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropIntBinRel"><span class="hs-identifier hs-type">PropIntBinRel</span></a></span><span> </span><span id="local-6989586621679131807"><span class="annot"><span class="annottext">BinRel
+</span><a href="#local-6989586621679131807"><span class="hs-identifier hs-var">rel</span></a></span></span><span> </span><span class="annot"><span class="annottext">Relevance event ty
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.Integer.Polynomial.Term.html#IntConst"><span class="hs-identifier hs-type">IntConst</span></a></span><span> </span><span id="local-6989586621679131809"><span class="annot"><span class="annottext">IntValue
+</span><a href="#local-6989586621679131809"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.Integer.Polynomial.Term.html#IntConst"><span class="hs-identifier hs-type">IntConst</span></a></span><span> </span><span id="local-6989586621679131810"><span class="annot"><span class="annottext">IntValue
+</span><a href="#local-6989586621679131810"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-156"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">BinRel
+</span><a href="#local-6989586621679131807"><span class="hs-identifier hs-var">rel</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-157"></span><span>    </span><span class="annot"><span class="annottext">BinRel
+</span><a href="Hermod.ReCon.Common.Types.html#Eq"><span class="hs-identifier hs-var">Eq</span></a></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">IntValue
+</span><a href="#local-6989586621679131809"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">IntValue -&gt; IntValue -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Classes.html#%3D%3D"><span class="hs-operator hs-var">==</span></a></span><span> </span><span class="annot"><span class="annottext">IntValue
+</span><a href="#local-6989586621679131810"><span class="hs-identifier hs-var">b</span></a></span><span>  </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>
+</span><span id="line-158"></span><span>    </span><span class="annot"><span class="annottext">BinRel
+</span><a href="Hermod.ReCon.Common.Types.html#Lt"><span class="hs-identifier hs-var">Lt</span></a></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">IntValue
+</span><a href="#local-6989586621679131809"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">IntValue -&gt; IntValue -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Classes.html#%3C"><span class="hs-operator hs-var">&lt;</span></a></span><span>  </span><span class="annot"><span class="annottext">IntValue
+</span><a href="#local-6989586621679131810"><span class="hs-identifier hs-var">b</span></a></span><span>  </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>
+</span><span id="line-159"></span><span>    </span><span class="annot"><span class="annottext">BinRel
+</span><a href="Hermod.ReCon.Common.Types.html#Lte"><span class="hs-identifier hs-var">Lte</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">IntValue
+</span><a href="#local-6989586621679131809"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">IntValue -&gt; IntValue -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Classes.html#%3C%3D"><span class="hs-operator hs-var">&lt;=</span></a></span><span> </span><span class="annot"><span class="annottext">IntValue
+</span><a href="#local-6989586621679131810"><span class="hs-identifier hs-var">b</span></a></span><span>  </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>
+</span><span id="line-160"></span><span>    </span><span class="annot"><span class="annottext">BinRel
+</span><a href="Hermod.ReCon.Common.Types.html#Gt"><span class="hs-identifier hs-var">Gt</span></a></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">IntValue
+</span><a href="#local-6989586621679131809"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">IntValue -&gt; IntValue -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Classes.html#%3E"><span class="hs-operator hs-var">&gt;</span></a></span><span>  </span><span class="annot"><span class="annottext">IntValue
+</span><a href="#local-6989586621679131810"><span class="hs-identifier hs-var">b</span></a></span><span>  </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>
+</span><span id="line-161"></span><span>    </span><span class="annot"><span class="annottext">BinRel
+</span><a href="Hermod.ReCon.Common.Types.html#Gte"><span class="hs-identifier hs-var">Gte</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">IntValue
+</span><a href="#local-6989586621679131809"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">IntValue -&gt; IntValue -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Classes.html#%3E%3D"><span class="hs-operator hs-var">&gt;=</span></a></span><span> </span><span class="annot"><span class="annottext">IntValue
+</span><a href="#local-6989586621679131810"><span class="hs-identifier hs-var">b</span></a></span><span>  </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>
+</span><span id="line-162"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span id="local-6989586621679131814"><span class="annot"><span class="annottext">p :: Formula event ty
+</span><a href="#local-6989586621679131814"><span class="hs-identifier hs-var">p</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropIntBinRel"><span class="hs-identifier hs-type">PropIntBinRel</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131814"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span id="line-163"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropTextEq"><span class="hs-identifier hs-type">PropTextEq</span></a></span><span> </span><span class="annot"><span class="annottext">Relevance event ty
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#TextConst"><span class="hs-identifier hs-type">TextConst</span></a></span><span> </span><span id="local-6989586621679131816"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131816"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679131817"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131817"><span class="hs-identifier hs-var">v'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131816"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier -&gt; VariableIdentifier -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Classes.html#%3D%3D"><span class="hs-operator hs-var">==</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131817"><span class="hs-identifier hs-var">v'</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>
+</span><span id="line-164"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropTextEq"><span class="hs-identifier hs-type">PropTextEq</span></a></span><span> </span><span class="annot"><span class="annottext">Relevance event ty
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#TextConst"><span class="hs-identifier hs-type">TextConst</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span>            </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>
+</span><span id="line-165"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span id="local-6989586621679131818"><span class="annot"><span class="annottext">p :: Formula event ty
+</span><a href="#local-6989586621679131818"><span class="hs-identifier hs-var">p</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropTextEq"><span class="hs-identifier hs-type">PropTextEq</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131818"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span id="line-166"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span id="local-6989586621679131819"><span class="annot"><span class="annottext">p :: Formula event ty
+</span><a href="#local-6989586621679131819"><span class="hs-identifier hs-var">p</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#Atom"><span class="hs-identifier hs-type">Atom</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131819"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span id="line-167"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropIntForall"><span class="hs-identifier hs-type">PropIntForall</span></a></span><span> </span><span id="local-6989586621679131820"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131820"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131821"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131821"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-168"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall ty event. Eq ty =&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131821"><span class="hs-identifier hs-var">phi</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-169"></span><span>    </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>
+</span><span id="line-170"></span><span>    </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>
+</span><span id="line-171"></span><span>    </span><span id="local-6989586621679131822"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131822"><span class="hs-identifier hs-var">phi'</span></a></span></span><span>   </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#PropIntForall"><span class="hs-identifier hs-var">PropIntForall</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131820"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131822"><span class="hs-identifier hs-var">phi'</span></a></span><span>
+</span><span id="line-172"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropTextForall"><span class="hs-identifier hs-type">PropTextForall</span></a></span><span> </span><span id="local-6989586621679131823"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131823"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131824"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131824"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-173"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall ty event. Eq ty =&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131824"><span class="hs-identifier hs-var">phi</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-174"></span><span>    </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>
+</span><span id="line-175"></span><span>    </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>
+</span><span id="line-176"></span><span>    </span><span id="local-6989586621679131825"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131825"><span class="hs-identifier hs-var">phi'</span></a></span></span><span>   </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#PropTextForall"><span class="hs-identifier hs-var">PropTextForall</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131823"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131825"><span class="hs-identifier hs-var">phi'</span></a></span><span>
+</span><span id="line-177"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropIntExists"><span class="hs-identifier hs-type">PropIntExists</span></a></span><span> </span><span id="local-6989586621679131826"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131826"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131827"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131827"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-178"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall ty event. Eq ty =&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131827"><span class="hs-identifier hs-var">phi</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-179"></span><span>    </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>
+</span><span id="line-180"></span><span>    </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>
+</span><span id="line-181"></span><span>    </span><span id="local-6989586621679131828"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131828"><span class="hs-identifier hs-var">phi'</span></a></span></span><span>   </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#PropIntExists"><span class="hs-identifier hs-var">PropIntExists</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131826"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131828"><span class="hs-identifier hs-var">phi'</span></a></span><span>
+</span><span id="line-182"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropTextExists"><span class="hs-identifier hs-type">PropTextExists</span></a></span><span> </span><span id="local-6989586621679131829"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131829"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131830"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131830"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-183"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall ty event. Eq ty =&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131830"><span class="hs-identifier hs-var">phi</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-184"></span><span>    </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>
+</span><span id="line-185"></span><span>    </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>
+</span><span id="line-186"></span><span>    </span><span id="local-6989586621679131831"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131831"><span class="hs-identifier hs-var">phi'</span></a></span></span><span>   </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#PropTextExists"><span class="hs-identifier hs-var">PropTextExists</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131829"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131831"><span class="hs-identifier hs-var">phi'</span></a></span><span>
+</span><span id="line-187"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropIntForallN"><span class="hs-identifier hs-type">PropIntForallN</span></a></span><span>  </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679131832"><span class="annot"><span class="annottext">Set IntValue
+</span><a href="#local-6989586621679131832"><span class="hs-identifier hs-var">dom</span></a></span></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Set IntValue -&gt; Bool
+forall a. Set a -&gt; Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.Internal.html#null"><span class="hs-identifier hs-var">Set.null</span></a></span><span> </span><span class="annot"><span class="annottext">Set IntValue
+</span><a href="#local-6989586621679131832"><span class="hs-identifier hs-var">dom</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>
+</span><span id="line-188"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropIntForallN"><span class="hs-identifier hs-type">PropIntForallN</span></a></span><span>  </span><span id="local-6989586621679131834"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131834"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131835"><span class="annot"><span class="annottext">Set IntValue
+</span><a href="#local-6989586621679131835"><span class="hs-identifier hs-var">dom</span></a></span></span><span> </span><span id="local-6989586621679131836"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131836"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-189"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall ty event. Eq ty =&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131836"><span class="hs-identifier hs-var">phi</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-190"></span><span>    </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>
+</span><span id="line-191"></span><span>    </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>
+</span><span id="line-192"></span><span>    </span><span id="local-6989586621679131837"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131837"><span class="hs-identifier hs-var">phi'</span></a></span></span><span>   </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+-&gt; Set IntValue -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+VariableIdentifier
+-&gt; Set IntValue -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#PropIntForallN"><span class="hs-identifier hs-var">PropIntForallN</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131834"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Set IntValue
+</span><a href="#local-6989586621679131835"><span class="hs-identifier hs-var">dom</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131837"><span class="hs-identifier hs-var">phi'</span></a></span><span>
+</span><span id="line-193"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropTextForallN"><span class="hs-identifier hs-type">PropTextForallN</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679131838"><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131838"><span class="hs-identifier hs-var">dom</span></a></span></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier -&gt; Bool
+forall a. Set a -&gt; Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.Internal.html#null"><span class="hs-identifier hs-var">Set.null</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131838"><span class="hs-identifier hs-var">dom</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>
+</span><span id="line-194"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropTextForallN"><span class="hs-identifier hs-type">PropTextForallN</span></a></span><span> </span><span id="local-6989586621679131839"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131839"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131840"><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131840"><span class="hs-identifier hs-var">dom</span></a></span></span><span> </span><span id="local-6989586621679131841"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131841"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-195"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall ty event. Eq ty =&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131841"><span class="hs-identifier hs-var">phi</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-196"></span><span>    </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>
+</span><span id="line-197"></span><span>    </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>
+</span><span id="line-198"></span><span>    </span><span id="local-6989586621679131842"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131842"><span class="hs-identifier hs-var">phi'</span></a></span></span><span>   </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+-&gt; Set VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+VariableIdentifier
+-&gt; Set VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#PropTextForallN"><span class="hs-identifier hs-var">PropTextForallN</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131839"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131840"><span class="hs-identifier hs-var">dom</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131842"><span class="hs-identifier hs-var">phi'</span></a></span><span>
+</span><span id="line-199"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropIntExistsN"><span class="hs-identifier hs-type">PropIntExistsN</span></a></span><span>  </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679131843"><span class="annot"><span class="annottext">Set IntValue
+</span><a href="#local-6989586621679131843"><span class="hs-identifier hs-var">dom</span></a></span></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Set IntValue -&gt; Bool
+forall a. Set a -&gt; Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.Internal.html#null"><span class="hs-identifier hs-var">Set.null</span></a></span><span> </span><span class="annot"><span class="annottext">Set IntValue
+</span><a href="#local-6989586621679131843"><span class="hs-identifier hs-var">dom</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>
+</span><span id="line-200"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropIntExistsN"><span class="hs-identifier hs-type">PropIntExistsN</span></a></span><span>  </span><span id="local-6989586621679131844"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131844"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131845"><span class="annot"><span class="annottext">Set IntValue
+</span><a href="#local-6989586621679131845"><span class="hs-identifier hs-var">dom</span></a></span></span><span> </span><span id="local-6989586621679131846"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131846"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-201"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall ty event. Eq ty =&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131846"><span class="hs-identifier hs-var">phi</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-202"></span><span>    </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>
+</span><span id="line-203"></span><span>    </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>
+</span><span id="line-204"></span><span>    </span><span id="local-6989586621679131847"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131847"><span class="hs-identifier hs-var">phi'</span></a></span></span><span>   </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+-&gt; Set IntValue -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+VariableIdentifier
+-&gt; Set IntValue -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#PropIntExistsN"><span class="hs-identifier hs-var">PropIntExistsN</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131844"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Set IntValue
+</span><a href="#local-6989586621679131845"><span class="hs-identifier hs-var">dom</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131847"><span class="hs-identifier hs-var">phi'</span></a></span><span>
+</span><span id="line-205"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropTextExistsN"><span class="hs-identifier hs-type">PropTextExistsN</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679131848"><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131848"><span class="hs-identifier hs-var">dom</span></a></span></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier -&gt; Bool
+forall a. Set a -&gt; Bool
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/containers-0.6.7/src/Data.Set.Internal.html#null"><span class="hs-identifier hs-var">Set.null</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131848"><span class="hs-identifier hs-var">dom</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>
+</span><span id="line-206"></span><span class="annot"><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Hermod.ReCon.LTL.Formula.html#PropTextExistsN"><span class="hs-identifier hs-type">PropTextExistsN</span></a></span><span> </span><span id="local-6989586621679131849"><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131849"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679131850"><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131850"><span class="hs-identifier hs-var">dom</span></a></span></span><span> </span><span id="local-6989586621679131851"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131851"><span class="hs-identifier hs-var">phi</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-207"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Formula event ty -&gt; Formula event ty
+forall ty event. Eq ty =&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Internal.Rewrite.html#rewriteIdentity"><span class="hs-identifier hs-var">rewriteIdentity</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131851"><span class="hs-identifier hs-var">phi</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-208"></span><span>    </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Top"><span class="hs-identifier hs-var">Top</span></a></span><span>
+</span><span id="line-209"></span><span>    </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Formula event ty
+forall event ty. Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#Bottom"><span class="hs-identifier hs-var">Bottom</span></a></span><span>
+</span><span id="line-210"></span><span>    </span><span id="local-6989586621679131852"><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131852"><span class="hs-identifier hs-var">phi'</span></a></span></span><span>   </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+-&gt; Set VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+forall event ty.
+VariableIdentifier
+-&gt; Set VariableIdentifier -&gt; Formula event ty -&gt; Formula event ty
+</span><a href="Hermod.ReCon.LTL.Formula.html#PropTextExistsN"><span class="hs-identifier hs-var">PropTextExistsN</span></a></span><span> </span><span class="annot"><span class="annottext">VariableIdentifier
+</span><a href="#local-6989586621679131849"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Set VariableIdentifier
+</span><a href="#local-6989586621679131850"><span class="hs-identifier hs-var">dom</span></a></span><span> </span><span class="annot"><span class="annottext">Formula event ty
+</span><a href="#local-6989586621679131852"><span class="hs-identifier hs-var">phi'</span></a></span><span>
+</span><span id="line-211"></span></pre></body></html>
