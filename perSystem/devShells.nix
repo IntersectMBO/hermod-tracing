@@ -1,7 +1,7 @@
 { inputs, ... }: {
   perSystem = { shellFor, pkgs, ... }: {
     devShells.default = shellFor {
-      packages = p: [ p.trace-dispatcher p.hermod-recon-framework ];
+      packages = p: [ p.trace-dispatcher p.hermod-recon-framework p.hermod-trace-resources];
 
       nativeBuildInputs = [
         pkgs.jq
@@ -26,7 +26,7 @@
         export PS1="\n\[\033[1;32m\][nix-shell:\w]\[\033[01;36m\]\$(parse_git_branch)\[\033[0m\]\$ "        
       '';
 
-      withHoogle = true;
+      withHoogle = false;
     };
   };
 }
