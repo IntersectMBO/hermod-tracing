@@ -52,22 +52,17 @@ library
                       Cardano.Logging.Prometheus.Exposition
                       Cardano.Logging.Prometheus.NetworkRun
                       Cardano.Logging.Prometheus.TCPServer
-                      Cardano.Logging.Trace
                       Cardano.Logging.TraceDispatcherMessage
                       Cardano.Logging.Tracer.DataPoint
                       Cardano.Logging.Tracer.EKG
                       Cardano.Logging.Tracer.Standard
                       Cardano.Logging.Tracer.Forward
                       Cardano.Logging.Tracer.Composed
-                      Cardano.Logging.Types
-                      Cardano.Logging.Types.NodeInfo
-                      Cardano.Logging.Types.NodeStartupInfo
-                      Cardano.Logging.Types.TraceMessage
-                      Cardano.Logging.Utils
 
   other-modules:      Cardano.Logging.Types.DocuGenerator
 
   build-depends:        base >=4.12 && <5
+                      , trace-dispatcher-api
                       , aeson >= 2.1.0.0
                       , aeson-pretty
                       , async

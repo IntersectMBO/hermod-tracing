@@ -1,11 +1,15 @@
 {
   perSystem = { hsPkgs, ... }:
     let
+      tda = hsPkgs.trace-dispatcher-api;
       td  = hsPkgs.trace-dispatcher;
       hrf = hsPkgs.hermod-recon-framework;
       htr = hsPkgs.hermod-trace-resources;
     in
     {
+      packages.trace-dispatcher-api          = tda.components.library;
+
+
       packages.trace-dispatcher              = td.components.library;
       checks.trace-dispatcher-test           = td.components.tests.trace-dispatcher-test;
 

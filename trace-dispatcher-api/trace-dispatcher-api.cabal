@@ -1,0 +1,68 @@
+cabal-version: 3.0
+
+name:                   trace-dispatcher-api
+version:                0.1.0
+synopsis:               Thin API layer for the trace-dispatcher tracing system
+description:            Core types (Trace, MetaTrace, LogFormatting) and combinators
+                        (traceWith, contramapM, foldTraceM, routingTrace) that form the
+                        stable API surface of the Hermod tracing system. Packages that
+                        implement or consume tracers can depend on this package without
+                        pulling in the full trace-dispatcher implementation.
+category:               System,
+                        Logging,
+                        Tracing,
+                        Metrics,
+copyright:              2020-2023 Input Output Global Inc (IOG), 2023-2026 Intersect.
+author:                 Juergen Nicklisch, Michael Karg
+maintainer:             operations@iohk.io
+license:                Apache-2.0
+license-files:          LICENSE
+                        NOTICE
+
+common project-config
+  default-language:     Haskell2010
+
+  default-extensions:   LambdaCase
+                        NamedFieldPuns
+                        OverloadedStrings
+
+  ghc-options:          -Wall
+                        -Wcompat
+                        -Wincomplete-uni-patterns
+                        -Wincomplete-record-updates
+                        -Wpartial-fields
+                        -Widentities
+                        -Wredundant-constraints
+                        -Wmissing-export-lists
+                        -Wno-incomplete-patterns
+
+  if impl(ghc >= 9.8)
+    ghc-options:        -Wno-x-partial
+
+
+library
+  import:             project-config
+  hs-source-dirs:     src
+  exposed-modules:    Cardano.Logging.Trace
+                      Cardano.Logging.Types
+                      Cardano.Logging.Types.NodeInfo
+                      Cardano.Logging.Types.NodeStartupInfo
+                      Cardano.Logging.Types.TraceMessage
+                      Cardano.Logging.Utils
+
+  build-depends:        base >=4.12 && <5
+                      , aeson >= 2.1.0.0
+                      , async
+                      , bytestring
+                      , cborg
+                      , cborg-json
+                      , containers
+                      , contra-tracer ^>= 0.2.1
+                      , deepseq
+                      , hostname
+                      , network
+                      , serialise
+                      , text
+                      , time
+                      , unliftio
+                      , unliftio-core
