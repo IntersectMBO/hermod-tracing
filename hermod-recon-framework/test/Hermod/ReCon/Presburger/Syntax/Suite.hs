@@ -30,6 +30,7 @@ syntaxTests = testGroup "Syntax"
   , connTests
   , precedenceTests
   , quantifierTests
+  , asciiTests
   ]
 
 atomTests :: TestTree
@@ -145,6 +146,29 @@ precedenceTests = testGroup "Precedence"
         And (Or (IntBinRel Eq (IntVar 1 "x") (IntConst 0))
                (IntBinRel Eq (IntVar 1 "y") (IntConst 1)))
             (IntBinRel Eq (IntVar 1 "z") (IntConst 2))
+  ]
+
+asciiTests :: TestTree
+asciiTests = testGroup "ASCII syntax"
+  [ testCase "\\bottom"       $ "\\bottom"          @== Bottom
+  , testCase "\\top"          $ "\\top"              @== Top
+  , testCase "<= (Lte)"       $ "x <= 5"             @== IntBinRel Lte (IntVar 1 "x") (IntConst 5)
+  , testCase ">= (Gte)"       $ "x >= 5"             @== IntBinRel Gte (IntVar 1 "x") (IntConst 5)
+  , testCase "3*x = 0"        $ "3*x = 0"            @== IntBinRel Eq  (IntVar 3 "x") (IntConst 0)
+  , testCase "\\not atom"     $ "\\not(x < 5)"       @== Not (IntBinRel Lt (IntVar 1 "x") (IntConst 5))
+  , testCase "&&"             $ "x < 5 && y > 0"     @==
+      And (IntBinRel Lt (IntVar 1 "x") (IntConst 5))
+          (IntBinRel Gt (IntVar 1 "y") (IntConst 0))
+  , testCase "||"             $ "x < 5 || y > 0"     @==
+      Or  (IntBinRel Lt (IntVar 1 "x") (IntConst 5))
+          (IntBinRel Gt (IntVar 1 "y") (IntConst 0))
+  , testCase "=>"             $ "x < 5 => y > 0"     @==
+      Implies (IntBinRel Lt (IntVar 1 "x") (IntConst 5))
+              (IntBinRel Gt (IntVar 1 "y") (IntConst 0))
+  , testCase "\\exists"       $ "\\exists x. x < 5"  @==
+      IntExists "x" (IntBinRel Lt (IntVar 1 "x") (IntConst 5))
+  , testCase "\\forall"       $ "\\forall x. x >= 0" @==
+      IntForall "x" (IntBinRel Gte (IntVar 1 "x") (IntConst 0))
   ]
 
 quantifierTests :: TestTree

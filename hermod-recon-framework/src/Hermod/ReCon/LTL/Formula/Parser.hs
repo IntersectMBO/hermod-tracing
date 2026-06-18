@@ -23,6 +23,7 @@ import qualified Data.Text as Text
 import           GHC.Unicode (isControl, isSpace)
 import           Text.Megaparsec
 import           Text.Megaparsec.Char (char, space, string)
+import           Text.Megaparsec.Char.Lexer (decimal)
 
 -- | The kind of a property variable: integer or text.
 data PropKind = IntKind | TextKind deriving (Show, Eq, Ord)
@@ -81,11 +82,14 @@ littleEndian radix = go 0 1 where
 bigEndian :: Word -> [Word] -> Word
 bigEndian radix = littleEndian radix . reverse
 
+asciiIndexing :: Parser Word
+asciiIndexing = char '(' *> space *> decimal <* space <* char ')'
+
 superscriptWord :: Parser Word
-superscriptWord = bigEndian 10 <$> some superscriptDigit
+superscriptWord = bigEndian 10 <$> some superscriptDigit <|> asciiIndexing
 
 subscriptWord :: Parser Word
-subscriptWord = bigEndian 10 <$> some subscriptDigit
+subscriptWord = bigEndian 10 <$> some subscriptDigit <|> asciiIndexing
 
 variableIdentifier :: Parser Text
 variableIdentifier = unescapedVariableIdentifier
@@ -108,10 +112,10 @@ name :: Parser Text
 name = try unquotedName <|> text
 
 formulaBottom :: Parser (Formula event ty)
-formulaBottom = Bottom <$ string "⊥"
+formulaBottom = Bottom <$ (string "⊥" <|> string "\\bottom")
 
 formulaTop :: Parser (Formula event ty)
-formulaTop = Top <$ string "⊤"
+formulaTop = Top <$ (string "⊤" <|> string "\\top")
 
 -- | Parse a single property constraint inside an Atom: "propname" = term.
 --   The term kind is determined by the RHS: int literal → IntPropConstraint,
@@ -141,23 +145,38 @@ formulaPropAtom ctx ty = Atom <$> ty <*> (space *> constraints ctx)
 formulaAtom :: Context -> Parser ty -> Parser (Formula event ty)
 formulaAtom ctx ty = formulaBottom <|> formulaTop <|> formulaInParens ctx ty <|> formulaPropAtom ctx ty
 
+formulaTemporalNextOp :: Parser ()
+formulaTemporalNextOp = void $ string "◯" <|> string "\\next"
+
+formulaTemporalExistsOp :: Parser ()
+formulaTemporalExistsOp = void $ string "♢" <|> string "\\finallyN"
+
+formulaTemporalForallOp :: Parser ()
+formulaTemporalForallOp = void $ string "☐" <|> string "\\globallyN"
+
+formulaTemporalForallInfOp :: Parser ()
+formulaTemporalForallInfOp = void $ string "☐ ᪲" <|> try (string "\\globally" <* notFollowedBy (char 'N'))
+
 formulaNext :: Context -> Parser ty -> Parser (Formula event ty)
-formulaNext ctx ty = Next <$> (string "◯" *> space *> formulaAtom ctx ty)
+formulaNext ctx ty = Next <$> (formulaTemporalNextOp *> space *> formulaAtom ctx ty)
 
 formulaNextN :: Context -> Parser ty -> Parser (Formula event ty)
-formulaNextN ctx ty = NextN <$> (try (string "◯" *> superscriptWord) <* space) <*> formulaAtom ctx ty
+formulaNextN ctx ty = NextN <$> (try (formulaTemporalNextOp *> superscriptWord) <* space) <*> formulaAtom ctx ty
 
 formulaExistsN :: Context -> Parser ty -> Parser (Formula event ty)
-formulaExistsN ctx ty = ExistsN <$> (string "♢" *> superscriptWord <* space) <*> formulaAtom ctx ty
+formulaExistsN ctx ty = ExistsN <$> (formulaTemporalExistsOp *> superscriptWord <* space) <*> formulaAtom ctx ty
 
 formulaForallN :: Context -> Parser ty -> Parser (Formula event ty)
-formulaForallN ctx ty = ForallN <$> (string "☐" *> superscriptWord <* space) <*> formulaAtom ctx ty
+formulaForallN ctx ty = ForallN <$> (formulaTemporalForallOp *> superscriptWord <* space) <*> formulaAtom ctx ty
 
 formulaForall :: Context -> Parser ty -> Parser (Formula event ty)
-formulaForall ctx ty = Forall <$> (string "☐ ᪲" *> option 0 subscriptWord <* space) <*> formulaAtom ctx ty
+formulaForall ctx ty = Forall <$> (formulaTemporalForallInfOp *> option 0 subscriptWord <* space) <*> formulaAtom ctx ty
+
+formulaNotOp :: Parser ()
+formulaNotOp = void $ string "¬" <|> string "\\not"
 
 formulaNot :: Context -> Parser ty -> Parser (Formula event ty)
-formulaNot ctx ty = Not <$> (string "¬" *> space *> formulaAtom ctx ty)
+formulaNot ctx ty = Not <$> (formulaNotOp *> space *> formulaAtom ctx ty)
 
 -- | Set of int values from a literal {1, 2, 3}.
 setIntConst :: Parser (Set IntValue)
@@ -209,27 +228,36 @@ formulaPrefixOrEq ctx ty =
   <|> formulaNot ctx ty
   <|> formulaEq ctx ty
 
+formulaAndOp :: Parser ()
+formulaAndOp = void $ string "∧" <|> string "&&"
+
 formulaAnd :: Context -> Parser ty -> Parser (Formula event ty)
 formulaAnd ctx ty = apply <$> (formulaPrefixOrEq ctx ty <* space) <*> optional (do
-    void $ string "∧"
+    formulaAndOp
     space
     formulaAnd ctx ty) where
   apply :: Formula event ty -> Maybe (Formula event ty) -> Formula event ty
   apply phi Nothing     = phi
   apply phi (Just !psi) = And phi psi
 
+formulaOrOp :: Parser ()
+formulaOrOp = void $ string "∨" <|> string "||"
+
 formulaOr :: Context -> Parser ty -> Parser (Formula event ty)
 formulaOr ctx ty = apply <$> (formulaAnd ctx ty <* space) <*> optional (do
-    void $ string "∨"
+    formulaOrOp
     space
     formulaOr ctx ty) where
   apply :: Formula event ty -> Maybe (Formula event ty) -> Formula event ty
   apply phi Nothing     = phi
   apply phi (Just !psi) = Or phi psi
 
+formulaImpliesOp :: Parser ()
+formulaImpliesOp = void $ string "⇒" <|> string "=>"
+
 formulaImplies :: Context -> Parser ty -> Parser (Formula event ty)
 formulaImplies ctx ty = apply <$> (formulaOr ctx ty <* space) <*> optional (do
-    void $ string "⇒"
+    formulaImpliesOp
     space
     formulaImplies ctx ty) where
   apply :: Formula event ty -> Maybe (Formula event ty) -> Formula event ty
@@ -238,19 +266,25 @@ formulaImplies ctx ty = apply <$> (formulaOr ctx ty <* space) <*> optional (do
 
 data Quantifier = Universal | Existential
 
+formulaIntKind :: Parser ()
+formulaIntKind = void $ string "ℤ" <|> string "\\Int" <|> string "Int"
+
+formulaTextKind :: Parser ()
+formulaTextKind = void $ string "\\Text" <|> string "Text"
+
 -- | Handles Qx ∈ ℤ. φ,  Qx ∈ Text. φ,  Qx ∈ dom. φ  where Q is ∀ or ∃
 formulaPropQuantifier :: Context -> Parser ty -> Parser (Formula event ty)
 formulaPropQuantifier ctx ty = do
   q <- try $
-        (Universal   <$ string "∀") <|>
-        (Existential <$ string "∃")
+        (Universal   <$ (string "∀" <|> string "\\forall")) <|>
+        (Existential <$ (string "∃" <|> string "\\exists"))
   space
   x <- variableIdentifier
   space
-  void $ string "∈"
+  void $ string "∈" <|> string ":"
   space
   result <-
-    (Left  <$> ((IntKind <$ string "ℤ") <|> (TextKind <$ string "Text")))
+    (Left  <$> (IntKind <$ formulaIntKind <|> TextKind <$ formulaTextKind))
     <|>
     (Right <$> setDomain ctx)
   space

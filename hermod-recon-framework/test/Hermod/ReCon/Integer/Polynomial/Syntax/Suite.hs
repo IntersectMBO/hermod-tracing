@@ -25,6 +25,7 @@ syntaxTests = testGroup "Syntax"
   [ constantTests
   , variableTests
   , sumTests
+  , asciiCoeffTests
   ]
 
 constantTests :: TestTree
@@ -51,5 +52,14 @@ sumTests = testGroup "Sums"
 
   , testCase "3·x + y - 1" $
       "3·x + y - 1" @==
+        IntSum (IntSum (IntVar 3 "x") (IntVar 1 "y")) (IntConst (-1))
+  ]
+
+asciiCoeffTests :: TestTree
+asciiCoeffTests = testGroup "ASCII coefficient operator (*)"
+  [ testCase "scaled variable"      $ "3*x"         @== IntVar 3 "x"
+  , testCase "negative coefficient" $ "-2*x"        @== IntVar (-2) "x"
+  , testCase "3*x + y - 1" $
+      "3*x + y - 1" @==
         IntSum (IntSum (IntVar 3 "x") (IntVar 1 "y")) (IntConst (-1))
   ]

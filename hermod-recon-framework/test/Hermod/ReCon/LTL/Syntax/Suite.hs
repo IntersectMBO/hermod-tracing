@@ -55,10 +55,20 @@ formula6 = "∃x ∈ {1, 2, 3}. x = 1"
 emptyCtx :: Context
 emptyCtx = Context { interpDomain = [], varKinds = Map.empty }
 
+pF :: Text -> Either String (Formula () Text)
+pF src = case parse (Parser.formula @Text @() emptyCtx Parser.name) "input" src of
+  Right x  -> Right x
+  Left err -> Left (show err)
+
+(@==) :: Text -> Formula () Text -> Assertion
+input @== expected = pF input @?= Right expected
+infix 1 @==
+
 syntaxTests :: TestTree
 syntaxTests = testGroup "Syntax"
   [ syntacticTests
   , parserTests
+  , asciiTests
   ]
 
 syntacticTests :: TestTree
@@ -144,4 +154,38 @@ parserTests = testGroup "Parsing"
             (fromList [1, 2, 3])
             (PropIntBinRel Eq (fromList []) (IntVar 1 "x") (IntConst 1))
           )
+  ]
+
+asciiTests :: TestTree
+asciiTests = testGroup "ASCII syntax"
+  [ testGroup "Atoms"
+      [ testCase "\\bottom"  $ "\\bottom" @== Bottom
+      , testCase "\\top"     $ "\\top"    @== Top
+      ]
+  , testGroup "Temporal operators"
+      [ testCase "\\next"              $ "\\next \\top"         @== Next Top
+      , testCase "\\next with (N)"     $ "\\next(2) \\top"      @== NextN 2 Top
+      , testCase "\\finallyN with (N)" $ "\\finallyN(300) \\top" @== ExistsN 300 Top
+      , testCase "\\globallyN with (N)" $ "\\globallyN(2) \\top" @== ForallN 2 Top
+      , testCase "\\globally"          $ "\\globally \\top"     @== Forall 0 Top
+      , testCase "\\globally with (N)" $ "\\globally(42) \\top" @== Forall 42 Top
+      ]
+  , testGroup "Connectives"
+      [ testCase "\\not"  $ "\\not \\top"            @== Not Top
+      , testCase "&&"     $ "\\top && \\bottom"       @== And Top Bottom
+      , testCase "||"     $ "\\top || \\bottom"       @== Or  Top Bottom
+      , testCase "=>"     $ "\\top => \\bottom"       @== Implies Top Bottom
+      ]
+  , testGroup "Quantifiers"
+      [ testCase "\\forall x : \\Int"  $ "\\forall x : \\Int. x = 1"  @==
+          PropIntForall "x" (PropIntBinRel Eq (fromList []) (IntVar 1 "x") (IntConst 1))
+      , testCase "\\forall x : Int"    $ "\\forall x : Int. x = 1"    @==
+          PropIntForall "x" (PropIntBinRel Eq (fromList []) (IntVar 1 "x") (IntConst 1))
+      , testCase "\\exists x : \\Int"  $ "\\exists x : \\Int. x = 1"  @==
+          PropIntExists "x" (PropIntBinRel Eq (fromList []) (IntVar 1 "x") (IntConst 1))
+      , testCase "\\forall x : \\Text" $ "\\forall x : \\Text. \\top" @==
+          PropTextForall "x" Top
+      , testCase "\\exists x : \\Text" $ "\\exists x : \\Text. \\top" @==
+          PropTextExists "x" Top
+      ]
   ]
