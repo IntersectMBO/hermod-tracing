@@ -21,10 +21,10 @@ import           Test.Tasty
 import           Test.Tasty.HUnit
 
 eventDuration :: Word
-eventDuration = 10          -- μs per event bucket (= --duration 10)
+eventDuration = 100         -- μs per event bucket (= --duration 100)
 
 second :: Word
-second = 1_000_000          -- μs                 (= --timeunit second)
+second = 1_000_000          -- μs                  (= --timeunit second)
 
 integrationTests :: IO TestTree
 integrationTests = do
