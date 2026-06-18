@@ -1,3 +1,6 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -5,7 +8,10 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Cardano.Logging.Formatter (
-    metricsFormatter
+    FormattedMessage(..)
+  , PreFormatted(..)
+  , TraceObject(..)
+  , metricsFormatter
   , preFormatted
   , forwardFormatter
   , forwardFormatter'
@@ -21,7 +27,11 @@ import           Cardano.Logging.Trace (contramapM)
 import           Cardano.Logging.Types
 import           Cardano.Logging.Types.TraceMessage
 
-import           Codec.Serialise (serialise)
+import           Codec.Serialise (Serialise (..), serialise)
+import           Control.DeepSeq (NFData)
+import           Data.ByteString (ByteString)
+import           Data.Time (UTCTime)
+import           GHC.Generics (Generic)
 import           Control.Concurrent (myThreadId)
 import           Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Control.Tracer as T
@@ -39,6 +49,41 @@ import           Data.Time (defaultTimeLocale, formatTime, getCurrentTime)
 import           Network.HostName
 import           System.Environment (lookupEnv)
 import           System.IO.Unsafe (unsafePerformIO)
+
+
+data FormattedMessage =
+      FormattedHuman Bool Text
+      -- ^ The bool specifies if the formatting includes colours
+    | FormattedMachine Text
+    | FormattedMetrics [Metric]
+    | FormattedForwarder TraceObject
+    | FormattedCBOR ByteString
+  deriving stock (Eq, Show)
+
+
+data PreFormatted = PreFormatted {
+    pfTime             :: !UTCTime
+  , pfNamespace        :: !Text
+  , pfThreadId         :: !Text
+  , pfForHuman         :: !(Maybe Text)
+  , pfForMachineObject :: AE.Object
+}
+
+-- | Used as interface object for ForwarderTracer
+data TraceObject = TraceObject {
+    toHuman     :: !(Maybe Text)
+  , toMachine   :: !Text
+  , toNamespace :: ![Text]
+  , toSeverity  :: !SeverityS
+  , toDetails   :: !DetailLevel
+  , toTimestamp :: !UTCTime
+  , toHostname  :: !Text
+  , toThreadId  :: !Text
+} deriving stock
+    (Eq, Show, Generic)
+  -- ^ Instances for 'TraceObject' to forward it using 'trace-forward' library.
+  deriving anyclass
+    (Serialise, NFData)
 
 
 -- | If the @TRACE_DISPATCHER_LOGGING_HOSTNAME@ environment variable is set,

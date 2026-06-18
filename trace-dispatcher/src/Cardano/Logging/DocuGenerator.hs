@@ -26,6 +26,7 @@ module Cardano.Logging.DocuGenerator (
 ) where
 
 import           Cardano.Logging.ConfigurationParser ()
+import           Cardano.Logging.Formatter (FormattedMessage)
 import           Cardano.Logging.Types
 import           Cardano.Logging.Types.DocuGenerator
 

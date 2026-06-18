@@ -43,19 +43,12 @@ common project-config
 library
   import:             project-config
   hs-source-dirs:     src
-  exposed-modules:    Cardano.Logging.Trace
+  exposed-modules:    Cardano.Logging.API
+                      Cardano.Logging.Trace
                       Cardano.Logging.Types
-                      Cardano.Logging.Types.NodeInfo
-                      Cardano.Logging.Types.NodeStartupInfo
-                      Cardano.Logging.Types.TraceMessage
-                      Cardano.Logging.Utils
 
   build-depends:        base >=4.12 && <5
                       , aeson >= 2.1.0.0
-                      , async
-                      , bytestring
-                      , cborg
-                      , cborg-json
                       , containers
                       , contra-tracer ^>= 0.2.1
                       , deepseq
@@ -63,6 +56,5 @@ library
                       , network
                       , serialise
                       , text
-                      , time
                       , unliftio
                       , unliftio-core

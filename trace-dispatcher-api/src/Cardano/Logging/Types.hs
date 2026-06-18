@@ -2,11 +2,9 @@
 {-# LANGUAGE DeriveGeneric            #-}
 {-# LANGUAGE DerivingStrategies       #-}
 {-# LANGUAGE GADTs                    #-}
-{-# LANGUAGE MultiWayIf               #-}
 {-# LANGUAGE RankNTypes               #-}
 {-# LANGUAGE RecordWildCards          #-}
 {-# LANGUAGE ScopedTypeVariables      #-}
-{-# LANGUAGE StandaloneKindSignatures #-}
 
 {-# OPTIONS_GHC -Wno-partial-fields  #-}
 
@@ -44,7 +42,6 @@ module Cardano.Logging.Types (
   , emptyConfigReflection
   , TraceConfig(..)
   , emptyTraceConfig
-  , FormattedMessage(..)
   , TraceControl(..)
   , DocCollector(..)
   , LogDoc(..)
@@ -52,31 +49,21 @@ module Cardano.Logging.Types (
   , BackendConfig(..)
   , Folding(..)
   , unfold
-  , TraceObject(..)
-  , PreFormatted(..)
-  , HowToConnect(..)
 ) where
 
 import           Codec.Serialise     (Serialise (..))
-import           Control.Applicative ((<|>))
 import           Control.DeepSeq     (NFData)
 import qualified Control.Tracer      as T
 import qualified Data.Aeson          as AE
-import qualified Data.Aeson.Types    as AE (Parser)
 import           Data.Bool           (bool)
-import           Data.ByteString     (ByteString)
 import           Data.IORef
-import           Data.Kind           (Type)
 import           Data.Map.Strict     (Map)
 import qualified Data.Map.Strict     as Map
 import           Data.Set            (Set)
 import qualified Data.Set            as Set
-import           Data.Text           as T (Text, breakOnEnd, intercalate, null,
-                                           pack, singleton, unpack, unsnoc,
-                                           words)
+import           Data.Text           as T (Text, intercalate, null,
+                                           pack, singleton, unpack, words)
 import           Data.Text.Read      as T (decimal)
-import           Data.Time           (UTCTime)
-import           Data.Word           (Word16)
 import           GHC.Generics
 import           Network.HostName    (HostName)
 import           Network.Socket      (PortNumber)
@@ -334,40 +321,6 @@ emptyConfigReflection  = do
     allTracers  <- newIORef Set.empty
     pure $ ConfigReflection silence hasMetrics allTracers
 
-data FormattedMessage =
-      FormattedHuman Bool Text
-      -- ^ The bool specifies if the formatting includes colours
-    | FormattedMachine Text
-    | FormattedMetrics [Metric]
-    | FormattedForwarder TraceObject
-    | FormattedCBOR ByteString
-  deriving stock (Eq, Show)
-
-
-data PreFormatted = PreFormatted {
-    pfTime             :: !UTCTime
-  , pfNamespace        :: !Text
-  , pfThreadId         :: !Text
-  , pfForHuman         :: !(Maybe Text)
-  , pfForMachineObject :: AE.Object
-}
-
--- | Used as interface object for ForwarderTracer
-data TraceObject = TraceObject {
-    toHuman     :: !(Maybe Text)
-  , toMachine   :: !Text
-  , toNamespace :: ![Text]
-  , toSeverity  :: !SeverityS
-  , toDetails   :: !DetailLevel
-  , toTimestamp :: !UTCTime
-  , toHostname  :: !Text
-  , toThreadId  :: !Text
-} deriving stock
-    (Eq, Show, Generic)
-  -- ^ Instances for 'TraceObject' to forward it using 'trace-forward' library.
-  deriving anyclass
-    (Serialise, NFData)
-
 -- |
 data BackendConfig =
     Forwarder
@@ -613,55 +566,3 @@ instance LogFormatting b => LogFormatting (Folding a b) where
   forHuman (Folding b)     =  forHuman b
   asMetrics (Folding b)    =  asMetrics b
 
--- | Specifies how to connect to the peer.
---
--- Taken from ekg-forward:System.Metrics.Configuration, to avoid dependency.
-type Host :: Type
-type Host = Text
-
-type Port :: Type
-type Port = Word16
-
-type HowToConnect :: Type
-data HowToConnect
-  = LocalPipe    !FilePath    -- ^ Local pipe (UNIX or Windows).
-  | RemoteSocket !Host !Port  -- ^ Remote socket (host and port).
-  deriving stock (Eq, Generic)
-  deriving anyclass (NFData)
-
-instance Show HowToConnect where
-  show = \case
-    LocalPipe pipe         -> pipe
-    RemoteSocket host port -> T.unpack host ++ ":" ++ show port
-
-instance AE.ToJSON HowToConnect where
-  toJSON     = AE.toJSON . show
-  toEncoding = AE.toEncoding . show
-
--- first try to host:port, and if that fails revert to parsing any
--- string literal and assume it is a localpipe.
-instance AE.FromJSON HowToConnect where
-  parseJSON = AE.withText "HowToConnect" $ \t ->
-        (uncurry RemoteSocket <$> parseHostPort t)
-    <|> (        LocalPipe    <$> parseLocalPipe t)
-
-parseLocalPipe :: Text -> AE.Parser FilePath
-parseLocalPipe t
-  | T.null t = fail "parseLocalPipe: empty Text"
-  | otherwise   = pure $ T.unpack t
-
-parseHostPort :: Text -> AE.Parser (Text, Word16)
-parseHostPort t
-  | T.null t
-  = fail "parseHostPort: empty Text"
-  | otherwise
-  = let
-    (host_, portText) = T.breakOnEnd ":" t
-    host              = maybe "" fst (T.unsnoc host_)
-  in if
-    | T.null host      -> fail "parseHostPort: Empty host or no colon found."
-    | T.null portText  -> fail "parseHostPort: Empty port."
-    | Right (port, remainder) <- T.decimal portText
-    , T.null remainder
-    , 0 <= port, port <= 65535 -> pure (host, port)
-    | otherwise -> fail "parseHostPort: Non-numeric port or value out of range."

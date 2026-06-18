@@ -24,6 +24,7 @@ module Cardano.Logging.Configuration
   ) where
 
 import           Cardano.Logging.DocuGenerator (addFiltered, addLimiter, addSilent)
+import           Cardano.Logging.Formatter (FormattedMessage)
 import           Cardano.Logging.FrequencyLimiter (limitFrequency)
 import           Cardano.Logging.Trace
 import           Cardano.Logging.TraceDispatcherMessage

@@ -58,6 +58,10 @@ library
                       Cardano.Logging.Tracer.Standard
                       Cardano.Logging.Tracer.Forward
                       Cardano.Logging.Tracer.Composed
+                      Cardano.Logging.Types.NodeInfo
+                      Cardano.Logging.Types.NodeStartupInfo
+                      Cardano.Logging.Types.TraceMessage
+                      Cardano.Logging.Utils
 
   other-modules:      Cardano.Logging.Types.DocuGenerator
 

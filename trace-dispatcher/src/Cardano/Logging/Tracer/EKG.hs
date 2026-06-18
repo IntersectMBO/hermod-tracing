@@ -6,6 +6,7 @@ module Cardano.Logging.Tracer.EKG (
 ) where
 
 import           Cardano.Logging.DocuGenerator
+import           Cardano.Logging.Formatter (FormattedMessage (..))
 import           Cardano.Logging.Types
 import           Cardano.Logging.Utils (showTReal, tryEvalNF)
 
