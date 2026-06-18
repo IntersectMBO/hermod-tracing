@@ -3,9 +3,10 @@ module Hermod.ReCon.Common.Parser (parseIdentifier, parseIntValue, parseNatValue
 import           Hermod.ReCon.Common.Types (BinRel (..), IntValue, NatValue, Parser, VariableIdentifier)
 
 import           Data.Char (isAlpha, isAlphaNum)
+import           Data.Functor
 import qualified Data.Text as Text
 import           Text.Megaparsec
-import           Text.Megaparsec.Char (char)
+import           Text.Megaparsec.Char (string)
 import           Text.Megaparsec.Char.Lexer (decimal, signed)
 
 isSubscriptDigit :: Char -> Bool
@@ -24,10 +25,25 @@ parseIntValue = signed (pure ()) decimal
 parseNatValue :: Parser NatValue
 parseNatValue = decimal
 
+parseLt :: Parser ()
+parseLt = void $ string "<"
+
+parseGt :: Parser ()
+parseGt = void $ string ">"
+
+parseEq :: Parser ()
+parseEq = void $ string "="
+
+parseLte :: Parser ()
+parseLte = void $ string "≤" <|> string "<="
+
+parseGte :: Parser ()
+parseGte = void $ string "≥" <|> string ">="
+
 parseBinRel :: Parser BinRel
 parseBinRel =
-      Lte <$ char '≤'
-  <|> Gte <$ char '≥'
-  <|> Eq  <$ char '='
-  <|> Lt  <$ char '<'
-  <|> Gt  <$ char '>'
+      Lte <$ parseLte
+  <|> Gte <$ parseGte
+  <|> Eq  <$ parseEq
+  <|> Lt  <$ parseLt
+  <|> Gt  <$ parseGt

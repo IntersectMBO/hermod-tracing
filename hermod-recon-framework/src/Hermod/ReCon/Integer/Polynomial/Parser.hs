@@ -4,12 +4,16 @@ import           Hermod.ReCon.Common.Parser
 import           Hermod.ReCon.Common.Types
 import           Hermod.ReCon.Integer.Polynomial.Term (IntTerm (..), mul)
 
+import           Data.Functor                         (void)
 import           Text.Megaparsec
-import           Text.Megaparsec.Char (char, space)
+import           Text.Megaparsec.Char                 (char, space)
 
 -- ---------------------------------------------------------------------------
 -- IntTerm parser
 -- ---------------------------------------------------------------------------
+
+intTermCoeffOp :: Parser ()
+intTermCoeffOp = void $ char '·' <|> char '*'
 
 -- | Atom-level IntTerm.
 --
@@ -22,7 +26,7 @@ import           Text.Megaparsec.Char (char, space)
 intTermAtom :: Parser IntTerm
 intTermAtom =
       char '(' *> space *> intTerm <* space <* char ')'
-  <|> try (IntVar <$> parseIntValue <* char '·' <*> parseIdentifier)
+  <|> try (IntVar <$> parseIntValue <* intTermCoeffOp <*> parseIdentifier)
   <|> IntConst <$> parseIntValue
   <|> IntVar 1 <$> parseIdentifier
 
