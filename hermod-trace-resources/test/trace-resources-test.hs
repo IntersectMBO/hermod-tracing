@@ -1,8 +1,5 @@
-{-# OPTIONS_GHC -Wno-unused-imports  #-}
-
 import           Cardano.Logging
 import           Hermod.Tracing.Resources
-import           Hermod.Tracing.Resources.Types
 
 import           Control.Monad.IO.Class
 import           Data.IORef

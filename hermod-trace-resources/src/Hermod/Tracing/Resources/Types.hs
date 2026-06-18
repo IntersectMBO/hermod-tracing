@@ -17,30 +17,54 @@ import           Data.Text (pack)
 import           Data.Word
 import           GHC.Generics (Generic)
 
--- | Struct for resources used by the process
-type ResourceStats = Resources Word64
-
--- * HKD for resources used by the process.
+-- | A snapshot of resource usage for the current process, parameterised over
+-- the numeric type @a@. The concrete alias 'ResourceStats' fixes @a ~ Word64@.
 --
+-- Fields that cannot be measured on the current platform are set to @0@.
 data Resources a
   = Resources
       { rCentiCpu   :: !a
+        -- ^ CPU time in centiseconds (1\/100 s) since process start,
+        --   from @\/proc\/self\/stat@ on Linux or equivalent OS API.
       , rCentiGC    :: !a
+        -- ^ CPU centiseconds spent in the GHC garbage collector (RTS stats).
       , rCentiMut   :: !a
+        -- ^ CPU centiseconds spent in the mutator, i.e. application code (RTS stats).
       , rGcsMajor   :: !a
+        -- ^ Number of major (full-heap) GC runs since process start (RTS stats).
       , rGcsMinor   :: !a
+        -- ^ Number of minor GC runs since process start (RTS stats).
       , rAlloc      :: !a
+        -- ^ Cumulative bytes allocated in the heap since process start (RTS stats).
       , rLive       :: !a
+        -- ^ Live heap bytes immediately after the last GC run (RTS stats).
       , rHeap       :: !a
+        -- ^ Committed heap bytes (total heap size reserved from the OS) (RTS stats).
       , rRSS        :: !a
+        -- ^ Resident set size in bytes: physical memory currently mapped to
+        --   the process (from the OS kernel).
       , rCentiBlkIO :: !a
-      , rNetRd :: !a
-      , rNetWr :: !a
-      , rFsRd  :: !a
-      , rFsWr  :: !a
+        -- ^ Centiseconds spent waiting for block I/O (Linux @\/proc\/self\/stat@ only;
+        --   @0@ on other platforms).
+      , rNetRd      :: !a
+        -- ^ IP packet bytes received since boot (Linux @\/proc\/self\/net\/netstat@,
+        --   only when the @with-netstat@ flag is enabled; @0@ otherwise).
+      , rNetWr      :: !a
+        -- ^ IP packet bytes transmitted since boot (Linux @\/proc\/self\/net\/netstat@,
+        --   only when the @with-netstat@ flag is enabled; @0@ otherwise).
+      , rFsRd       :: !a
+        -- ^ Filesystem bytes read by the process (from @\/proc\/self\/io@ on Linux
+        --   or equivalent OS API).
+      , rFsWr       :: !a
+        -- ^ Filesystem bytes written by the process (from @\/proc\/self\/io@ on Linux
+        --   or equivalent OS API).
       , rThreads    :: !a
+        -- ^ Number of live GHC green threads (RTS stats).
       }
   deriving (Functor, Generic, Show)
+
+-- | Concrete snapshot of resource usage with all fields as 'Word64' counts.
+type ResourceStats = Resources Word64
 
 instance Applicative Resources where
   pure a = Resources a a a a a a a a a a a a a a a

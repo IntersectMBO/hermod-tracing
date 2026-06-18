@@ -1,9 +1,14 @@
 cabal-version: 3.0
 
 name:                   hermod-trace-resources
-version:                0.2.4
-synopsis:               Package for tracing resources for linux, mac and windows
-description:            Package for tracing resources for linux, mac and windows.
+version:                1.0.0
+synopsis:               OS resource sampling for the Hermod tracing system
+description:            Provides a single IO action, 'readResourceStats', that samples
+                        the calling process's resource usage (CPU, GC, memory, I/O,
+                        threads) and returns it as a 'LogFormatting' / 'MetaTrace' value
+                        ready to feed into the trace-dispatcher pipeline.
+                        Supports Linux, macOS, and Windows; falls back to GHC RTS metrics
+                        only on other platforms.
 category:               Cardano,
                         Trace,
 copyright:              2021-2023 Input Output Global Inc (IOG), 2023-2026 Intersect.
@@ -29,7 +34,7 @@ library
   import:               project-config
   hs-source-dirs:       src
   exposed-modules:      Hermod.Tracing.Resources
-                        Hermod.Tracing.Resources.Types
+  other-modules:        Hermod.Tracing.Resources.Types
                         Hermod.Tracing.Resources.Dummy
 
   default-extensions:   OverloadedStrings
@@ -58,14 +63,14 @@ library
     CPP-options:        -DWITH_NETSTAT
 
   if os(linux)
-    exposed-modules:    Hermod.Tracing.Resources.Linux
+    other-modules:      Hermod.Tracing.Resources.Linux
   if os(windows)
-    exposed-modules:    Hermod.Tracing.Resources.Windows
+    other-modules:      Hermod.Tracing.Resources.Windows
     c-sources:          cbits/os-support-win.c
     include-dirs:       include/
     cc-options:         -DPSAPI_VERSION=2
   if os(darwin)
-    exposed-modules:    Hermod.Tracing.Resources.Darwin
+    other-modules:      Hermod.Tracing.Resources.Darwin
     c-sources:          cbits/os-support-darwin.c
     include-dirs:       include/
 
