@@ -1,5 +1,12 @@
 # Revision history for hermod-recon-framework
 
+## 1.4.0 -- June 2026
+
+* All Unicode operators in the formula parsers now have ASCII spellings accepted
+  as alternatives (e.g. `\globally`, `\forall`, `&&`, `=>`, `<=`).
+* Numeric indices on temporal operators can be written as a parenthesised decimal
+  immediately after the operator token (e.g. `\globallyN(2)`, `\finallyN(300)`).
+
 ## 1.3.0 -- June 2026
 
 * Rename module namespace from `Cardano.ReCon.*` to `Hermod.ReCon.*`.

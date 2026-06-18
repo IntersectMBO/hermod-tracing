@@ -3,7 +3,7 @@ name:               hermod-recon-framework
 description:        Re(altime) Con(formance) Framework based on Linear Temporal Logic (LTL).
 category:           Testing
 copyright:          2026 Intersect.
-version:            1.3.0
+version:            1.4.0
 license:            Apache-2.0
 license-files:      LICENSE
                     NOTICE
