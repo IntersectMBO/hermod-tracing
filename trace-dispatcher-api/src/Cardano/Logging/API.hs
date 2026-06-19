@@ -10,8 +10,11 @@
 -- * __Dispatch messages__: call 'traceWith' to emit, 'contramapM' \/ 'contramapM''
 --   to adapt types, 'foldTraceM' to accumulate state, 'routingTrace' to fan out.
 --
--- * __Filter and annotate__: 'filterTraceBySeverity', 'filterTraceByPrivacy',
---   'withNames', 'setSeverity', 'setDetails', etc.
+-- * __Filter__: 'filterTrace', 'filterTraceMaybe'.
+--
+-- Annotation combinators ('withNames', 'setSeverity', 'setDetails', etc.) are
+-- intentionally excluded from this module; they are available in
+-- "Cardano.Logging.Trace" for use within @trace-dispatcher@ itself.
 --
 -- == When to use this package vs. @trace-dispatcher@
 --
@@ -50,15 +53,27 @@
 -- These appear in type signatures throughout the system; tracer authors
 -- typically do not construct them directly.
 module Cardano.Logging.API
-    ( module X
+    ( -- * Types
+      module Cardano.Logging.Types
+      -- * Core combinators
+    , traceWith
+    , contramapM
+    , contramapMCond
+    , contramapM'
+    , foldTraceM
+    , foldCondTraceM
+    , routingTrace
+    , contramap'
+    , (>!$!<)
+      -- * Filtering
+    , filterTrace
+    , filterTraceMaybe
     ) where
 
--- Core types: Trace, LogFormatting, MetaTrace, Namespace, Metric,
---             LoggingContext, Severity, Privacy, DetailLevel, Folding,
---             TraceConfig, TraceControl, BackendConfig, …
-import           Cardano.Logging.Types as X
-
--- Core combinators: traceWith, contramapM, contramapM', foldTraceM,
---                   foldCondTraceM, routingTrace, filterTrace*,
---                   withNames, setSeverity, setDetails, withLoggingContext, …
-import           Cardano.Logging.Trace as X
+import           Cardano.Logging.Types
+import           Cardano.Logging.Trace.Combinators
+                   ( traceWith, contramapM, contramapMCond, contramapM'
+                   , foldTraceM, foldCondTraceM, routingTrace
+                   , contramap', (>!$!<)
+                   )
+import           Cardano.Logging.Trace (filterTrace, filterTraceMaybe)

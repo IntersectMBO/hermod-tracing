@@ -34,6 +34,7 @@ import           Cardano.Logging.Tracer.Standard as X
 import           Cardano.Logging.Configuration as X
 import           Cardano.Logging.ConfigurationParser as X
 import           Cardano.Logging.Consistency as X
+import           Cardano.Logging.FrequencyLimiter as X
 
 -- Output types produced by the backend pipeline
 -- (FormattedMessage, TraceObject, PreFormatted)
