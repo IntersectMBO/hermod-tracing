@@ -31,6 +31,7 @@ import           Data.Text                           as T (Text, intercalate, la
 import           Data.Yaml                           hiding (decodeFileEither)
 import           Data.Yaml.Include                   (decodeFileEither)
 import           System.Directory                    (doesFileExist)
+import           System.FilePath                     (takeDirectory, (</>))
 
 -- -----------------------------------------------------------------------------
 -- Configuration file
@@ -199,7 +200,7 @@ readConfigurationInt modifyConf = go 4
     external :: Either ParseException ExternalFile <- decodeFileEither fp
     case external of
       Right (ExternalFile fp')
-        | redirects > 0 -> go (redirects - 1) fp'
+        | redirects > 0 -> go (redirects - 1) (takeDirectory fp </> fp')
         | otherwise     -> error "hermod.readConfigurationInt: too many redirects"
       Left{} -> do
         confRep_ :: Either ParseException ConfigRepresentation <- decodeFileEither fp
