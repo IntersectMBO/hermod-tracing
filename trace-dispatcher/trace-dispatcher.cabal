@@ -80,6 +80,7 @@ library
                       , deepseq
                       , directory
                       , ekg-core
+                      , filepath
                       , hashable
                       , hostname
                       , http-date
