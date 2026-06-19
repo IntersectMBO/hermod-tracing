@@ -5,6 +5,7 @@
 <int> stands for an integer                   // examples: 0, -1, 42
 <nat> stands for a natural number written in  // examples: ⁰ ¹ ⁴² (superscript)
       superscript or subscript Unicode digits //           ₀ ₁ ₄₂ (subscript)
+    or as a decimal in parentheses            // examples: (0) (1) (42)
 
 x ::= [_a-zA-Z][_a-zA-Z0-9₀-₉]*
 
@@ -62,3 +63,33 @@ ns ::= name                   // namespace, examples:
 // k denotes a <nat> encoded as superscript (e.g. ◯⁴²) or subscript (e.g. ☐ ᪲₄₂)
 
 atom < eq = prefix < and < or < implies < universe
+
+// Every Unicode operator has an ASCII spelling. The grammar above uses the Unicode
+// forms; the table below lists the equivalent ASCII tokens accepted by the parser.
+//
+// Unicode    ASCII          Notes
+// ─────────────────────────────────────────────────────────────────────────────
+// ·          *              coefficient separator in integer terms (3·x / 3*x)
+// ≤          <=
+// ≥          >=
+// ⊥          \bottom
+// ⊤          \top
+// ¬          \not
+// ∧          &&
+// ∨          ||
+// ⇒          =>
+// ∀          \forall
+// ∃          \exists
+// ∈          :              quantifier domain separator (∀x ∈ ℤ. / \forall x : \Int.)
+// ℤ          \Int  or  Int  integer kind in quantifiers
+// Text       \Text          string kind in quantifiers (Text is also accepted as-is)
+// ◯          \next
+// ♢          \finallyN
+// ☐          \globallyN
+// ☐ ᪲        \globally
+//
+// Numeric indices (superscript k or subscript k) are written as a decimal in
+// parentheses immediately after the operator token, with no space in between:
+//
+//   ☐ ᪲₂ φ   →   \globally(2) φ
+//   ♢³ φ     →   \finallyN(3) φ
