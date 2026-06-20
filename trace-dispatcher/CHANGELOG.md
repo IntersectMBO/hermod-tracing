@@ -13,6 +13,7 @@
 * Limiter name is now included in the machine-readable trace output for high detail levels.
 * New exception type `HermodException` - currently only used for config errors.
 * Safeguard ceiling for PrometheusSimple response size, corresponding to roughly 56,000 distinct application metrics.
+* When `"HermodTracing"` config key references an external file via a relative path, make that relative to the original config file.
 
 ## 2.12.1 -- Apr 2026
 
