@@ -21,11 +21,11 @@ resource usage. The returned `ResourceStats` value carries `LogFormatting` and
 | Platform | CPU & GC | Memory (RSS) | Block I/O | Network I/O | Threads |
 |----------|----------|--------------|-----------|-------------|---------|
 | Linux    | ✓        | ✓            | ✓         | ✓ (opt-in)  | ✓       |
-| macOS    | ✓        | ✓            | —         | ✓           | ✓       |
+| macOS    | ✓        | ✓            | —         | —           | ✓       |
 | Windows  | ✓        | ✓            | ✓         | —           | ✓       |
 | Other    | ✓ (RTS only) | —        | —         | —           | ✓       |
 
-Fields that cannot be read on a given platform are reported as `0`.
+Fields not supported on a given platform are reported as `0`.
 
 ## Quick start
 
@@ -82,14 +82,15 @@ package hermod-trace-resources
 
 ## Integration with trace-dispatcher
 
-`ResourceStats` implements both `LogFormatting` (human-readable text and structured
-JSON) and `MetaTrace` (namespace, severity, metric documentation). Wire it up like
+`ResourceStats` implements both `LogFormatting` (human-readable text, structured
+JSON and system metrics) and `MetaTrace` (namespace, severity, metric documentation). Wire it up like
 any other traced value:
 
 ```haskell
-tr <- mkCardanoTracer trBase mempty ["Resources"] [EKGBackend]
-configureTracers initialTraceConfig trDocumented [tr]
-forM_ [1..] $ \_ -> do
+configReflection <- emptyConfigReflection
+!tr <- mkCardanoTracer myStdoutTracer mempty Nothing ["Resources"] -- No trace forwarding or metrics in this example
+configureTracers configReflection myTraceConfig [tr]
+forever $ do
   threadDelay 5_000_000  -- 5 s
   readResourceStats >>= mapM_ (traceWith tr)
 ```
