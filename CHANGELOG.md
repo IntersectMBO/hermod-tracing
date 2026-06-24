@@ -3,6 +3,7 @@
 ## June 2026
 
 * Import `hermod-recon-framework` (was: `cardano-recon-framework`).
+* Import `hermod-trace-resources` (was: `trace-resources`).
 
 ## March 2026
 
