@@ -7,7 +7,7 @@ module Hermod.Tracing.FrequencyLimiter (
 )where
 
 import           Hermod.Tracing.Trace
-import           Hermod.Tracing.TraceDispatcherMessage
+import           Hermod.Tracing.HermodTracingMessage
 import           Hermod.Tracing.Types
 
 import           Control.Monad.IO.Unlift
@@ -77,7 +77,7 @@ limitFrequency
   :: forall a m . MonadUnliftIO m
   => Double   -- messages per second
   -> Text     -- name of this limiter
-  -> Trace m TraceDispatcherMessage -- the limiters messages
+  -> Trace m HermodTracingMessage -- the limiters messages
   -> Trace m a -- the limited trace
   -> m (Trace m a) -- the original trace
 limitFrequency thresholdFrequency limiterName ltracer vtracer = do

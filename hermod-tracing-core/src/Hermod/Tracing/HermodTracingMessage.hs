@@ -1,7 +1,7 @@
-module Hermod.Tracing.TraceDispatcherMessage
+module Hermod.Tracing.HermodTracingMessage
   (
     UnknownNamespaceKind (..)
-  , TraceDispatcherMessage (..)
+  , HermodTracingMessage (..)
   ) where
 
 import           Hermod.Tracing.ConfigurationParser ()
@@ -25,7 +25,7 @@ instance Show UnknownNamespaceKind where
   show UKFPrivacy  = "privacy"
   show UKFDetails  = "details"
 
-data TraceDispatcherMessage =
+data HermodTracingMessage =
     StartLimiting Text
     -- ^ This message indicates the start of frequency limiting
   | StopLimiting Text Int
@@ -48,7 +48,7 @@ data TraceDispatcherMessage =
     -- ^  Trace the effective configuration as JSON
   deriving Show
 
-instance LogFormatting TraceDispatcherMessage where
+instance LogFormatting HermodTracingMessage where
   forHuman (StartLimiting txt) = "Start of frequency limiting for " <> txt
   forHuman (StopLimiting txt num) = "Stop of frequency limiting for " <> txt <>
     ". Suppressed " <> showT num <> " messages."
@@ -112,7 +112,7 @@ instance LogFormatting TraceDispatcherMessage where
 internalRestriction :: Text
 internalRestriction = "\nThis internal message can't be filtered by the current configuration"
 
-instance MetaTrace TraceDispatcherMessage where
+instance MetaTrace HermodTracingMessage where
     namespaceFor StartLimiting {}    = Namespace [] ["StartLimiting"]
     namespaceFor StopLimiting {}     = Namespace [] ["StopLimiting"]
     namespaceFor RememberLimiting {} = Namespace [] ["RememberLimiting"]

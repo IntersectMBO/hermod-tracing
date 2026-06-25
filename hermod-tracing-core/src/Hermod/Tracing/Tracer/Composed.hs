@@ -15,7 +15,7 @@ module Hermod.Tracing.Tracer.Composed (
 import           Hermod.Tracing.Configuration
 import           Hermod.Tracing.Formatter
 import           Hermod.Tracing.Trace
-import           Hermod.Tracing.TraceDispatcherMessage
+import           Hermod.Tracing.HermodTracingMessage
 import           Hermod.Tracing.Types
 
 import           Control.Monad (when)
@@ -100,7 +100,7 @@ mkHermodTracer' trStdout trForward mbTrEkg tracerPrefix hook = do
              $ withSeverity tr''
 
     traceNamespaceErrors ::
-         Trace IO TraceDispatcherMessage
+         Trace IO HermodTracingMessage
       -> Trace IO evt1
       -> IO (Trace IO evt1)
     traceNamespaceErrors internalTr (Trace tr) = do

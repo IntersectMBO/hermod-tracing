@@ -276,7 +276,7 @@ limitFrequency
   :: forall a m . MonadUnliftIO m
   => Double   -- messages per second
   -> Text     -- name of this limiter
-  -> Trace m TraceDispatcherMessage -- the limiter's messages
+  -> Trace m HermodTracingMessage -- the limiter's messages
   -> Trace m a -- the trace subject to limitation
   -> m (Trace m a) -- the original trace
 ```
@@ -673,7 +673,7 @@ The consistency checks cover the following aspects:
 - Any namespace in the configuration must be found by a hierarchical lookup in `all namespaces`.
 
 If the checker encounters any problems it emits a `TracerConsistencyWarnings` message through the
-`Hermod.Tracing.TraceDispatcherMessage` type. The message is routed via the `Reflection` namespace
+`Hermod.Tracing.HermodTracingMessage` type. The message is routed via the `Reflection` namespace
 and carries `Warning` severity so that misconfigured namespaces are surfaced prominently in both the
 logs and forwarded tracing output.
 

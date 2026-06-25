@@ -27,7 +27,7 @@ import           Hermod.Tracing.DocuGenerator (addFiltered, addLimiter, addSilen
 import           Hermod.Tracing.Formatter (FormattedMessage)
 import           Hermod.Tracing.FrequencyLimiter (limitFrequency)
 import           Hermod.Tracing.Trace
-import           Hermod.Tracing.TraceDispatcherMessage
+import           Hermod.Tracing.HermodTracingMessage
 import           Hermod.Tracing.Types
 
 import           Control.Applicative (asum)
@@ -324,7 +324,7 @@ instance Show (Limiter m a) where
 
 -- | Routing and formatting of a trace from the config
 withLimitersFromConfig :: forall a m . (MonadUnliftIO m)
-  => Trace m TraceDispatcherMessage
+  => Trace m HermodTracingMessage
   -> Trace m a
   -> m (Trace m a)
 withLimitersFromConfig tri tr = do

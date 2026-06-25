@@ -49,7 +49,7 @@ library
                       Hermod.Tracing.DocuGenerator
                       Hermod.Tracing.Formatter
                       Hermod.Tracing.FrequencyLimiter
-                      Hermod.Tracing.TraceDispatcherMessage
+                      Hermod.Tracing.HermodTracingMessage
                       Hermod.Tracing.Tracer.DataPoint
                       Hermod.Tracing.Tracer.EKG
                       Hermod.Tracing.Tracer.Standard
