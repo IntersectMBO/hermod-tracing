@@ -1,6 +1,6 @@
 module Main(main) where
 
-import           Cardano.Logging.Types.TraceMessage (TraceMessage (..))
+import           Hermod.Tracing.Types.TraceMessage (TraceMessage (..))
 import qualified Hermod.ReCon.LTL.ContinuousFormula as CF
 import           Hermod.ReCon.LTL.Formula (OnMissingKey (..))
 import           Hermod.ReCon.LTL.Formula.Parser (Context (..))

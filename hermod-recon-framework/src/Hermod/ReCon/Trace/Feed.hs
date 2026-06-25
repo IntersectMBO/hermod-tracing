@@ -2,7 +2,7 @@
 
 module Hermod.ReCon.Trace.Feed(TemporalEvent(..), TemporalEventDurationMicrosec, read, readS) where
 
-import           Cardano.Logging.Types.TraceMessage
+import           Hermod.Tracing.Types.TraceMessage
 import           Hermod.ReCon.Trace.Ingest (IngestorReader (..))
 
 import           Prelude hiding (read)

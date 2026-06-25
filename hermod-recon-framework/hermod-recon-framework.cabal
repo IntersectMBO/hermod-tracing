@@ -114,7 +114,7 @@ library
                     , mtl
                     , text
                     , directory
-                    , trace-dispatcher
+                    , hermod-tracing-core
                     , serialise
                     , bytestring
                     , time
@@ -151,7 +151,7 @@ executable hermod-recon
       , text
       , containers
       , hermod-recon-framework
-      , trace-dispatcher
+      , hermod-tracing-core
       , aeson
       , streaming
       , async
@@ -182,7 +182,7 @@ executable hermod-recon-grep
       , mtl
       , time
       , hermod-recon-framework
-      , trace-dispatcher
+      , hermod-tracing-core
       , optparse-applicative
 
     hs-source-dirs:   app
