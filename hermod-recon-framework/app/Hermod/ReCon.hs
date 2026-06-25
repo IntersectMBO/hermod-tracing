@@ -167,7 +167,7 @@ main = do
         <> Text.unlines (fmap (("— " <>) . prettyError) (e : es))
     (_, []) -> pure ()
   let formulas' = fmap (interpTimeunit (\u -> timeunitToMicrosecond options.timeunit u `div` fromIntegral options.duration)) formulas
-  tr <- setupTraceDispatcher options.traceDispatcherCfg
+  tr <- setupTraceDispatcher options.hermodTracingCfg
   traceWith tr $ ContextDump (map (second showT) ctx)
   case options.mode of
     Offline -> do
