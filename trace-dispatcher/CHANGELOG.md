@@ -1,5 +1,16 @@
 # Revision history for trace-dispatcher
 
+## NEXT
+
+* All modules renamed from the `Cardano.Logging.*` namespace to `Hermod.Tracing.*`.
+* Core types (`Trace`, `LogFormatting`, `MetaTrace`, `Namespace`, `LoggingContext`,
+  severity/privacy/detail types, config types, `DocCollector`, …) and core
+  combinators (`traceWith`, `contramapM`, `foldTraceM`, `routingTrace`,
+  `filterTrace`, …) have been extracted into the new thin package
+  `trace-dispatcher-api`.  `trace-dispatcher` now depends on that package.
+* `Hermod.Tracing` (the top-level re-export module) now carries an explicit
+  export list, trimming it to the approved public surface.
+
 ## 2.13.0 -- July 2026
 
 * Drop compatibility with `contra-tracer-0.1`.

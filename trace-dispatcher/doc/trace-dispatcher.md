@@ -187,7 +187,7 @@ For the effective integration of trace messages into the tracing system, two ess
 The `LogFormatting` typeclass governs the presentation of trace messages, encompassing the mapping of traces to metrics and messages. It includes the following methods:
 
 - The `forMachine` method caters to a machine-readable representation, adaptable based on the detail level. Implementation is mandatory for the trace author. The system will render this,
-along with trace metadata, as JSON of type `Cardano.Logging.Types.TraceMessage.TraceMessage`.
+along with trace metadata, as JSON of type `Hermod.Tracing.Types.TraceMessage.TraceMessage`.
 
 - The `forHuman` method renders the message in a human-readable form. Its default implementation is an
 empty text. Whenever the system encounters the empty text, it will replace it with the machine-readable JSON, rendering it as a value in `{"data": <value>}`, preventing potential loss of log information
@@ -688,7 +688,7 @@ The consistency checks cover the following aspects:
 - Any namespace in the configuration must be found by a hierarchical lookup in `all namespaces`.
 
 If the checker encounters any problems it emits a `TracerConsistencyWarnings` message through the
-`Cardano.Logging.TraceDispatcherMessage` type. The message is routed via the `Reflection` namespace
+`Hermod.Tracing.TraceDispatcherMessage` type. The message is routed via the `Reflection` namespace
 and carries `Warning` severity so that misconfigured namespaces are surfaced prominently in both the
 logs and forwarded tracing output.
 

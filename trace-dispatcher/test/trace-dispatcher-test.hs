@@ -13,18 +13,18 @@ import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 
-import           Cardano.Logging
-import           Cardano.Logging.Test.Oracles
-import           Cardano.Logging.Test.Script
-import           Cardano.Logging.Test.Tracer
-import           Cardano.Logging.Test.Unit.Aggregation
-import           Cardano.Logging.Test.Unit.Configuration
-import           Cardano.Logging.Test.Unit.DataPoint
-import           Cardano.Logging.Test.Unit.Documentation
-import           Cardano.Logging.Test.Unit.EKG
-import           Cardano.Logging.Test.Unit.FrequencyLimiting
-import           Cardano.Logging.Test.Unit.Routing
-import           Cardano.Logging.Test.Unit.Trivial
+import           Hermod.Tracing
+import           Hermod.Tracing.Test.Oracles
+import           Hermod.Tracing.Test.Script
+import           Hermod.Tracing.Test.Tracer
+import           Hermod.Tracing.Test.Unit.Aggregation
+import           Hermod.Tracing.Test.Unit.Configuration
+import           Hermod.Tracing.Test.Unit.DataPoint
+import           Hermod.Tracing.Test.Unit.Documentation
+import           Hermod.Tracing.Test.Unit.EKG
+import           Hermod.Tracing.Test.Unit.FrequencyLimiting
+import           Hermod.Tracing.Test.Unit.Routing
+import           Hermod.Tracing.Test.Unit.Trivial
 
 
 main :: IO ()

@@ -18,6 +18,7 @@ maintainer:             operations@iohk.io
 license:                Apache-2.0
 license-files:          LICENSE
                         NOTICE
+extra-doc-files:        CHANGELOG.md
 
 common project-config
   default-language:     Haskell2010
@@ -43,13 +44,13 @@ common project-config
 library
   import:             project-config
   hs-source-dirs:     src
-  exposed-modules:    Cardano.Logging.API
-                      Cardano.Logging.Trace
-                      Cardano.Logging.Trace.Combinators
-                      Cardano.Logging.Types
-                      Cardano.Logging.Types.Annotations
-                      Cardano.Logging.Types.Config
-                      Cardano.Logging.Types.Doc
+  exposed-modules:    Hermod.Tracing.API
+                      Hermod.Tracing.Trace
+                      Hermod.Tracing.Trace.Combinators
+                      Hermod.Tracing.Types
+                      Hermod.Tracing.Types.Annotations
+                      Hermod.Tracing.Types.Config
+                      Hermod.Tracing.Types.Doc
 
   build-depends:        base >=4.12 && <5
                       , aeson >= 2.1.0.0

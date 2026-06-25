@@ -1,7 +1,7 @@
-import           Cardano.Logging hiding (stdoutTracer)
-import           Cardano.Logging.Test.Config
-import           Cardano.Logging.Test.Tracer
-import           Cardano.Logging.Test.Types
+import           Hermod.Tracing hiding (stdoutTracer)
+import           Hermod.Tracing.Test.Config
+import           Hermod.Tracing.Test.Tracer
+import           Hermod.Tracing.Test.Types
 
 import           Data.IORef
 import           System.Metrics (newStore)

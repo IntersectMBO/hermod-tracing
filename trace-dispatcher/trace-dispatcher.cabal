@@ -42,28 +42,28 @@ common project-config
 library
   import:             project-config
   hs-source-dirs:     src
-  exposed-modules:    Cardano.Logging
-                      Cardano.Logging.Configuration
-                      Cardano.Logging.ConfigurationParser
-                      Cardano.Logging.Consistency
-                      Cardano.Logging.DocuGenerator
-                      Cardano.Logging.Formatter
-                      Cardano.Logging.FrequencyLimiter
-                      Cardano.Logging.Prometheus.Exposition
-                      Cardano.Logging.Prometheus.NetworkRun
-                      Cardano.Logging.Prometheus.TCPServer
-                      Cardano.Logging.TraceDispatcherMessage
-                      Cardano.Logging.Tracer.DataPoint
-                      Cardano.Logging.Tracer.EKG
-                      Cardano.Logging.Tracer.Standard
-                      Cardano.Logging.Tracer.Forward
-                      Cardano.Logging.Tracer.Composed
-                      Cardano.Logging.Types.NodeInfo
-                      Cardano.Logging.Types.NodeStartupInfo
-                      Cardano.Logging.Types.TraceMessage
-                      Cardano.Logging.Utils
+  exposed-modules:    Hermod.Tracing
+                      Hermod.Tracing.Configuration
+                      Hermod.Tracing.ConfigurationParser
+                      Hermod.Tracing.Consistency
+                      Hermod.Tracing.DocuGenerator
+                      Hermod.Tracing.Formatter
+                      Hermod.Tracing.FrequencyLimiter
+                      Hermod.Tracing.Prometheus.Exposition
+                      Hermod.Tracing.Prometheus.NetworkRun
+                      Hermod.Tracing.Prometheus.TCPServer
+                      Hermod.Tracing.TraceDispatcherMessage
+                      Hermod.Tracing.Tracer.DataPoint
+                      Hermod.Tracing.Tracer.EKG
+                      Hermod.Tracing.Tracer.Standard
+                      Hermod.Tracing.Tracer.Forward
+                      Hermod.Tracing.Tracer.Composed
+                      Hermod.Tracing.Types.NodeInfo
+                      Hermod.Tracing.Types.NodeStartupInfo
+                      Hermod.Tracing.Types.TraceMessage
+                      Hermod.Tracing.Utils
 
-  other-modules:      Cardano.Logging.Types.DocuGenerator
+  other-modules:      Hermod.Tracing.Types.DocuGenerator
 
   build-depends:        base >=4.12 && <5
                       , trace-dispatcher-api
@@ -106,20 +106,20 @@ test-suite trace-dispatcher-test
   type:                 exitcode-stdio-1.0
   hs-source-dirs:       test
   main-is:              trace-dispatcher-test.hs
-  other-modules:        Cardano.Logging.Test.Types
-                        Cardano.Logging.Test.Oracles
-                        Cardano.Logging.Test.Config
-                        Cardano.Logging.Test.Tracer
-                        Cardano.Logging.Test.Script
-                        Cardano.Logging.Test.Unit.TestObjects
-                        Cardano.Logging.Test.Unit.Aggregation
-                        Cardano.Logging.Test.Unit.Trivial
-                        Cardano.Logging.Test.Unit.Routing
-                        Cardano.Logging.Test.Unit.EKG
-                        Cardano.Logging.Test.Unit.Configuration
-                        Cardano.Logging.Test.Unit.DataPoint
-                        Cardano.Logging.Test.Unit.FrequencyLimiting
-                        Cardano.Logging.Test.Unit.Documentation
+  other-modules:        Hermod.Tracing.Test.Types
+                        Hermod.Tracing.Test.Oracles
+                        Hermod.Tracing.Test.Config
+                        Hermod.Tracing.Test.Tracer
+                        Hermod.Tracing.Test.Script
+                        Hermod.Tracing.Test.Unit.TestObjects
+                        Hermod.Tracing.Test.Unit.Aggregation
+                        Hermod.Tracing.Test.Unit.Trivial
+                        Hermod.Tracing.Test.Unit.Routing
+                        Hermod.Tracing.Test.Unit.EKG
+                        Hermod.Tracing.Test.Unit.Configuration
+                        Hermod.Tracing.Test.Unit.DataPoint
+                        Hermod.Tracing.Test.Unit.FrequencyLimiting
+                        Hermod.Tracing.Test.Unit.Documentation
 
   ghc-options:          -Wno-incomplete-patterns
 
@@ -150,11 +150,11 @@ benchmark trace-dispatcher-bench
   hs-source-dirs:       bench, test
   main-is:              trace-dispatcher-bench.hs
 
-  other-modules:        Cardano.Logging.Test.Types
-                        Cardano.Logging.Test.Oracles
-                        Cardano.Logging.Test.Config
-                        Cardano.Logging.Test.Tracer
-                        Cardano.Logging.Test.Script
+  other-modules:        Hermod.Tracing.Test.Types
+                        Hermod.Tracing.Test.Oracles
+                        Hermod.Tracing.Test.Config
+                        Hermod.Tracing.Test.Tracer
+                        Hermod.Tracing.Test.Script
 
   ghc-options:          -Wno-incomplete-patterns
 
