@@ -17,14 +17,14 @@ The application traverses the events from the given log files and checks if each
 If negative, reports as such and lists the events that have been relevant to the formula.
 
 Pass `--grep` for machine-readable output: on a negative outcome only the JSON array of relevant events is written
-to stdout (bypassing trace-dispatcher), and nothing is printed on a positive outcome. This makes it straightforward
+to stdout (bypassing hermod-tracing), and nothing is printed on a positive outcome. This makes it straightforward
 to pipe results directly into `hermod-recon-grep`.
 
 #### CLI Syntax
 
 ```
 Usage: hermod-recon FILE --mode <offline|online> --duration INT FILES
-                     [--retention INT] [--trace-dispatcher-cfg FILE]
+                     [--retention INT] [--hermod-tracing-cfg FILE]
                      [--context FILE] [--dump-metrics BOOL] [--seek-to-end BOOL]
                      [--timeunit <hour|minute|second|millisecond|microsecond>]
                      [--on-missing-key <crash|bottom>] [--grep]
@@ -35,8 +35,8 @@ Available options:
   --mode <offline|online>  mode
   --duration INT           temporal event duration (μs)
   --retention INT          temporal event retention period (ms) (default: 200)
-  --trace-dispatcher-cfg FILE
-                           trace dispatcher configuration file
+  --hermod-tracing-cfg FILE
+                           hermod-tracing configuration file
   --context FILE           context variables
   --dump-metrics BOOL      enable periodic metric dumps to stdout
                            (default: False)

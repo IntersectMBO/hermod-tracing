@@ -2,10 +2,9 @@
 
 `hermod-tracing-core` is a library that enables definition of __tracing systems__ -- systems that collect and manage traces -- as evidence of program execution.
 
-- [hermod-tracing-core: efficient, simple and flexible program tracing](#trace-dispatcher-efficient-simple-and-flexible-program-tracing)
+- [hermod-tracing-core: efficient, simple and flexible program tracing](#hermod-tracing-core-efficient-simple-and-flexible-program-tracing)
 - [Introduction](#introduction)
   - [Rationale](#rationale)
-  - [Transition Period](#transition-period)
   - [Key Recommendations for Developers](#key-recommendations-for-developers)
 - [Basic Tracer Topics](#basic-tracer-topics)
   - [Tracer Construction Basics](#tracer-construction-basics)
@@ -23,7 +22,7 @@
   - [Privacy Annotations](#privacy-annotations)
   - [Detail Level in Trace Presentation](#detail-level-in-trace-presentation)
   - [Fold-Based Aggregation](#fold-based-aggregation)
-  - [Dispatcher Routing Mechanism](#dispatcher-routing-mechanism)
+  - [Routing Mechanism](#routing-mechanism)
   - [Documentation Generation](#documentation-generation)
   - [Consistency Checking](#consistency-checking)
   - [Trace Backends Overview](#trace-backends-overview)
@@ -38,7 +37,7 @@
 
 ## Rationale
 
-The `trace-dispatcher` library serves as a sophisticated solution for streamlined and effective tracing systems. Built upon the arrow-based `contra-tracer` framework, it surpasses the capabilities of the `iohk-monitoring` framework with the following enhancements:
+The `hermod-tracing-core` library serves as a sophisticated solution for streamlined and effective tracing systems. Built upon the arrow-based `contra-tracer` framework, it provides the following capabilities:
 
 - Persistent activation of all tracers, adhering to the configured severity levels.
 
@@ -51,16 +50,6 @@ The `trace-dispatcher` library serves as a sophisticated solution for streamline
 - Automatic generation of comprehensive documentation encompassing all trace messages, metrics, and datapoints.
 
 - Sanity and consistency checking of tracer implementations and tracing settings based on the system's introspective capability.
-
-## Transition Period
-
-During the transitional phase, both legacy tracing, based on the `iohk-monitoring` framework, and new tracing, leveraging `trace-dispatcher` and `cardano-tracer`, will coexist.
-
-This interim period provides an opportunity to thoroughly test and enhance the new tracing system. Given the extensive repertoire of over 600 trace messages, the possibility of uncovering regressions and bugs is anticipated. Your assistance in identifying and rectifying these issues is invaluable.
-
-Please be aware that, owing to compatibility with the legacy system, the new tracing functionality will be slightly constrained during this transitional phase. Certain features, such as dynamic reconfiguration of a running node, will be temporarily unavailable. Additionally, there may be redundant implementations that are currently necessary but slated for refinement.
-
-To activate new tracing, set the `UseTraceDispatcher` in the node's config file value to `true`. When making this switch, ensure that the configuration file includes the requisite values for the new tracing setup, as detailed in the subsequent section.
 
 ## Key Recommendations for Developers
 
@@ -152,7 +141,7 @@ traceWith addBlockTracer (IgnoreBlockOlderThanK p)
 
 Understanding the concept of namespaces is crucial for comprehending the tracing system and the `MetaTrace` typeclass. Tracers are systematically organized within a hierarchical tracer namespace, with tree nodes and leaves identified by `Text` name components.
 
-The trace dispatcher requires careful organization to ensure that all messages possess a unique name within this namespace. Moreover, the same tracer type can be utilized in different contexts, such as for local and remote messages. To enable this flexibility, the 'inner' namespace is prefixed by the namespace passed to a tracer during construction (refer to `mkCardanoTracer` example above).
+The tracing system requires careful organization to ensure that all messages possess a unique name within this namespace. Moreover, the same tracer type can be utilized in different contexts, such as for local and remote messages. To enable this flexibility, the 'inner' namespace is prefixed by the namespace passed to a tracer during construction (refer to `mkCardanoTracer` example above).
 
 ```haskell
 -- A unique identifier for every message, composed of arrays of text
@@ -296,7 +285,7 @@ It is important to note that frequency filtering is designed to be applied selec
 
 ## Configuration
 
-The configurability of dispatchers provided by this library relies on:
+The configurability provided by this library relies on:
 
 1. __Tracer Namespace-based Configurability__: Configurable down to single message granularity based on tracer namespaces.
 
@@ -320,9 +309,6 @@ The `nosuffix` modifier removes suffixes like `_int` from metrics names, making 
 *CAUTION*: Generally allowing remote queries of Prometheus metrics is risky and should only be done in an environment you control.
 
 ```yaml
-# Use new tracing
-UseTraceDispatcher: True
-
 TraceOptions:
   "": # Options for all tracers, if not overwritten:
     severity: Notice
@@ -351,7 +337,6 @@ The same in JSON looks like this:
 
 ```json
 {
-  "UseTraceDispatcher": true,
   "TraceOptions": {
     "": {
       "severity": "Notice",
@@ -566,9 +551,9 @@ traceWith 2.0 aggregationTracer -- measure: 2.0 sum: 3.1
 
 This demonstrates how fold-based aggregation facilitates the accumulation of information over consecutive messages, enabling insightful data summaries.
 
-## Dispatcher Routing Mechanism
+## Routing Mechanism
 
-In the process of defining the trace dispatcher, it can be advantageous to employ a set of functions for routing messages. When there's a need to dispatch a trace message to different tracers based on specific criteria, the following function proves valuable:
+When there is a need to route a trace message to different tracers based on specific criteria, the following function proves valuable:
 
 ```haskell
 -- Allows routing to different tracers, based on the message being processed.
@@ -620,7 +605,7 @@ runTraceDocumentationCmd
   -> IO ()
 ```
 
-The self-documentation capabilities of `hermod-tracing-core` rely on documentation annotations provided by the `documentFor` and `metricsDocFor` methods within the `MetaTrace` typeclass. Additionally, a specialized dispatcher execution mode emits documentation for all annotated traces, utilizing the tracer namespace to structure the document.
+The self-documentation capabilities of `hermod-tracing-core` rely on documentation annotations provided by the `documentFor` and `metricsDocFor` methods within the `MetaTrace` typeclass. Additionally, a specialized execution mode emits documentation for all annotated traces, utilizing the tracer namespace to structure the document.
 
 To generate the documentation, first, call `documentTracer` for each message type with the associated tracers, then use `docuResultsToText` with the accumulated lists.
 

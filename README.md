@@ -11,8 +11,7 @@ hermod-tracing rebranding effort.
 
 ## Overview
 
-`hermod-tracing-core` replaces the legacy `iohk-monitoring` framework. Its design
-goals are:
+`hermod-tracing-core` is a tracing framework whose design goals are:
 
 - **Simplicity** — define tracers with two typeclasses; the framework handles
   routing, formatting, and dispatch
@@ -70,9 +69,9 @@ Three backend tracers are available; each should be instantiated once:
 
 | Backend | Function | Notes |
 |---|---|---|
-| `Cardano.Logging.Tracer.Standard` | stdout | thread-safe, bounded buffer, human or machine format |
-| `Cardano.Logging.Tracer.Forward` | TCP/socket forwarding | sends to `cardano-tracer`; public traces only |
-| `Cardano.Logging.Tracer.EKG` | EKG metrics store | Counter, Gauge, Label; always active regardless of severity |
+| `Hermod.Tracing.Tracer.Standard` | stdout | thread-safe, bounded buffer, human or machine format |
+| `Hermod.Tracing.Tracer.Forward` | TCP/socket forwarding | sends to `cardano-tracer`; public traces only |
+| `Hermod.Tracing.Tracer.EKG` | EKG metrics store | Counter, Gauge, Label; always active regardless of severity |
 
 ### Configuration
 
