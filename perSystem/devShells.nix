@@ -1,7 +1,7 @@
 { inputs, ... }: {
   perSystem = { shellFor, pkgs, ... }: {
     devShells.default = shellFor {
-      packages = p: [ p.trace-dispatcher-api p.trace-dispatcher p.hermod-recon-framework ];
+      packages = p: [ p.hermod-tracing-api p.trace-dispatcher p.hermod-recon-framework ];
 
       nativeBuildInputs = [
         pkgs.jq

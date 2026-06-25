@@ -7,7 +7,7 @@
   severity/privacy/detail types, config types, `DocCollector`, …) and core
   combinators (`traceWith`, `contramapM`, `foldTraceM`, `routingTrace`,
   `filterTrace`, …) have been extracted into the new thin package
-  `trace-dispatcher-api`.  `trace-dispatcher` now depends on that package.
+  `hermod-tracing-api`.  `trace-dispatcher` now depends on that package.
 * `Hermod.Tracing` (the top-level re-export module) now carries an explicit
   export list, trimming it to the approved public surface.
 

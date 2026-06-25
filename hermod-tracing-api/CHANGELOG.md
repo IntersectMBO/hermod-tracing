@@ -1,10 +1,10 @@
-# Revision history for trace-dispatcher-api
+# Revision history for hermod-tracing-api
 
 ## NEXT
 
 * Initial release.  Core types and combinators extracted from `trace-dispatcher`
   into this thin, low-dependency package so that libraries only need to depend
-  on `trace-dispatcher-api` to define tracers and call core combinators, without
+  on `hermod-tracing-api` to define tracers and call core combinators, without
   pulling in the full implementation stack.
 * Modules under `Hermod.Tracing.Types.*` carry the stable type vocabulary:
   `Trace`, `LogFormatting`, `MetaTrace`, `Namespace`, `LoggingContext`,
