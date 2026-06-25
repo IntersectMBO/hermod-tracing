@@ -49,9 +49,6 @@ library
                       Hermod.Tracing.DocuGenerator
                       Hermod.Tracing.Formatter
                       Hermod.Tracing.FrequencyLimiter
-                      Hermod.Tracing.Prometheus.Exposition
-                      Hermod.Tracing.Prometheus.NetworkRun
-                      Hermod.Tracing.Prometheus.TCPServer
                       Hermod.Tracing.TraceDispatcherMessage
                       Hermod.Tracing.Tracer.DataPoint
                       Hermod.Tracing.Tracer.EKG
@@ -79,17 +76,13 @@ library
                       , directory
                       , ekg-core
                       , filepath
-                      , hashable
                       , hostname
-                      , http-date
                       , network
                       , serialise
                       , stm
                       , text
                       , time
-                      , time-manager
                       , unagi-chan >= 0.4.1.4
-                      , unix-compat
                       , unliftio
                       , unliftio-core
                       , unordered-containers

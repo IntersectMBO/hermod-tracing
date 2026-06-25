@@ -8,6 +8,7 @@
 # Perf/Tracing                                                @intersectmbo/performance-and-tracing
 hermod-tracing-core/                                          @intersectmbo/performance-and-tracing
 hermod-tracing-api/                                           @intersectmbo/performance-and-tracing
+hermod-tracing-prometheus/                                    @intersectmbo/performance-and-tracing
 hermod-recon-framework/                                       @intersectmbo/performance-and-tracing
 
 # DevOps

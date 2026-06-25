@@ -152,6 +152,7 @@ executable hermod-recon
       , containers
       , hermod-recon-framework
       , hermod-tracing-core
+      , hermod-tracing-prometheus
       , aeson
       , streaming
       , async
