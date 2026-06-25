@@ -20,8 +20,8 @@ docTracers :: IO T.Text
 docTracers = do
   testTracerRef <- newIORef []
   tt <- testTracer testTracerRef
-  t1   <- mkCardanoTracer tt tt Nothing ["Node1"]
-  t2   <- mkCardanoTracer tt tt Nothing ["Node2"]
+  t1   <- mkHermodTracer tt tt Nothing ["Node1"]
+  t2   <- mkHermodTracer tt tt Nothing ["Node2"]
   confState <- emptyConfigReflection
   configureTracers confState config1 [t1, t2]
   b1 <- documentTracer (t1 :: Trace IO (TraceForgeEvent LogBlock))

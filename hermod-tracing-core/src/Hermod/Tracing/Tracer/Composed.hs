@@ -4,8 +4,8 @@
 {- HLINT ignore "Monad law, left identity" -}
 
 module Hermod.Tracing.Tracer.Composed (
-    mkCardanoTracer
-  , mkCardanoTracer'
+    mkHermodTracer
+  , mkHermodTracer'
   , mkMetricsTracer
   , traceTracerInfo
   , traceConfigWarnings
@@ -36,7 +36,7 @@ import           Data.Text hiding (map)
 -- as arguments.
 -- The returned tracer needs to be configured with a configuration
 -- before it is used.
-mkCardanoTracer :: forall evt.
+mkHermodTracer :: forall evt.
      ( LogFormatting evt
      , MetaTrace evt)
   => Trace IO FormattedMessage
@@ -44,14 +44,14 @@ mkCardanoTracer :: forall evt.
   -> Maybe (Trace IO FormattedMessage)
   -> [Text]
   -> IO (Trace IO evt)
-mkCardanoTracer trStdout trForward mbTrEkg tracerPrefix =
-    mkCardanoTracer' trStdout trForward mbTrEkg tracerPrefix noHook
+mkHermodTracer trStdout trForward mbTrEkg tracerPrefix =
+    mkHermodTracer' trStdout trForward mbTrEkg tracerPrefix noHook
   where
     noHook :: Trace IO evt -> IO (Trace IO evt)
     noHook = pure
 
 -- | Adds the possibility to add special tracers via the hook function
-mkCardanoTracer' :: forall evt evt1.
+mkHermodTracer' :: forall evt evt1.
      ( LogFormatting evt1
      , MetaTrace evt1
      )
@@ -61,7 +61,7 @@ mkCardanoTracer' :: forall evt evt1.
   -> [Text]
   -> (Trace IO evt1 -> IO (Trace IO evt))
   -> IO (Trace IO evt)
-mkCardanoTracer' trStdout trForward mbTrEkg tracerPrefix hook = do
+mkHermodTracer' trStdout trForward mbTrEkg tracerPrefix hook = do
 
     !internalTr <-  backendsAndFormat
                       trStdout

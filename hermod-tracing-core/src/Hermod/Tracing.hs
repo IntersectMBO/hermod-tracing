@@ -6,7 +6,7 @@
 --    'LogFormatting' (human\/machine rendering, metrics) and 'MetaTrace'
 --    (namespace, severity, documentation) instances.
 --
--- 2. __Construct backends__: call 'mkCardanoTracer' (or 'mkCardanoTracer'')
+-- 2. __Construct backends__: call 'mkHermodTracer' (or 'mkHermodTracer'')
 --    with 'standardTracer', 'ekgTracer', and\/or 'forwardTracer' to build a
 --    'Trace IO YourType'.
 --

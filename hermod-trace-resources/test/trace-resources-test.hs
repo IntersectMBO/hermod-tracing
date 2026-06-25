@@ -25,7 +25,7 @@ playScript = ioProperty $ do
   forwardTracer'  <- testTracer forwardTrRef
   ekgTrRef        <- newIORef []
   ekgTracer'      <- testTracer ekgTrRef
-  tr              <- mkCardanoTracer
+  tr              <- mkHermodTracer
                       stdoutTracer'
                       forwardTracer'
                       (Just ekgTracer')

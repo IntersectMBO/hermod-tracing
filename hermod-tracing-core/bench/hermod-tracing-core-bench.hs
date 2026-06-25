@@ -52,7 +52,7 @@ stdoutTracers :: ConfigReflection -> Trace IO FormattedMessage -> IO (Trace IO M
 stdoutTracers confState stdoutTracer = do
     forwardTrRef    <- newIORef []
     forwardTracer'  <- testTracer forwardTrRef
-    tr              <- mkCardanoTracer
+    tr              <- mkHermodTracer
                         stdoutTracer
                         forwardTracer'
                         Nothing
@@ -64,7 +64,7 @@ filterTracers :: ConfigReflection -> Trace IO FormattedMessage -> IO (Trace IO M
 filterTracers confState stdoutTracer = do
     forwardTrRef    <- newIORef []
     forwardTracer'  <- testTracer forwardTrRef
-    tr              <- mkCardanoTracer
+    tr              <- mkHermodTracer
                         stdoutTracer
                         forwardTracer'
                         Nothing
@@ -78,7 +78,7 @@ inMemoryTracers confState = do
     stdoutTracer'   <- testTracer stdoutTrRef
     forwardTrRef    <- newIORef []
     forwardTracer'  <- testTracer forwardTrRef
-    tr              <- mkCardanoTracer
+    tr              <- mkHermodTracer
                         stdoutTracer'
                         forwardTracer'
                         Nothing
@@ -90,7 +90,7 @@ timeLimitedTracers :: ConfigReflection -> Trace IO FormattedMessage -> IO (Trace
 timeLimitedTracers confState stdoutTracer = do
     forwardTrRef    <- newIORef []
     forwardTracer'  <- testTracer forwardTrRef
-    tr              <- mkCardanoTracer
+    tr              <- mkHermodTracer
                         stdoutTracer
                         forwardTracer'
                         Nothing
@@ -106,7 +106,7 @@ ekgTracers confState = do
     forwardTracer'  <- testTracer forwardTrRef
     store           <- newStore
     trEkg           <- ekgTracer emptyTraceConfig store
-    tr              <- mkCardanoTracer
+    tr              <- mkHermodTracer
                         stdoutTracer'
                         forwardTracer'
                         (Just trEkg)

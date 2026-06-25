@@ -88,7 +88,7 @@ any other traced value:
 
 ```haskell
 configReflection <- emptyConfigReflection
-!tr <- mkCardanoTracer myStdoutTracer mempty Nothing ["Resources"] -- No trace forwarding or metrics in this example
+!tr <- mkHermodTracer myStdoutTracer mempty Nothing ["Resources"] -- No trace forwarding or metrics in this example
 configureTracers configReflection myTraceConfig [tr]
 forever $ do
   threadDelay 5_000_000  -- 5 s

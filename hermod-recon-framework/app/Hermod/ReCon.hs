@@ -114,8 +114,8 @@ setupTraceDispatcher optTraceDispatcherConfigFile = do
   cfg <- fromMaybe defaultTraceConfig <$> traverse (`readConfigurationWithDefault` defaultTraceConfig) (FromFile <$> optTraceDispatcherConfigFile)
   ekgStore <- EKG.newStore
   ekgTrace <- ekgTracer cfg ekgStore
-  tr <- mkCardanoTracer @App.TraceMessage stdTr mempty (Just ekgTrace) ["ReCon"]
-  prometheusSimpleTr <- mkCardanoTracer @TracePrometheusSimple stdTr mempty Nothing ["ReCon"]
+  tr <- mkHermodTracer @App.TraceMessage stdTr mempty (Just ekgTrace) ["ReCon"]
+  prometheusSimpleTr <- mkHermodTracer @TracePrometheusSimple stdTr mempty Nothing ["ReCon"]
   configureTracers configReflection cfg [tr]
   configureTracers configReflection cfg [prometheusSimpleTr]
   for_ (prometheusSimple cfg) $ \ps -> do

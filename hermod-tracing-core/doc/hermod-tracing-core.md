@@ -92,7 +92,7 @@ data TraceAddBlockEvent blk =
 -- The tracer is supplied with a 'name' as an array of text, which is prepended to its namespace.
 -- This function returns the new tracer.
 
-mkCardanoTracer :: forall evt.
+mkHermodTracer :: forall evt.
     ( LogFormatting evt
     , MetaTrace evt )
   => Trace IO FormattedMessage
@@ -131,7 +131,7 @@ To emit a trace, employing a message and its corresponding tracer, utilize the `
 ```haskell
 traceWith :: Trace m a -> a -> m ()
 -- For example:
-addBlockTracer <- mkCardanoTracer trStdout trForward (Just trEkg) ["ChainDB"]
+addBlockTracer <- mkHermodTracer trStdout trForward (Just trEkg) ["ChainDB"]
 configureTracers configReflect config [addBlockTracer]
 ..
 traceWith addBlockTracer (IgnoreBlockOlderThanK p)
@@ -141,7 +141,7 @@ traceWith addBlockTracer (IgnoreBlockOlderThanK p)
 
 Understanding the concept of namespaces is crucial for comprehending the tracing system and the `MetaTrace` typeclass. Tracers are systematically organized within a hierarchical tracer namespace, with tree nodes and leaves identified by `Text` name components.
 
-The tracing system requires careful organization to ensure that all messages possess a unique name within this namespace. Moreover, the same tracer type can be utilized in different contexts, such as for local and remote messages. To enable this flexibility, the 'inner' namespace is prefixed by the namespace passed to a tracer during construction (refer to `mkCardanoTracer` example above).
+The tracing system requires careful organization to ensure that all messages possess a unique name within this namespace. Moreover, the same tracer type can be utilized in different contexts, such as for local and remote messages. To enable this flexibility, the 'inner' namespace is prefixed by the namespace passed to a tracer during construction (refer to `mkHermodTracer` example above).
 
 ```haskell
 -- A unique identifier for every message, composed of arrays of text
@@ -156,7 +156,7 @@ data Namespace a = Namespace {
 Every namespace is composed of:
 
 - system namespace (empty for cardano, but was cardano in old tracing)
-- tracer namespace (argument of mkCardanoTracer)
+- tracer namespace (argument of mkHermodTracer)
 - inner namespace (provided by the MetaTrace typeclass)
 
 The tracer namespace serves pivotal roles in:

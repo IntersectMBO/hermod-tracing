@@ -42,7 +42,7 @@ runScriptSimple time oracle = do
     forwardTracer'  <- testTracer forwardTrRef
     ekgTrRef        <- newIORef []
     ekgTracer'      <- testTracer ekgTrRef
-    tr              <- mkCardanoTracer
+    tr              <- mkHermodTracer
                         stdoutTracer'
                         forwardTracer'
                         (Just ekgTracer')
@@ -84,7 +84,7 @@ runScriptMultithreaded time oracle = do
       forwardTracer'  <- testTracer forwardTrRef
       ekgTrRef        <- newIORef []
       ekgTracer'      <- testTracer ekgTrRef
-      tr              <- mkCardanoTracer
+      tr              <- mkHermodTracer
                           stdoutTracer'
                           forwardTracer'
                           (Just ekgTracer')
@@ -152,7 +152,7 @@ runScriptMultithreadedWithReconfig time oracle = do
       forwardTracer'  <- testTracer forwardTrRef
       ekgTrRef        <- newIORef []
       ekgTracer'      <- testTracer ekgTrRef
-      tr              <- mkCardanoTracer
+      tr              <- mkHermodTracer
                           stdoutTracer'
                           forwardTracer'
                           (Just ekgTracer')
@@ -218,7 +218,7 @@ runScriptMultithreadedWithConstantReconfig time oracle = do
       forwardTracer'  <- testTracer forwardTrRef
       ekgTrRef        <- newIORef []
       ekgTracer'      <- testTracer ekgTrRef
-      tr              <- mkCardanoTracer
+      tr              <- mkHermodTracer
                           stdoutTracer'
                           forwardTracer'
                           (Just ekgTracer')
