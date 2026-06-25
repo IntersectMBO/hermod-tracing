@@ -2,12 +2,12 @@ cabal-version: 3.0
 
 name:                   hermod-tracing-api
 version:                0.1.0
-synopsis:               Thin API layer for the trace-dispatcher tracing system
+synopsis:               Thin API layer for the hermod-tracing-core tracing system
 description:            Core types (Trace, MetaTrace, LogFormatting) and combinators
                         (traceWith, contramapM, foldTraceM, routingTrace) that form the
                         stable API surface of the Hermod tracing system. Packages that
                         implement or consume tracers can depend on this package without
-                        pulling in the full trace-dispatcher implementation.
+                        pulling in the full hermod-tracing-core implementation.
 category:               System,
                         Logging,
                         Tracing,

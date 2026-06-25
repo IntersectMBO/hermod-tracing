@@ -9,7 +9,7 @@
 -- | Configuration types for the tracing pipeline: backend selection, forwarder
 --   options, Prometheus tuning, and the per-namespace config map.
 --
---   These types are consumed by @trace-dispatcher@ when wiring up backends and
+--   These types are consumed by @hermod-tracing-core@ when wiring up backends and
 --   applying a @TraceConfig@ to a live tracer net.  Tracer authors writing
 --   'Hermod.Tracing.Types.LogFormatting' or 'Hermod.Tracing.Types.MetaTrace'
 --   instances typically do not need this module directly.

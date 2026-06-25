@@ -5,7 +5,7 @@
     let
       project = pkgs.haskell-nix.cabalProject' ({ config, pkgs, ... }: {
         src = ./..;
-        name = "trace-dispatcher";
+        name = "hermod-tracing-core";
         compiler-nix-name = lib.mkDefault "ghc967";
 
         inputMap = {
@@ -14,7 +14,7 @@
 
         modules = [{
           packages.hermod-tracing-api.ghcOptions      = [ "-Werror" "-fno-ignore-asserts" ];
-          packages.trace-dispatcher.ghcOptions       = [ "-Werror" "-fno-ignore-asserts" ];
+          packages.hermod-tracing-core.ghcOptions     = [ "-Werror" "-fno-ignore-asserts" ];
           packages.hermod-recon-framework.ghcOptions = [ "-Werror" "-fno-ignore-asserts" ];
         }];
       });

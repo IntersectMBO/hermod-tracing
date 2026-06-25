@@ -1,8 +1,8 @@
-**trace-dispatcher**
+**hermod-tracing-core**
 
 This package depends on the arrow-based `contra-tracer` package (>= 0.2).
 
-The documentation can currently be found under: docs/trace-dispatcher.md  
+The documentation can currently be found under: docs/hermod-tracing-core.md  
 
 ## Developers
 

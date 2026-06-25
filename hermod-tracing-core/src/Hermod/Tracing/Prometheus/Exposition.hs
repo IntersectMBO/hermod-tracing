@@ -40,7 +40,7 @@ renderExpositionFromSampleWith helpTextDict noSuffixes =
       (find ((`T.isInfixOf` name) . fst) helpTextDict)
 
     -- implements the metricsNoSuffix config option
-    -- must strip all suffixes as per: trace-dispatcher/src/Cardano/Logging/Tracer/EKG.hs > ekgTracer > setIt
+    -- must strip all suffixes as per: hermod-tracing-core/src/Hermod/Tracing/Tracer/EKG.hs > ekgTracer > setIt
     stripSuffix :: MetricName -> MetricName
     stripSuffix
       | noSuffixes = \name -> fromMaybe name $ asum $ map (`T.stripSuffix` name) ["_int", "_counter", "_real"]

@@ -1,8 +1,8 @@
-# trace-dispatcher: efficient, simple and flexible program tracing
+# hermod-tracing-core: efficient, simple and flexible program tracing
 
-`trace-dispatcher` is a library that enables definition of __tracing systems__ -- systems that collect and manage traces -- as evidence of program execution.
+`hermod-tracing-core` is a library that enables definition of __tracing systems__ -- systems that collect and manage traces -- as evidence of program execution.
 
-- [trace-dispatcher: efficient, simple and flexible program tracing](#trace-dispatcher-efficient-simple-and-flexible-program-tracing)
+- [hermod-tracing-core: efficient, simple and flexible program tracing](#trace-dispatcher-efficient-simple-and-flexible-program-tracing)
 - [Introduction](#introduction)
   - [Rationale](#rationale)
   - [Transition Period](#transition-period)
@@ -620,7 +620,7 @@ runTraceDocumentationCmd
   -> IO ()
 ```
 
-The self-documentation capabilities of `trace-dispatcher` rely on documentation annotations provided by the `documentFor` and `metricsDocFor` methods within the `MetaTrace` typeclass. Additionally, a specialized dispatcher execution mode emits documentation for all annotated traces, utilizing the tracer namespace to structure the document.
+The self-documentation capabilities of `hermod-tracing-core` rely on documentation annotations provided by the `documentFor` and `metricsDocFor` methods within the `MetaTrace` typeclass. Additionally, a specialized dispatcher execution mode emits documentation for all annotated traces, utilizing the tracer namespace to structure the document.
 
 To generate the documentation, first, call `documentTracer` for each message type with the associated tracers, then use `docuResultsToText` with the accumulated lists.
 
@@ -662,7 +662,7 @@ Filtered `Visible` by config value: `Info`
 
 ## Consistency Checking
 
-As namespaces are essentially strings, the type system doesn't inherently ensure the consistency of namespaces. To address this concern, we have incorporated consistency check functionality into `trace-dispatcher`. Within the node, you can invoke the following procedure from the `Cardano.Node.Tracing.Consistency` module. It returns an array of `Text`, an empty list indicating that everything is in order.
+As namespaces are essentially strings, the type system doesn't inherently ensure the consistency of namespaces. To address this concern, we have incorporated consistency check functionality into `hermod-tracing-core`. Within the node, you can invoke the following procedure from the `Cardano.Node.Tracing.Consistency` module. It returns an array of `Text`, an empty list indicating that everything is in order.
 
 ```haskell
 -- | Check the configuration in the given file.

@@ -19,7 +19,7 @@ module Hermod.Tracing (
     module X
   ) where
 
--- Core API types and combinators (from trace-dispatcher-api)
+-- Core API types and combinators (from hermod-tracing-api)
 import           Hermod.Tracing.Types as X
 import           Hermod.Tracing.Trace as X
 

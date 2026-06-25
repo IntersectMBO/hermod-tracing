@@ -2,7 +2,7 @@
 
 ## NEXT
 
-* Initial release.  Core types and combinators extracted from `trace-dispatcher`
+* Initial release.  Core types and combinators extracted from `hermod-tracing-core`
   into this thin, low-dependency package so that libraries only need to depend
   on `hermod-tracing-api` to define tracers and call core combinators, without
   pulling in the full implementation stack.

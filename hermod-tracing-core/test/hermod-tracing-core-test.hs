@@ -38,7 +38,7 @@ tests = testGroup "Tests"
   ]
 
 unitTests :: TestTree
-unitTests = testGroup "trace-dispatcher-unit-tests"
+unitTests = testGroup "hermod-tracing-core-unit-tests"
     [
         testCase "testTrivial1" $ do
         res <- test1
@@ -81,7 +81,7 @@ unitTests = testGroup "trace-dispatcher-unit-tests"
     ]
 
 localTests :: TestTree
-localTests = localOption (QuickCheckTests 10) $ testGroup "trace-dispatcher"
+localTests = localOption (QuickCheckTests 10) $ testGroup "hermod-tracing-core"
     [ testProperty "single-threaded send tests" $
         runScriptSimple 1.0 oracleMessages
     , testProperty "multi-threaded send tests" $

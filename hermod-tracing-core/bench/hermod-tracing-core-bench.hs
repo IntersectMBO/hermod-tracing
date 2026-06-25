@@ -10,7 +10,7 @@ import           Criterion.Main
 
 
 -- Can be run with:
--- cabal bench trace-dispatcher-bench --benchmark-option='-o benchmark-trace.html'
+-- cabal bench hermod-tracing-core-bench --benchmark-option='-o benchmark-trace.html'
 
 main :: IO ()
 main = do

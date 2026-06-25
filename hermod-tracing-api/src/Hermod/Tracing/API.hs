@@ -1,6 +1,6 @@
 -- | Stable public API for the Hermod tracing system.
 --
--- This is the single-import front door for @trace-dispatcher-api@. It
+-- This is the single-import front door for @hermod-tracing-core-api@. It
 -- re-exports everything a package needs to:
 --
 -- * __Define trace types__: write 'LogFormatting' (human\/machine rendering,
@@ -14,16 +14,16 @@
 --
 -- Annotation combinators ('withNames', 'setSeverity', 'setDetails', etc.) are
 -- intentionally excluded from this module; they are available in
--- "Hermod.Tracing.Trace" for use within @trace-dispatcher@ itself.
+-- "Hermod.Tracing.Trace" for use within @hermod-tracing-core@ itself.
 --
--- == When to use this package vs. @trace-dispatcher@
+-- == When to use this package vs. @hermod-tracing-core@
 --
--- Depend on @trace-dispatcher-api@ (and import this module) when your package
+-- Depend on @hermod-tracing-core-api@ (and import this module) when your package
 -- only needs to __define__ trace types and __call__ the core combinators — for
 -- example, a library that instruments its own operations.  You get a small
 -- transitive closure with no I\/O backends, no config parser, no Prometheus.
 --
--- Depend on @trace-dispatcher@ (and import "Hermod.Tracing") when you need
+-- Depend on @hermod-tracing-core@ (and import "Hermod.Tracing") when you need
 -- the __full stack__: backend constructors ('standardTracer', 'ekgTracer',
 -- 'forwardTracer'), 'configureTracers', 'readConfiguration', and so on.
 --
@@ -45,7 +45,7 @@
 -- Folding(..)            -- wrapper for fold-based stateful tracers
 -- @
 --
--- === Configuration and control (consumed by @trace-dispatcher@)
+-- === Configuration and control (consumed by @hermod-tracing-core@)
 --
 -- 'TraceControl', 'TraceConfig', 'ConfigOption', 'BackendConfig',
 -- 'ConfigReflection', 'DocCollector', 'LogDoc', 'ForwarderAddr',

@@ -44,7 +44,7 @@ import qualified Data.Set as Set
 import           Data.Text (Text, intercalate, unpack)
 
 
--- This is currently ad-hoc. With a future refactoring of trace-dispatcher,
+-- This is currently ad-hoc. With a future refactoring of hermod-tracing-core,
 -- it will be moved and serve as a proper error / exception type.
 data HermodException = HermodConfigException { excMessage :: String }
      deriving Show
