@@ -6,7 +6,7 @@ synopsis:               OS resource sampling for the Hermod tracing system
 description:            Provides a single IO action, 'readResourceStats', that samples
                         the calling process's resource usage (CPU, GC, memory, I/O,
                         threads) and returns it as a 'LogFormatting' / 'MetaTrace' value
-                        ready to feed into the trace-dispatcher pipeline.
+                        ready to feed into the hermod-tracing pipeline.
                         Supports Linux, macOS, and Windows; falls back to GHC RTS metrics
                         only on other platforms.
 category:               Cardano,
@@ -40,7 +40,7 @@ library
   default-extensions:   OverloadedStrings
                         CPP
   build-depends:        base >=4.12 && <5
-                      , trace-dispatcher
+                      , hermod-tracing-core
                       , text
                       , aeson                         >= 2.1.0.0
 
@@ -81,7 +81,7 @@ test-suite trace-resources-test
   main-is:              trace-resources-test.hs
   default-extensions:   OverloadedStrings
   build-depends:        base >=4.12 && <5
-                      , trace-dispatcher
+                      , hermod-tracing-core
                       , text
                       , aeson
                       , QuickCheck

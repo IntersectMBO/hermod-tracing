@@ -1,5 +1,10 @@
 # Changelog for hermod-trace-resources
 
+## NEXT
+
+* Replace `trace-dispatcher` dependency with `hermod-tracing-core`.
+* Update `Cardano.Logging` import to `Hermod.Tracing`.
+
 ## 1.0.0
 
 - Initial release as `hermod-trace-resources`

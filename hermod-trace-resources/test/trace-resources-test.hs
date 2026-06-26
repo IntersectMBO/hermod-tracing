@@ -1,4 +1,4 @@
-import           Cardano.Logging
+import           Hermod.Tracing
 import           Hermod.Tracing.Resources
 
 import           Control.Monad.IO.Class
