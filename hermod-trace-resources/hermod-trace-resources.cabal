@@ -9,8 +9,7 @@ description:            Provides a single IO action, 'readResourceStats', that s
                         ready to feed into the hermod-tracing pipeline.
                         Supports Linux, macOS, and Windows; falls back to GHC RTS metrics
                         only on other platforms.
-category:               Cardano,
-                        Trace,
+category:               Trace
 copyright:              2021-2023 Input Output Global Inc (IOG), 2023-2026 Intersect.
 author:                 Juergen Nicklisch-Franken
 maintainer:             operations@iohk.io
