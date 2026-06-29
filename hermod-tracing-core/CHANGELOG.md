@@ -11,6 +11,11 @@
   `hermod-tracing-api`.  `hermod-tracing-core` now depends on that package.
 * `Hermod.Tracing` (the top-level re-export module) now carries an explicit
   export list, trimming it to the approved public surface.
+* `mkCardanoTracer` / `mkCardanoTracer'` renamed to `mkHermodTracer` / `mkHermodTracer'`.
+* `TraceDispatcherMessage` renamed to `HermodTracingMessage`.
+* Environment variable `TRACE_DISPATCHER_LOGGING_HOSTNAME` renamed to `HERMOD_TRACING_LOGGING_HOSTNAME`.
+* Prometheus modules (`Hermod.Tracing.Prometheus.*`) extracted into the new
+  optional package `hermod-tracing-prometheus`.
 
 ## 2.13.0 -- July 2026
 
