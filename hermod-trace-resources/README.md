@@ -13,7 +13,7 @@ readResourceStats :: IO (Maybe ResourceStats)
 
 Call it once per sampling interval to get a snapshot of the current process's
 resource usage. The returned `ResourceStats` value carries `LogFormatting` and
-`MetaTrace` instances from `trace-dispatcher`, so it can be fed directly into any
+`MetaTrace` instances from `hermod-tracing`, so it can be fed directly into any
 `Trace IO ResourceStats`.
 
 ## Platform support
@@ -80,7 +80,7 @@ package hermod-trace-resources
   flags: +with-netstat
 ```
 
-## Integration with trace-dispatcher
+## Integration with hermod-tracing
 
 `ResourceStats` implements both `LogFormatting` (human-readable text, structured
 JSON and system metrics) and `MetaTrace` (namespace, severity, metric documentation). Wire it up like

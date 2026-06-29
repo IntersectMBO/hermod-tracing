@@ -86,15 +86,15 @@ data TraceObject = TraceObject {
     (Serialise, NFData)
 
 
--- | If the @TRACE_DISPATCHER_LOGGING_HOSTNAME@ environment variable is set,
+-- | If the @HERMOD_TRACING_LOGGING_HOSTNAME@ environment variable is set,
 --   it overrides the system hostname in the trace message. This is useful when
 --   multiple instances of a service or application on the same host.
--- 
+--
 --   The env var is expected to be set (if desired) before the application emits its first trace, as this is evaluated only once.
 hostname :: Text
 {-# NOINLINE hostname #-}
 hostname = unsafePerformIO $
-  lookupEnv "TRACE_DISPATCHER_LOGGING_HOSTNAME" >>= maybe hostNameOnly (pure . T.pack)
+  lookupEnv "HERMOD_TRACING_LOGGING_HOSTNAME" >>= maybe hostNameOnly (pure . T.pack)
   where
     -- disregard FQDNs
     hostNameOnly = T.pack . takeWhile (/= '.') <$> getHostName
@@ -247,7 +247,7 @@ humanFormatter' withColor (Trace tr) =
                                     <> singleton ','
                                     <> fromText (pfThreadId v))
                   dataPart = fromMaybe
-                                (toStrict . decodeUtf8 . AE.encodingToLazyByteString $ 
+                                (toStrict . decodeUtf8 . AE.encodingToLazyByteString $
                                   AE.pairs ("data" .= pfForMachineObject v)
                                 )
                                 (pfForHuman v)

@@ -107,11 +107,11 @@ checkOffline omk greppable tr eventDuration file phis = do
     check omk greppable idx tr phi events
   threadDelay 200_000 -- Give the tracer a grace period to output the logs to whatever backend
 
-setupTraceDispatcher :: Maybe FilePath -> IO (Trace IO App.TraceMessage)
-setupTraceDispatcher optTraceDispatcherConfigFile = do
+setupHermodTracing :: Maybe FilePath -> IO (Trace IO App.TraceMessage)
+setupHermodTracing optTracingConfigFile = do
   stdTr <- standardTracer
   configReflection <- emptyConfigReflection
-  cfg <- fromMaybe defaultTraceConfig <$> traverse (`readConfigurationWithDefault` defaultTraceConfig) (FromFile <$> optTraceDispatcherConfigFile)
+  cfg <- fromMaybe defaultTraceConfig <$> traverse (`readConfigurationWithDefault` defaultTraceConfig) optTracingConfigFile
   ekgStore <- EKG.newStore
   ekgTrace <- ekgTracer cfg ekgStore
   tr <- mkHermodTracer @App.TraceMessage stdTr mempty (Just ekgTrace) ["ReCon"]
@@ -167,7 +167,7 @@ main = do
         <> Text.unlines (fmap (("— " <>) . prettyError) (e : es))
     (_, []) -> pure ()
   let formulas' = fmap (interpTimeunit (\u -> timeunitToMicrosecond options.timeunit u `div` fromIntegral options.duration)) formulas
-  tr <- setupTraceDispatcher options.hermodTracingCfg
+  tr <- setupHermodTracing options.hermodTracingCfg
   traceWith tr $ ContextDump (map (second showT) ctx)
   case options.mode of
     Offline -> do
