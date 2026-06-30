@@ -22,6 +22,7 @@ module Hermod.Tracing.Types.Annotations (
   , SeverityS(..)
   , SeverityF(..)
   , Metric(..)
+  , CounterAction(..)
   , getMetricName
   , LoggingContext(..)
   , emptyLoggingContext
@@ -33,6 +34,7 @@ import qualified Data.Aeson      as AE
 import           Data.Text       (Text)
 import qualified Data.Text       as T
 import           GHC.Generics
+import Data.Word (Word64)
 
 
 -- | A unique identifier for every message, composed of text.
@@ -176,15 +178,15 @@ instance Show SeverityF where
 -- > instance LogFormatting Trace where
 -- >   asMetrics (BatchProcessed size) =
 -- >     [ IntM       "batch.current" (fromIntegral size)        -- element count of the most recent batch
--- >     , CounterM   "batchesTotal"  Nothing                    -- total batches processed (increment by 1)
--- >     , CounterM   "batch.total"   (Just $ fromIntegral size) -- total elements processed
+-- >     , CounterM   "batchesTotal"  CounterIncrement              -- total batches processed (increment by 1)
+-- >     , CounterM   "batch.total"   (CounterAdd (fromIntegral size)) -- total elements processed
 -- >     ]
 data Metric
     = IntM Text Integer
     -- ^ An integer gauge metric. Gauges are variable values.
     | DoubleM Text Double
     -- ^ A floating-point gauge metric. Gauges are variable values.
-    | CounterM Text (Maybe Int)
+    | CounterM Text CounterAction
     -- ^ A counter metric. Counters are non-negative, monotonically increasing values.
     | LabelSetM Text [(Text, Text)]
     -- ^ A label set containing the specified key-value pairs.
@@ -193,6 +195,15 @@ data Metric
     --
     --   For instance, a @LabelSetM "foo" [("key1", "value1"), ("key2", "value2")]@
     --   will be exposed as /"foo{key1=\"value1\",key2=\"value2\"} 1"/
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass NFData
+
+-- | Explicit type on how to update a @CounterM@ metric (which may never decrease).
+data CounterAction
+  -- | Increment the counter by one
+  = CounterIncrement
+  -- | Increase the counter by some value
+  | CounterAdd Word64
   deriving stock (Eq, Show, Generic)
   deriving anyclass NFData
 

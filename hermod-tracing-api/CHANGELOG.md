@@ -21,3 +21,5 @@
   lower-level annotation combinators.
 * `PrometheusM` constructor renamed to `LabelSetM` throughout
   `Hermod.Tracing.Types.Annotations`.
+* `CounterM` field type changed from `Maybe Int` to `CounterAction` for
+  clarity of intent (`CounterIncrement` / `CounterAdd`).

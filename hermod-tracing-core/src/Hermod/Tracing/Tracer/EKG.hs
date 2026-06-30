@@ -77,12 +77,12 @@ ekgTracer TraceConfig{tcMetricsPrefix} store = liftIO $ do
             let fullName = metricsPrefix <> name
             label <- modifyMVar rgsLabels (setFunc Metrics.createLabel fullName)
             Label.set label (presentLabelSetM keyLabels)
-          CounterM name mbInt -> do
+          CounterM name action -> do
             let fullName = metricsPrefix <> name <> "_counter"
             counter <- modifyMVar rgsCounters (setFunc Metrics.createCounter fullName)
-            case mbInt of
-              Nothing -> Counter.inc counter
-              Just i  -> Counter.add counter (fromIntegral i)
+            case action of
+              CounterIncrement -> Counter.inc counter
+              CounterAdd i     -> Counter.add counter (fromIntegral i)
 
     setFunc ::
          (Text -> Metrics.Store -> IO m)
