@@ -27,7 +27,7 @@ import qualified Data.Set as Set
 import           Data.Text hiding (map)
 
 
--- | Construct a tracer according to the requirements for cardano node.
+-- | Construct a hermod tracer.
 -- The tracer gets a 'name', which is appended to its namespace.
 -- The tracer has to be an instance of LogFormatting for the display of
 -- messages and an instance of MetaTrace for meta information such as

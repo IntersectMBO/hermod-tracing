@@ -449,7 +449,7 @@ docuResultsToText dt@DocTracer {..} configuration =
                           (filter (resultIsMetric .snd) dtBuilderList)
       datapointBuilders = sortBy (\ (l,_) (r,_) -> compare l r)
                           (filter (resultIsDatapoint . snd) dtBuilderList)
-      header  = fromText "# Cardano Trace Documentation\n\n"
+      header  = fromText "# Tracing Documentation\n\n"
       header1  = fromText "## Table Of Contents\n\n"
       toc      = generateTOC dt
                     (map fst traceBuilders)
@@ -598,8 +598,6 @@ toForest = unfoldForest build . groupByHead
   build grp@(representative : _) = (head representative, (groupByHead . filter (not . null) . map tail) grp)
   build [] = error "toForest: implementation error"
 
--- this reflects the type cardano-tracer expects the metrics help texts to be serialized from:
--- simple key-value map
 newtype MetricsHelp = MH (Map.Map Text Text)
         deriving ToJSON via (Map.Map Text Text)
 

@@ -71,7 +71,7 @@ library
                       , cborg
                       , cborg-json
                       , containers
-                      , contra-tracer ^>= 0.2.1
+                      , contra-tracer
                       , deepseq
                       , directory
                       , ekg-core

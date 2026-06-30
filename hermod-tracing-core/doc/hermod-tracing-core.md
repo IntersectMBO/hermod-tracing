@@ -16,7 +16,6 @@
   - [Frequency Limiting in Trace Filtering](#frequency-limiting-in-trace-filtering)
   - [Configuration](#configuration)
 - [Advanced Tracer Topics](#advanced-tracer-topics)
-  - [Integrating a New Tracer into cardano-node](#integrating-a-new-tracer-into-cardano-node)
   - [Message Filtering based on Severity](#message-filtering-based-on-severity)
   - [Comprehensive Trace Filtering](#comprehensive-trace-filtering)
   - [Privacy Annotations](#privacy-annotations)
@@ -43,7 +42,7 @@ The `hermod-tracing-core` library serves as a sophisticated solution for streaml
 
 - Granular configuration (such as filtering, limiting) of individual tracers based on hierarchical namespaces, extending down to individual messages.
 
-- Seamless transmission of traces to a dedicated `cardano-tracer` process capable of handling traces from multiple nodes.
+- Seamless transmission of traces to a dedicated server capable of handling traces from multiple clients.
 
 - Dynamic reconfiguration (i.e. hot-reloading) of tracing settings within a running node (after removal of legacy tracing).
 
@@ -59,7 +58,7 @@ Kindly consider the following important suggestions:
 
 - Avoid using strictness annotations for trace types. Given that trace messages are either promptly discarded or instantly converted to another format without storage, strictness annotations introduce unnecessary inefficiencies without tangible benefits.
 
-- When developing new tracers, consider creating the new tracers first and subsequently mapping to old tracers. You can refer to numerous examples in `cardano-node` under `Cardano.Node.Tracing.Tracers`.
+- When developing new tracers, consider creating the new tracers first and subsequently mapping to old tracers.
 
 - For inquiries and reviews, please reach out to the Performance & Tracing team. Your collaboration and questions are welcome to ensure a seamless transition and optimal utilization of the new tracing framework.
 
@@ -81,8 +80,7 @@ data TraceAddBlockEvent blk =
 2. Create a tracer for this data type using the provided Haskell function:
 
 ```haskell
--- | Generate a tracer conforming to the cardano node requirements.
--- The tracer must be an instance of LogFormatting for message display
+-- | Construct a hermod tracer.
 -- and an instance of MetaTrace for meta-information such as
 -- severity, privacy, details, and backends.
 -- The tracer receives those backends as arguments:
@@ -155,7 +153,7 @@ data Namespace a = Namespace {
 
 Every namespace is composed of:
 
-- system namespace (empty for cardano, but was cardano in old tracing)
+- system namespace
 - tracer namespace (argument of mkHermodTracer)
 - inner namespace (provided by the MetaTrace typeclass)
 
@@ -218,7 +216,7 @@ The `MetaTrace` typeclass plays a pivotal role in providing meta-information for
 
 - __severityFor__: Provides severity for a given namespace. As some severities depend not only on the message type but also on the individual message, the actual message may be passed as well.
 
-- __privacyFor__: Determines whether a message is `Private` or `Public`. Private messages are not sent to `cardano-tracer` and are only displayed on the stdout trace. If no implementation is given, `Public` is chosen.
+- __privacyFor__: Determines whether a message is `Private` or `Public`. Private messages are not forwarded and are only displayed on the stdout trace. If no implementation is given, `Public` is chosen.
 
 - __detailsFor__: Specifies the level of details for printing messages. Options include `DMinimal`, `DNormal`, `DDetailed`, and `DMaximum`. If no implementation is given, `DNormal` is chosen.
 
@@ -250,7 +248,7 @@ class MetaTrace a where
 
 ## Metrics Integration
 
-Metrics are seamlessly incorporated into the system through regular trace messages implementing the `asMetrics` function within the `LogFormatting` typeclass. Unlike other trace components, metrics are not subjected to filtering and are consistently provided. This occurs as long as the `EKGBackend` is configured for the message. The `EKGBackend` then forwards these metrics to `cardano-tracer` for additional processing. Subsequently, they are dispatched as Prometheus metrics, extending their utility and visibility.
+Metrics are seamlessly incorporated into the system through regular trace messages implementing the `asMetrics` function within the `LogFormatting` typeclass. Unlike other trace components, metrics are not subjected to filtering and are consistently provided. This occurs as long as the `EKGBackend` is configured for the message. The `EKGBackend` then forwards these metrics for additional processing. Subsequently, they are dispatched as Prometheus metrics, extending their utility and visibility.
 
 It is essential to implement the metricsDoc function of the MetaTrace typeclass, as this information is utilized to optimize system performance.
 
@@ -363,28 +361,11 @@ The same in JSON looks like this:
 }
 ```
 
-For explanations of the trace forwarder option refer to the following document:
-
-[New Tracing Quickstart](https://github.com/input-output-hk/cardano-node-wiki/wiki/New-Tracing-Quickstart)
-
-When `TraceOptions` is empty, or other entries are missing in the configuration file, default entries are taken from
-[Cardano.Node.Tracing.DefaultTraceConfig](https://github.com/intersectmbo/cardano-node/blob/master/cardano-node/src/Cardano/Node/Tracing/DefaultTraceConfig.hs) module.
-
 # Advanced Tracer Topics
 
 The functionality of the new tracing system is composable using basic combinators defined on contravariant tracing.
 In this part of the document we introduce the underlying functions. You should look here if you want to
 implement some advanced functionality.
-
-## Integrating a New Tracer into cardano-node
-
-Presently, the process of adding a new tracer involves making changes in three specific modules. However, we anticipate that this requirement will be simplified once the old tracing system is phased out. The current modules where modifications are needed to add a new tracer are:
-
-- __Cardano.Node.Tracing.Tracers__
-
-- __Cardano.Node.Tracing.Documentation__
-
-- __Cardano.Node.Tracing.Consistency__
 
 ## Message Filtering based on Severity
 
@@ -731,11 +712,7 @@ The following document is periodically regenerated to provide comprehensive docu
 
 [Generated Cardano Trace Documentation](https://github.com/input-output-hk/cardano-node-wiki/wiki/tracers_doc_generated)
 
-For a quick start for administrators transitioning to the new tracing system, refer to the following document:
-
-[New Tracing Quickstart](https://github.com/input-output-hk/cardano-node-wiki/wiki/New-Tracing-Quickstart)
-
-Additionally, this document delves into `cardano-tracer`, a separate application designed for logging and monitoring Cardano nodes:
+A third-party application that employs hermod-tracing designed for logging and monitoring Cardano nodes:
 
 [Cardano Tracer](https://github.com/intersectmbo/cardano-node/blob/master/cardano-tracer/docs/cardano-tracer.md)
 
