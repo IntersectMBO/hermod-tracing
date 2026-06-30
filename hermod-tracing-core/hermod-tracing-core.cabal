@@ -55,8 +55,6 @@ library
                       Hermod.Tracing.Tracer.Standard
                       Hermod.Tracing.Tracer.Forward
                       Hermod.Tracing.Tracer.Composed
-                      Hermod.Tracing.Types.NodeInfo
-                      Hermod.Tracing.Types.NodeStartupInfo
                       Hermod.Tracing.Types.TraceMessage
                       Hermod.Tracing.Utils
 

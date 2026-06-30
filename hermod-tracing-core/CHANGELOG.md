@@ -18,6 +18,9 @@
   optional package `hermod-tracing-prometheus`.
 * Internal helper `presentPrometheusM` renamed to `presentLabelSetM` in
   `Hermod.Tracing.Tracer.EKG`.
+* `Hermod.Tracing.Types.NodeInfo` and `Hermod.Tracing.Types.NodeStartupInfo`
+  removed — these were cardano-node–specific types with no generic utility.
+* `contra-tracer` version bound loosened from `^>= 0.2.1` to unconstrained.
 
 ## 2.13.0 -- July 2026
 
