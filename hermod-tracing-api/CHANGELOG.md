@@ -19,3 +19,5 @@
   that only need to define trace types and dispatch messages.  It re-exports
   all types and a curated subset of combinators, intentionally omitting the
   lower-level annotation combinators.
+* `PrometheusM` constructor renamed to `LabelSetM` throughout
+  `Hermod.Tracing.Types.Annotations`.

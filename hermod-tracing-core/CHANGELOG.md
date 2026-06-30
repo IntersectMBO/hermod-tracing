@@ -16,6 +16,8 @@
 * Environment variable `TRACE_DISPATCHER_LOGGING_HOSTNAME` renamed to `HERMOD_TRACING_LOGGING_HOSTNAME`.
 * Prometheus modules (`Hermod.Tracing.Prometheus.*`) extracted into the new
   optional package `hermod-tracing-prometheus`.
+* Internal helper `presentPrometheusM` renamed to `presentLabelSetM` in
+  `Hermod.Tracing.Tracer.EKG`.
 
 ## 2.13.0 -- July 2026
 

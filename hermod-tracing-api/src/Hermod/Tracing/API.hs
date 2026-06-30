@@ -1,6 +1,6 @@
 -- | Stable public API for the Hermod tracing system.
 --
--- This is the single-import front door for @hermod-tracing-core-api@. It
+-- This is the single-import front door for @hermod-tracing-api@. It
 -- re-exports everything a package needs to:
 --
 -- * __Define trace types__: write 'LogFormatting' (human\/machine rendering,
@@ -18,7 +18,7 @@
 --
 -- == When to use this package vs. @hermod-tracing-core@
 --
--- Depend on @hermod-tracing-core-api@ (and import this module) when your package
+-- Depend on @hermod-tracing-api@ (and import this module) when your package
 -- only needs to __define__ trace types and __call__ the core combinators — for
 -- example, a library that instruments its own operations.  You get a small
 -- transitive closure with no I\/O backends, no config parser, no Prometheus.
@@ -35,7 +35,7 @@
 -- Trace                  -- the central carrier type
 -- LogFormatting(..)      -- typeclass: forMachine, forHuman, asMetrics
 -- MetaTrace(..)          -- typeclass: namespaceFor, severityFor, documentFor, …
--- Metric(..)             -- metric payload (IntM, DoubleM, CounterM, PrometheusM)
+-- Metric(..)             -- metric payload (IntM, DoubleM, CounterM, LabelSetM)
 -- Namespace(..)          -- hierarchical trace identifier
 -- LoggingContext(..)     -- per-message context (namespace, severity, privacy, detail)
 -- SeverityS(..)          -- message severity (Debug … Emergency)

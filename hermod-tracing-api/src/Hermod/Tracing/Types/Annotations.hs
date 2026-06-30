@@ -186,12 +186,12 @@ data Metric
     -- ^ A floating-point gauge metric. Gauges are variable values.
     | CounterM Text (Maybe Int)
     -- ^ A counter metric. Counters are non-negative, monotonically increasing values.
-    | PrometheusM Text [(Text, Text)]
+    | LabelSetM Text [(Text, Text)]
     -- ^ A label set containing the specified key-value pairs.
     --   The OpenMetrics standard permits empty label sets; the value of this labeled
     --   metric will always be @\"1\"@.
     --
-    --   For instance, a @PrometheusM "foo" [("key1", "value1"), ("key2", "value2")]@
+    --   For instance, a @LabelSetM "foo" [("key1", "value1"), ("key2", "value2")]@
     --   will be exposed as /"foo{key1=\"value1\",key2=\"value2\"} 1"/
   deriving stock (Eq, Show, Generic)
   deriving anyclass NFData
@@ -200,7 +200,7 @@ getMetricName :: Metric -> Text
 getMetricName (IntM name _)        = name
 getMetricName (DoubleM name _)     = name
 getMetricName (CounterM name _)    = name
-getMetricName (PrometheusM name _) = name
+getMetricName (LabelSetM name _) = name
 
 
 -- | Context every log message carries.
