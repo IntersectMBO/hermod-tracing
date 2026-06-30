@@ -19,6 +19,7 @@ license:                Apache-2.0
 license-files:          LICENSE
                         NOTICE
 extra-doc-files:        CHANGELOG.md
+                        README.md
 
 common project-config
   default-language:     Haskell2010
