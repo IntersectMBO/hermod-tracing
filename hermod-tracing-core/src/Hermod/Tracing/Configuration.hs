@@ -27,6 +27,7 @@ import           Hermod.Tracing.DocuGenerator (addFiltered, addLimiter, addSilen
 import           Hermod.Tracing.Formatter (FormattedMessage)
 import           Hermod.Tracing.FrequencyLimiter (limitFrequency)
 import           Hermod.Tracing.Trace
+import           Hermod.Tracing.Trace.Annotations
 import           Hermod.Tracing.HermodTracingMessage
 import           Hermod.Tracing.Types
 

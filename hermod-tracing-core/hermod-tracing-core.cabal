@@ -58,10 +58,11 @@ library
                       Hermod.Tracing.Types.TraceMessage
                       Hermod.Tracing.Utils
 
-  other-modules:      Hermod.Tracing.Types.DocuGenerator
+  other-modules:      Hermod.Tracing.Trace.Annotations
+                      Hermod.Tracing.Types.DocuGenerator
 
   build-depends:        base >=4.12 && <5
-                      , hermod-tracing-api
+                      , hermod-tracing-api:internal
                       , aeson >= 2.1.0.0
                       , aeson-pretty
                       , async

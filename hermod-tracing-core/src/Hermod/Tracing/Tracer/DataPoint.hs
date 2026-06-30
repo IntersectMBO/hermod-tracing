@@ -17,7 +17,7 @@ module Hermod.Tracing.Tracer.DataPoint
   ) where
 
 import           Hermod.Tracing.DocuGenerator
-import           Hermod.Tracing.Trace
+import           Hermod.Tracing.Trace.Annotations
 import           Hermod.Tracing.Types
 import           Hermod.Tracing.Utils (tryEvalNF)
 

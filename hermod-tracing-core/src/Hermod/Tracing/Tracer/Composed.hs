@@ -15,6 +15,7 @@ module Hermod.Tracing.Tracer.Composed (
 import           Hermod.Tracing.Configuration
 import           Hermod.Tracing.Formatter
 import           Hermod.Tracing.Trace
+import           Hermod.Tracing.Trace.Annotations
 import           Hermod.Tracing.HermodTracingMessage
 import           Hermod.Tracing.Types
 

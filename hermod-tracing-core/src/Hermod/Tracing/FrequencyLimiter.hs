@@ -7,6 +7,7 @@ module Hermod.Tracing.FrequencyLimiter (
 )where
 
 import           Hermod.Tracing.Trace
+import           Hermod.Tracing.Trace.Annotations
 import           Hermod.Tracing.HermodTracingMessage
 import           Hermod.Tracing.Types
 
