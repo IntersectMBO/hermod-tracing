@@ -1,6 +1,7 @@
 {
   perSystem = { hsPkgs, ... }:
     let
+      tdo = hsPkgs.trace-dispatcher;
       tda = hsPkgs.hermod-tracing-api;
       td  = hsPkgs.hermod-tracing-core;
       tdp = hsPkgs.hermod-tracing-prometheus;
@@ -8,6 +9,9 @@
       htr = hsPkgs.hermod-trace-resources;
     in
     {
+      packages.trace-dispatcher               = tdo.components.library;
+      checks.trace-dispatcher-test           = tdo.components.tests.trace-dispatcher-test;
+
       packages.hermod-tracing-api             = tda.components.library;
 
       packages.hermod-tracing-core           = td.components.library;

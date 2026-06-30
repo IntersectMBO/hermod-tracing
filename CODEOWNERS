@@ -6,6 +6,7 @@
 # NB - The last matching pattern takes precedence
 
 # Perf/Tracing                                                @intersectmbo/performance-and-tracing
+trace-dispatcher/                                             @intersectmbo/performance-and-tracing
 hermod-tracing-core/                                          @intersectmbo/performance-and-tracing
 hermod-tracing-api/                                           @intersectmbo/performance-and-tracing
 hermod-tracing-prometheus/                                    @intersectmbo/performance-and-tracing
