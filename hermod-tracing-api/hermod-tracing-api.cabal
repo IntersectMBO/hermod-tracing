@@ -42,11 +42,11 @@ common project-config
     ghc-options:        -Wno-x-partial
 
 
-library
+library internal
   import:             project-config
-  hs-source-dirs:     src
-  exposed-modules:    Hermod.Tracing.API
-                      Hermod.Tracing.Trace
+  visibility:         public
+  hs-source-dirs:     src/internal
+  exposed-modules:    Hermod.Tracing.Trace
                       Hermod.Tracing.Trace.Combinators
                       Hermod.Tracing.Types
                       Hermod.Tracing.Types.Annotations
@@ -64,3 +64,12 @@ library
                       , text
                       , unliftio
                       , unliftio-core
+
+library public
+  import:             project-config
+  visibility:         public
+  hs-source-dirs:     src/public
+  exposed-modules:    Hermod.Tracing.API
+
+  build-depends:        base >=4.12 && <5
+                      , hermod-tracing-api:internal

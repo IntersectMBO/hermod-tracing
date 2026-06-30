@@ -14,7 +14,19 @@ parsers, or Prometheus.
 | Set up backends, parse config, run EKG/Prometheus | `hermod-tracing-core` |
 
 The dependency graph is intentionally shallow: `hermod-tracing-core` depends on
-`hermod-tracing-api`, never the other way around.
+`hermod-tracing-api:internal`, never the other way around.
+
+## Sublibraries
+
+The package exposes two sublibraries:
+
+- **`hermod-tracing-api:internal`** — the full type vocabulary and combinators
+  (`src/internal/`): `Hermod.Tracing.Types.*`, `Hermod.Tracing.Trace`,
+  `Hermod.Tracing.Trace.Combinators`.
+- **`hermod-tracing-api:public`** (the default library) — the single-import
+  end-user front door (`src/public/`): `Hermod.Tracing.API`.
+
+User-space packages shall depend on `hermod-tracing-api:public` and `import Hermod.Tracing.API`.
 
 ## Quickstart
 
@@ -87,7 +99,6 @@ traceWith myTracer (RequestReceived 42 "/api/v1/ping")
 | `LogFormatting a` | Typeclass: `forMachine`, `forHuman`, `asMetrics` |
 | `MetaTrace a` | Typeclass: namespace, severity, privacy, detail, documentation |
 | `Namespace a` | Hierarchical dot-separated message identifier |
-| `LoggingContext` | Per-message context (namespace, severity, privacy, detail) |
 | `SeverityS` | Message severity (`Debug` … `Emergency`, following RFC 5424) |
 | `SeverityF` | Severity filter (`Just minSeverity` or `Silence`) |
 | `Privacy` | `Public` \| `Confidential` |

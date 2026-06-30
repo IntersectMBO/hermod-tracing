@@ -32,12 +32,11 @@
 -- === For tracer authors
 --
 -- @
--- Trace                  -- the central carrier type
+-- Trace                  -- the central carrier opaque type
 -- LogFormatting(..)      -- typeclass: forMachine, forHuman, asMetrics
 -- MetaTrace(..)          -- typeclass: namespaceFor, severityFor, documentFor, …
 -- Metric(..)             -- metric payload (IntM, DoubleM, CounterM, LabelSetM)
 -- Namespace(..)          -- hierarchical trace identifier
--- LoggingContext(..)     -- per-message context (namespace, severity, privacy, detail)
 -- SeverityS(..)          -- message severity (Debug … Emergency)
 -- SeverityF(..)          -- severity filter (Nothing = Silence)
 -- Privacy(..)            -- Public | Confidential
@@ -47,33 +46,18 @@
 --
 -- === Configuration and control (consumed by @hermod-tracing-core@)
 --
--- 'TraceControl', 'TraceConfig', 'ConfigOption', 'BackendConfig',
+-- 'TraceConfig', 'ConfigOption', 'BackendConfig',
 -- 'ConfigReflection', 'DocCollector', 'LogDoc', 'ForwarderAddr',
 -- 'ForwarderMode', 'TraceOptionForwarder', 'PrometheusSimpleRun'.
 -- These appear in type signatures throughout the system; tracer authors
 -- typically do not construct them directly.
-module Hermod.Tracing.API
-    ( -- * Types
-      module Hermod.Tracing.Types
-      -- * Core combinators
-    , traceWith
-    , contramapM
-    , contramapMCond
-    , contramapM'
-    , foldTraceM
-    , foldCondTraceM
-    , routingTrace
-    , contramap'
-    , (>!$!<)
-      -- * Filtering
-    , filterTrace
-    , filterTraceMaybe
-    ) where
+module Hermod.Tracing.API (module X) where
 
-import           Hermod.Tracing.Types
-import           Hermod.Tracing.Trace.Combinators
+import           Hermod.Tracing.Types as X hiding (Trace(..), TraceControl(..), LoggingContext(..))
+import           Hermod.Tracing.Types as X (Trace)
+import           Hermod.Tracing.Trace.Combinators as X
                    ( traceWith, contramapM, contramapMCond, contramapM'
                    , foldTraceM, foldCondTraceM, routingTrace
                    , contramap', (>!$!<)
                    )
-import           Hermod.Tracing.Trace (filterTrace, filterTraceMaybe)
+import           Hermod.Tracing.Trace as X (filterTrace, filterTraceMaybe)

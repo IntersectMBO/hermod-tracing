@@ -23,3 +23,7 @@
   `Hermod.Tracing.Types.Annotations`.
 * `CounterM` field type changed from `Maybe Int` to `CounterAction` for
   clarity of intent (`CounterIncrement` / `CounterAdd`).
+* Package split into two sublibraries: `hermod-tracing-api:internal` (types
+  and combinators) and `hermod-tracing-api:public` (the `Hermod.Tracing.API`
+  front door). Consumers depending on `hermod-tracing-api` and importing
+  `Hermod.Tracing.API` are unaffected.
