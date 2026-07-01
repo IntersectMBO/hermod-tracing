@@ -1,6 +1,6 @@
 # Revision history for hermod-tracing-api
 
-## NEXT
+## 1.0.0 -- July 2026
 
 * Initial release.  Core types and combinators extracted from `hermod-tracing-core`
   into this thin, low-dependency package so that libraries only need to depend
@@ -10,15 +10,20 @@
   `Trace`, `LogFormatting`, `MetaTrace`, `Namespace`, `LoggingContext`,
   `SeverityS`, `SeverityF`, `Privacy`, `DetailLevel`, `Folding`, config types,
   and doc-collector types.
-* `Hermod.Tracing.Trace` and `Hermod.Tracing.Trace.Combinators` expose the core
-  combinators: `traceWith`, `contramapM`, `contramapM'`, `foldTraceM`,
-  `foldCondTraceM`, `routingTrace`, `filterTrace`, `filterTraceMaybe`, and the
-  full set of annotation combinators (`withNames`, `setSeverity`, `setDetails`,
-  `withPrivacy`, …).
+* `Hermod.Tracing.Trace` and `Hermod.Tracing.Trace.Combinators` expose the
+  structural pipeline combinators: `traceWith`, `contramapM`, `contramapMCond`,
+  `foldTraceM`, `foldCondTraceM`, `filterTrace`, `filterTraceMaybe`.
 * `Hermod.Tracing.API` is the recommended single-import front door for packages
-  that only need to define trace types and dispatch messages.  It re-exports
-  all types and a curated subset of combinators, intentionally omitting the
-  lower-level annotation combinators.
+  that only need to define trace types and dispatch messages. Combinators in
+  this module have ergonomic signatures: `contramapM`/`contramapMCond` take
+  `(a -> m b)`, `filterTrace` takes `(a -> Bool)`, `foldTraceM`/`foldCondTraceM`
+  take `(acc -> a -> m acc)` — `LoggingContext` and `TraceControl` are hidden
+  from callers.
+* Annotation and filtering combinators (`withNames`, `setSeverity`, `setDetails`,
+  `withPrivacy`, `filterTraceBySeverity`, …) are not part of this package; they
+  live in `hermod-tracing-core` as internal implementation details.
+* `contramapM` and `contramapMCond` are pure (return `Trace m a`, not
+  `m (Trace m a)`).
 * `PrometheusM` constructor renamed to `LabelSetM` throughout
   `Hermod.Tracing.Types.Annotations`.
 * `CounterM` field type changed from `Maybe Int` to `CounterAction` for

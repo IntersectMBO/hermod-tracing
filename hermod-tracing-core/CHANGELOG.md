@@ -1,6 +1,6 @@
 # Revision history for hermod-tracing-core
 
-## NEXT
+## 1.0.0 -- July 2026
 
 * Package renamed from `trace-dispatcher` to `hermod-tracing-core`.
 * All modules renamed from the `Cardano.Logging.*` namespace to `Hermod.Tracing.*`.

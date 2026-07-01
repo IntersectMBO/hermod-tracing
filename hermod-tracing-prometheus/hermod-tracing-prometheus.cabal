@@ -1,7 +1,7 @@
 cabal-version: 3.0
 
 name:                   hermod-tracing-prometheus
-version:                0.1.0
+version:                1.0.0
 synopsis:               Prometheus TCP server backend for hermod-tracing
 description:            Optional Prometheus exposition backend for the hermod-tracing
                         system. Exposes a minimal HTTP/TCP server that serves current
