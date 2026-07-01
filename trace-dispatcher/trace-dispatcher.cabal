@@ -34,7 +34,6 @@ common project-config
                         -Widentities
                         -Wredundant-constraints
                         -Wmissing-export-lists
-                        -Wno-incomplete-patterns
 
   if impl(ghc >= 9.8)
     ghc-options:        -Wno-x-partial
@@ -123,6 +122,8 @@ test-suite trace-dispatcher-test
                         Cardano.Logging.Test.Unit.FrequencyLimiting
                         Cardano.Logging.Test.Unit.Documentation
 
+  ghc-options:          -Wno-incomplete-patterns
+
   build-depends:        base >=4.12 && <5
                       , aeson
                       , bytestring
@@ -155,6 +156,8 @@ benchmark trace-dispatcher-bench
                         Cardano.Logging.Test.Config
                         Cardano.Logging.Test.Tracer
                         Cardano.Logging.Test.Script
+
+  ghc-options:          -Wno-incomplete-patterns
 
   build-depends:        base >=4.12 && <5
                       , aeson

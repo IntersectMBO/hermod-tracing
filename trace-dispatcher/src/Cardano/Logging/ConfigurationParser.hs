@@ -5,7 +5,8 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Cardano.Logging.ConfigurationParser
-  ( mkConfiguration
+  ( ConfigSource (..)
+  , mkConfiguration
   , mkConfigurationWithFallback
   , readConfiguration
   , readConfigurationWithFallback
@@ -28,15 +29,26 @@ import qualified Data.Map.Strict                     as Map
 import           Data.Maybe
 import           Data.Text                           as T (Text, intercalate, last,
                                                            null, snoc, splitOn)
+
+import           Data.ByteString                     as BS (ByteString)
+import           Data.ByteString.Lazy                as BL (ByteString, toStrict)
 import           Data.Yaml                           hiding (decodeFileEither)
 import           Data.Yaml.Include                   (decodeFileEither)
 import           System.Directory                    (doesFileExist)
 import           System.FilePath                     (takeDirectory, (</>))
 
 -- -----------------------------------------------------------------------------
--- Configuration file
+-- Configuration source
 
--- | The external representation of a configuration file
+-- | The configuration source that should be ingested
+data ConfigSource =
+    FromFile        FilePath
+  | FromJSONObject  AE.Object
+  | FromLazyBytes   BL.ByteString
+  | FromStrictBytes BS.ByteString
+  deriving (Show, Eq)
+
+-- | The external representation of a configuration source
 data ConfigRepresentation = ConfigRepresentation {
     traceOptions                      :: OptionsRepresentation
   , traceOptionForwarder              :: Maybe TraceOptionForwarder
@@ -137,14 +149,14 @@ mkConfiguration = mkConfigurationWithFallback Notice DNormal (Stdout MachineForm
 mkConfigurationWithFallback :: SeverityS -> DetailLevel -> BackendConfig -> TraceConfig
 mkConfigurationWithFallback fallbSev fallbDet fallbBack = applyFallback fallbSev fallbDet fallbBack emptyTraceConfig
 
--- | Read a configuration file and return the internal representation.
+-- | Read a configuration source and return the internal representation.
 --   Fallback options for the namespace root: Notice severity, normal detail, JSON stdout logging.
-readConfiguration :: FilePath -> IO TraceConfig
+readConfiguration :: ConfigSource -> IO TraceConfig
 readConfiguration = readConfigurationWithFallback Notice DNormal (Stdout MachineFormat)
 
--- | Read a configuration file and return the internal representation.
+-- | Read a configuration source and return the internal representation.
 --   Fallback options for the namespace root: custom values.
-readConfigurationWithFallback :: SeverityS -> DetailLevel -> BackendConfig -> FilePath -> IO TraceConfig
+readConfigurationWithFallback :: SeverityS -> DetailLevel -> BackendConfig -> ConfigSource -> IO TraceConfig
 readConfigurationWithFallback fallbSev fallbDet fallbBack = readConfigurationInt apFallback
   where
     apFallback = applyFallback fallbSev fallbDet fallbBack
@@ -162,19 +174,19 @@ readConfigurationWithFallback' :: SeverityS -> DetailLevel -> BackendConfig -> F
 readConfigurationWithFallback' fallbSev fallbDet fallbBack fp = do
   exists <- doesFileExist fp
   if exists
-    then readConfigurationInt (applyFallback fallbSev fallbDet fallbBack) fp
+    then readConfigurationInt (applyFallback fallbSev fallbDet fallbBack) (FromFile fp)
     else pure $ mkConfigurationWithFallback fallbSev fallbDet fallbBack
 
--- | Read a configuration file and return the internal representation.
+-- | Read a configuration source and return the internal representation.
 --   TraceConfig fields not specified in the file will be taken from the provided @defaultConf@ (when given there).
 --   Fallback options for the namespace root: Notice severity, normal detail, JSON stdout logging.
-readConfigurationWithDefault :: FilePath -> TraceConfig -> IO TraceConfig
+readConfigurationWithDefault :: ConfigSource -> TraceConfig -> IO TraceConfig
 readConfigurationWithDefault = readConfigurationWithFallbackAndDefault Notice DNormal (Stdout MachineFormat)
 
--- | Read a configuration file and return the internal representation.
+-- | Read a configuration source and return the internal representation.
 --   TraceConfig fields not specified in the file will be taken from the provided @defaultConf@ (when given there).
 --   Fallback options for the namespace root: custom values.
-readConfigurationWithFallbackAndDefault :: SeverityS -> DetailLevel -> BackendConfig -> FilePath -> TraceConfig -> IO TraceConfig
+readConfigurationWithFallbackAndDefault :: SeverityS -> DetailLevel -> BackendConfig -> ConfigSource -> TraceConfig -> IO TraceConfig
 readConfigurationWithFallbackAndDefault fallbSev fallbDet fallbBack fp defaultConf = readConfigurationInt (apFallback . apDefault) fp
   where
     apFallback = applyFallback fallbSev fallbDet fallbBack
@@ -191,22 +203,33 @@ instance FromJSON ExternalFile where
 
 readConfigurationInt ::
      (TraceConfig -> TraceConfig)
-  -> FilePath
+  -> ConfigSource
   -> IO TraceConfig
-readConfigurationInt modifyConf = go 4
+readConfigurationInt modifyConf = \case
+  FromFile fp         -> go 4 fp                -- allow 4 file redirects
+  FromStrictBytes bs  -> handleResult $ decodeEither' bs
+  FromLazyBytes bl    -> handleResult $ decodeEither' $ BL.toStrict bl
+  FromJSONObject obj  -> handleResult $ parseObject obj
   where
-  go :: Int -> FilePath -> IO TraceConfig
-  go redirects fp = do
-    external :: Either ParseException ExternalFile <- decodeFileEither fp
-    case external of
-      Right (ExternalFile fp')
-        | redirects > 0 -> go (redirects - 1) (takeDirectory fp </> fp')
-        | otherwise     -> error "hermod.readConfigurationInt: too many redirects"
-      Left{} -> do
-        confRep_ :: Either ParseException ConfigRepresentation <- decodeFileEither fp
-        case confRep_ of
-          Right confRep -> pure $! modifyConf $ representationToConfig $ unAliasRoot confRep
-          Left e        -> throwIO e
+    handleResult :: Either ParseException ConfigRepresentation -> IO TraceConfig
+    handleResult eConfRep =
+      case eConfRep of
+        Right confRep -> pure $! modifyConf $ representationToConfig $ unAliasRoot confRep
+        Left e        -> throwIO e
+
+    parseObject :: AE.Object -> Either ParseException ConfigRepresentation
+    parseObject obj = case AE.fromJSON (AE.Object obj) of
+      AE.Success a -> Right a
+      AE.Error e   -> Left $ AesonException e
+
+    go :: Int -> FilePath -> IO TraceConfig
+    go redirects fp = do
+      external :: Either ParseException ExternalFile <- decodeFileEither fp
+      case external of
+        Right (ExternalFile fp')
+          | redirects > 0 -> go (redirects - 1) (takeDirectory fp </> fp')
+          | otherwise     -> error "hermod.readConfigurationInt: too many redirects"
+        Left{} -> decodeFileEither fp >>= handleResult
 
 -- right biased merge
 mergeWithDefault :: TraceConfig -> TraceConfig -> TraceConfig
