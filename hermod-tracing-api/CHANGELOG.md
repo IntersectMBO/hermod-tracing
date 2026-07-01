@@ -2,7 +2,7 @@
 
 ## 1.0.0 -- July 2026
 
-* Initial release.  Core types and combinators extracted from `hermod-tracing-core`
+* Initial release.  Core types and combinators extracted from `trace-dispatcher`
   into this thin, low-dependency package so that libraries only need to depend
   on `hermod-tracing-api` to define tracers and call core combinators, without
   pulling in the full implementation stack.
@@ -32,3 +32,4 @@
   and combinators) and `hermod-tracing-api:public` (the `Hermod.Tracing.API`
   front door). Consumers depending on `hermod-tracing-api` and importing
   `Hermod.Tracing.API` are unaffected.
+* Made `contramap` strict and removed `contramap'` and `>!$!<`.

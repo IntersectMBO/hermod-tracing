@@ -15,8 +15,6 @@ module Hermod.Tracing.Trace.Combinators (
   , contramapMCond
   , foldTraceM
   , foldCondTraceM
-  , contramap'
-  , (>!$!<)
 ) where
 
 import           Hermod.Tracing.Types
@@ -24,7 +22,6 @@ import           Hermod.Tracing.Types
 import           Control.Monad              (forM_, join)
 import           Control.Monad.IO.Unlift
 import qualified Control.Tracer             as T
-import           Data.Functor.Contravariant as Contr (Contravariant, (>$<))
 
 import           UnliftIO.MVar
 
@@ -100,17 +97,3 @@ foldCondTraceM cata initial flt (Trace tr) = do
             else pure Nothing
         (lc, Left control) ->
           pure $ Just (lc, Left control)
-
--- | A strict contramap that evaluates both the function and the result to WHNF,
---   avoiding accidental space leaks when composing deep tracer chains.
---
---   The infix alias is '(>!$!<)'.
-contramap', (>!$!<) :: Contravariant f => (a' -> a) -> (f a -> f a')
-
-contramap' a !b =
-  let !result = a Contr.>$< b
-  in result
-
-infixl 4 >!$!<
-
-(>!$!<) = contramap'

@@ -40,7 +40,7 @@ module Hermod.Tracing.API (module Export, contramapM, contramapMCond, foldTraceM
 
 import           Hermod.Tracing.Types as Export hiding (Trace(..), TraceControl(..), LoggingContext(..), LogDoc(..))
 import           Hermod.Tracing.Types as Export (Trace)
-import           Hermod.Tracing.Trace.Combinators as Export (traceWith , contramap', (>!$!<))
+import           Hermod.Tracing.Trace.Combinators as Export (traceWith)
 import           Hermod.Tracing.Trace as Export (filterTraceMaybe)
 
 import           qualified Hermod.Tracing.Trace.Combinators as Internal (contramapM, contramapMCond , foldTraceM, foldCondTraceM)
@@ -70,6 +70,7 @@ contramapMCond tr f = Internal.contramapMCond tr apply where
 
 -- | Fold a monadic accumulator function over a trace.
 --   Uses an 'MVar' to hold the state.
+{-# INLINE foldTraceM #-}
 foldTraceM :: forall a acc m . (MonadUnliftIO m)
   => (acc -> a -> m acc)
   -> acc
@@ -78,6 +79,7 @@ foldTraceM :: forall a acc m . (MonadUnliftIO m)
 foldTraceM cata = Internal.foldTraceM (const . cata)
 
 -- | Like 'foldTraceM' but additionally filter the trace by a predicate.
+{-# INLINE foldCondTraceM #-}
 foldCondTraceM :: forall a acc m . (MonadUnliftIO m)
   => (acc -> a -> m acc)
   -> acc
@@ -87,6 +89,7 @@ foldCondTraceM :: forall a acc m . (MonadUnliftIO m)
 foldCondTraceM cata = Internal.foldCondTraceM (const . cata)
 
 --- | Don't process further if the selector function returns 'False'.
+{-# INLINE filterTrace #-}
 filterTrace :: Monad m
   => (a -> Bool)
   -> Trace m a

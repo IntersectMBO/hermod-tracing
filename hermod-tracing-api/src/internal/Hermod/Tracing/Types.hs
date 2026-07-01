@@ -1,5 +1,6 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GADTs              #-}
+{-# LANGUAGE BangPatterns #-}
 
 -- | Core tracing machinery: the 'Trace' carrier, the 'TraceControl' GADT that
 --   flows in-band through the pipeline, and the two key typeclasses
@@ -38,11 +39,9 @@ newtype Trace m a = Trace
 
 -- | Contramap lifted to Trace.
 instance Monad m => T.Contravariant (Trace m) where
-    contramap f (Trace tr) = Trace $
-      T.contramap (\case
-                      (lc, Right a) -> (lc, Right (f a))
-                      (lc, Left tc) -> (lc, Left tc))
-                  tr
+    contramap f (Trace !tr) = Trace $! flip T.contramap tr $ \case
+      (lc, Right a) -> (lc, Right (f a))
+      (lc, Left tc) -> (lc, Left tc)
 
 -- | @tr1 \<\> tr2@ will run @tr1@ and then @tr2@ with the same input.
 instance Monad m => Semigroup (Trace m a) where
