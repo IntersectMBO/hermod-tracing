@@ -12,7 +12,7 @@
       packages.trace-dispatcher               = tdo.components.library;
       checks.trace-dispatcher-test           = tdo.components.tests.trace-dispatcher-test;
 
-      packages.hermod-tracing-api             = tda.components.library;
+      packages.hermod-tracing-api             = tda.components.sublibs.public;
 
       packages.hermod-tracing-core           = td.components.library;
       checks.hermod-tracing-core-test        = td.components.tests.hermod-tracing-core-test;
