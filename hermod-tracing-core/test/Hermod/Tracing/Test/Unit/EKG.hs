@@ -10,6 +10,7 @@ import           Control.Concurrent
 import qualified Data.Aeson as AE
 import           Data.Text (pack)
 import           System.Metrics (newStore)
+import Hermod.Tracing.Trace.Annotations
 
 
 newtype Measure = Measure Int

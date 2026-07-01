@@ -22,31 +22,26 @@ import           Hermod.Tracing.Types
 import qualified Control.Tracer as T
 
 
---- | Don't process further if the selector function returns 'False'.
 filterTrace :: Monad m
   => ((LoggingContext, a) -> Bool)
   -> Trace m a
   -> Trace m a
-filterTrace ff (Trace tr) = Trace $ T.squelchUnless
-    (\case
-      (_lc, Left _)  -> True
-      (lc, Right a)  -> ff (lc, a))
-      tr
+filterTrace f (Trace tr) = Trace $ flip T.squelchUnless tr $ \case
+  (_, Left _)   -> True
+  (lc, Right a)  -> f (lc, a)
 
 --- | Keep 'Just' values; discard 'Nothing'.
 filterTraceMaybe :: Monad m
   => Trace m a
   -> Trace m (Maybe a)
-filterTraceMaybe (Trace tr) = Trace $
-    T.squelchUnless
-      (\case
-        (_lc, Left _ctrl)     -> True
-        (_lc, Right (Just _)) -> True
-        (_lc, Right Nothing)  -> False)
-      (T.contramap
-          (\case
-            ( lc, Right (Just a)) -> (lc, Right a)
-            (_lc, Right Nothing)  -> error "filterTraceMaybe: impossible"
-            ( lc, Left ctrl)      -> (lc, Left ctrl))
-          tr)
+filterTraceMaybe (Trace tr) = Trace $ T.squelchUnless
+  (\case
+    (_lc, Left _ctrl)     -> True
+    (_lc, Right (Just _)) -> True
+    (_lc, Right Nothing)  -> False)
+  (flip T.contramap tr $ \case
+    ( lc, Right (Just a)) -> (lc, Right a)
+    (_lc, Right Nothing)  -> error "filterTraceMaybe: impossible"
+    ( lc, Left ctrl)      -> (lc, Left ctrl)
+  )
 

@@ -16,8 +16,7 @@ import           GHC.Generics (Generic)
 
 -- | NodeStartupInfo
 
--- | This information is taken from 'BasicInfoShelleyBased'. It is required for
---   'cardano-tracer' service (particularly, for RTView).
+-- | This information is taken from 'BasicInfoShelleyBased'. It is required for 'cardano-tracer' service.
 data NodeStartupInfo = NodeStartupInfo
   { -- | The most recent era the node supports transitioning to, not necessarily the era it currently operates in.
     suiLatestSupportedEra :: Text

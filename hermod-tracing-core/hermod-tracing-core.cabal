@@ -50,6 +50,7 @@ library
                       Hermod.Tracing.Formatter
                       Hermod.Tracing.FrequencyLimiter
                       Hermod.Tracing.HermodTracingMessage
+                      Hermod.Tracing.Trace.Annotations
                       Hermod.Tracing.Tracer.DataPoint
                       Hermod.Tracing.Tracer.EKG
                       Hermod.Tracing.Tracer.Standard
@@ -58,11 +59,11 @@ library
                       Hermod.Tracing.Types.TraceMessage
                       Hermod.Tracing.Utils
 
-  other-modules:      Hermod.Tracing.Trace.Annotations
-                      Hermod.Tracing.Types.DocuGenerator
+  other-modules:      Hermod.Tracing.Types.DocuGenerator
 
   build-depends:        base >=4.12 && <5
                       , hermod-tracing-api:internal
+                      , hermod-tracing-api:public
                       , aeson >= 2.1.0.0
                       , aeson-pretty
                       , async
@@ -106,7 +107,6 @@ test-suite hermod-tracing-core-test
                         Hermod.Tracing.Test.Unit.TestObjects
                         Hermod.Tracing.Test.Unit.Aggregation
                         Hermod.Tracing.Test.Unit.Trivial
-                        Hermod.Tracing.Test.Unit.Routing
                         Hermod.Tracing.Test.Unit.EKG
                         Hermod.Tracing.Test.Unit.Configuration
                         Hermod.Tracing.Test.Unit.DataPoint

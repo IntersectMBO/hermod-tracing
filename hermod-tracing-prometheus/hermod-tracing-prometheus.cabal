@@ -47,7 +47,7 @@ library
                       Hermod.Tracing.Prometheus.TCPServer
 
   build-depends:        base >=4.12 && <5
-                      , hermod-tracing-api
+                      , hermod-tracing-api:internal
                       , hermod-tracing-core
                       , aeson >= 2.1.0.0
                       , async

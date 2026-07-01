@@ -42,6 +42,7 @@ common project-config
     ghc-options:        -Wno-x-partial
 
 
+-- For internal use only. End users shall depend on the hygienic @public@ library.
 library internal
   import:             project-config
   visibility:         public
@@ -73,3 +74,5 @@ library public
 
   build-depends:        base >=4.12 && <5
                       , hermod-tracing-api:internal
+                      , unliftio
+                      , unliftio-core

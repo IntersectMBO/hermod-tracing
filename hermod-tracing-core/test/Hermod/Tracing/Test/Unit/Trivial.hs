@@ -13,6 +13,7 @@ import           Hermod.Tracing.Test.Unit.TestObjects
 
 import           Data.IORef
 import           Data.Text (Text)
+import Hermod.Tracing.Trace.Annotations
 
 
 -- | Make sure the function append name is only called once
@@ -21,7 +22,7 @@ test1 :: IO [Text]
 test1 = do
     testTracerRef <- newIORef []
     testTracer' <- testTracer testTracerRef
-    simpleTracer <- machineFormatter testTracer'
+    let simpleTracer = machineFormatter testTracer'
     confState <- emptyConfigReflection
     configureTracers confState emptyTraceConfig [simpleTracer]
     let simpleTracer1  = filterTraceBySeverity
@@ -53,7 +54,7 @@ test2 :: IO [Text]
 test2 = do
     stdoutTracerRef <- newIORef []
     stdoutTracer' <- testTracer stdoutTracerRef
-    simpleTracer <- machineFormatter stdoutTracer'
+    let simpleTracer = machineFormatter stdoutTracer'
     confState <- emptyConfigReflection
     configureTracers confState emptyTraceConfig [simpleTracer]
     let simpleTracer1  = filterTraceBySeverity

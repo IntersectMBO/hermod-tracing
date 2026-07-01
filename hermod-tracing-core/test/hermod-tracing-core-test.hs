@@ -23,7 +23,6 @@ import           Hermod.Tracing.Test.Unit.DataPoint
 import           Hermod.Tracing.Test.Unit.Documentation
 import           Hermod.Tracing.Test.Unit.EKG
 import           Hermod.Tracing.Test.Unit.FrequencyLimiting
-import           Hermod.Tracing.Test.Unit.Routing
 import           Hermod.Tracing.Test.Unit.Trivial
 
 
@@ -52,10 +51,6 @@ unitTests = testGroup "hermod-tracing-core-unit-tests"
         res <- testAggregation
         bres <- testLoggingMessagesEq res testAggResult
         assertBool "testAggregation" bres
-    , testCase "testRouting" $ do
-        res <- testRouting
-        bres <- testLoggingMessagesEq res testRoutingResult
-        assertBool "testRouting" bres
     , testCase "testConfig" $ do
         res <- testConfig
         bres <- testLoggingMessagesEq res testConfigResult

@@ -1,3 +1,5 @@
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TupleSections #-}
 -- | Stable public API for the Hermod tracing system.
 --
 -- This is the single-import front door for @hermod-tracing-api@. It
@@ -8,26 +10,9 @@
 --   for your domain message types.
 --
 -- * __Dispatch messages__: call 'traceWith' to emit, 'contramapM' \/ 'contramapM''
---   to adapt types, 'foldTraceM' to accumulate state, 'routingTrace' to fan out.
+--   to adapt types, 'foldTraceM' to accumulate state.
 --
 -- * __Filter__: 'filterTrace', 'filterTraceMaybe'.
---
--- Annotation combinators ('withNames', 'setSeverity', 'setDetails', etc.) are
--- intentionally excluded from this module; they are available in
--- "Hermod.Tracing.Trace" for use within @hermod-tracing-core@ itself.
---
--- == When to use this package vs. @hermod-tracing-core@
---
--- Depend on @hermod-tracing-api@ (and import this module) when your package
--- only needs to __define__ trace types and __call__ the core combinators — for
--- example, a library that instruments its own operations.  You get a small
--- transitive closure with no I\/O backends, no config parser, no Prometheus.
---
--- Depend on @hermod-tracing-core@ (and import "Hermod.Tracing") when you need
--- the __full stack__: backend constructors ('standardTracer', 'ekgTracer',
--- 'forwardTracer'), 'configureTracers', 'readConfiguration', and so on.
---
--- == Types exported by this module
 --
 -- === For tracer authors
 --
@@ -47,17 +32,63 @@
 -- === Configuration and control (consumed by @hermod-tracing-core@)
 --
 -- 'TraceConfig', 'ConfigOption', 'BackendConfig',
--- 'ConfigReflection', 'DocCollector', 'LogDoc', 'ForwarderAddr',
+-- 'ConfigReflection', 'DocCollector', 'ForwarderAddr',
 -- 'ForwarderMode', 'TraceOptionForwarder', 'PrometheusSimpleRun'.
 -- These appear in type signatures throughout the system; tracer authors
 -- typically do not construct them directly.
-module Hermod.Tracing.API (module X) where
+module Hermod.Tracing.API (module Export, contramapM, contramapMCond, foldTraceM, foldCondTraceM, filterTrace) where
 
-import           Hermod.Tracing.Types as X hiding (Trace(..), TraceControl(..), LoggingContext(..))
-import           Hermod.Tracing.Types as X (Trace)
-import           Hermod.Tracing.Trace.Combinators as X
-                   ( traceWith, contramapM, contramapMCond, contramapM'
-                   , foldTraceM, foldCondTraceM, routingTrace
-                   , contramap', (>!$!<)
-                   )
-import           Hermod.Tracing.Trace as X (filterTrace, filterTraceMaybe)
+import           Hermod.Tracing.Types as Export hiding (Trace(..), TraceControl(..), LoggingContext(..), LogDoc(..))
+import           Hermod.Tracing.Types as Export (Trace)
+import           Hermod.Tracing.Trace.Combinators as Export (traceWith , contramap', (>!$!<))
+import           Hermod.Tracing.Trace as Export (filterTraceMaybe)
+
+import           qualified Hermod.Tracing.Trace.Combinators as Internal (contramapM, contramapMCond , foldTraceM, foldCondTraceM)
+import           qualified Hermod.Tracing.Trace as Internal (filterTrace)
+
+import           Control.Monad.IO.Unlift
+
+-- | Contramap a monadic function over a trace.
+{-# INLINE contramapM #-}
+contramapM :: Monad m
+  => Trace m b
+  -> (a -> m b)
+  -> Trace m a
+contramapM tr f = Internal.contramapM tr apply where
+  apply (x, Left c) = pure (x, Left c)
+  apply (lc, Right x) = (lc, ) . Right <$> f x
+
+-- | Like 'contramapM' but can also filter out messages by returning 'Nothing'.
+{-# INLINE contramapMCond #-}
+contramapMCond :: Monad m
+  => Trace m b
+  -> (a -> m (Maybe b))
+  -> Trace m a
+contramapMCond tr f = Internal.contramapMCond tr apply where
+  apply (x, Left c) = pure (Just (x, Left c))
+  apply (lc, Right x) = fmap ((lc, ) . Right) <$> f x
+
+-- | Fold a monadic accumulator function over a trace.
+--   Uses an 'MVar' to hold the state.
+foldTraceM :: forall a acc m . (MonadUnliftIO m)
+  => (acc -> a -> m acc)
+  -> acc
+  -> Trace m (Folding a acc)
+  -> m (Trace m a)
+foldTraceM cata = Internal.foldTraceM (const . cata)
+
+-- | Like 'foldTraceM' but additionally filter the trace by a predicate.
+foldCondTraceM :: forall a acc m . (MonadUnliftIO m)
+  => (acc -> a -> m acc)
+  -> acc
+  -> (a -> Bool)
+  -> Trace m (Folding a acc)
+  -> m (Trace m a)
+foldCondTraceM cata = Internal.foldCondTraceM (const . cata)
+
+--- | Don't process further if the selector function returns 'False'.
+filterTrace :: Monad m
+  => (a -> Bool)
+  -> Trace m a
+  -> Trace m a
+filterTrace f = Internal.filterTrace (f . snd)

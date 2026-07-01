@@ -22,8 +22,8 @@ testLimiting :: IO [Text]
 testLimiting = do
   testTracerRef <- newIORef []
   simpleTracer <- testTracer testTracerRef
-  tf <- machineFormatter simpleTracer
-  tflimit <- machineFormatter simpleTracer
+  let tf = machineFormatter simpleTracer
+  let tflimit = machineFormatter simpleTracer
   tf2 <- limitFrequency 5 "5 messages per second" tflimit tf
   tf3 <- limitFrequency 15 "15 messages per second" tflimit tf
   confState <- emptyConfigReflection

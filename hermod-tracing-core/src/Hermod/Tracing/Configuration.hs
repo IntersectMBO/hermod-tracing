@@ -91,7 +91,7 @@ maybeSilent :: forall m a. (MonadIO m) =>
   -> m (Trace m a)
 maybeSilent selectorFunc prefixNames isMetrics (Trace tr) = do
     ref  <- liftIO (newIORef Nothing)
-    contramapMCond (Trace tr) (mapFunc ref)
+    pure $ contramapMCond (Trace tr) (mapFunc ref)
   where
     mapFunc ref =
       \case
@@ -158,12 +158,12 @@ hasNoMetrics _tc _ns =
 withNamespaceConfig :: forall m a b c. (MonadIO m, Ord b) =>
      String
   -> (TraceConfig -> Namespace a -> m b)
-  -> (Maybe b -> Trace m c -> m (Trace m a))
+  -> (Maybe b -> Trace m c -> Trace m a)
   -> Trace m c
   -> m (Trace m a)
 withNamespaceConfig name extract withConfig tr = do
     ref  <- liftIO (newIORef (Left (Map.empty, Nothing)))
-    pure $ contramapM' (mapFunc ref)
+    pure $ Trace $ T.mkTracer $ mapFunc ref
   where
     configError = liftIO . throwIO . HermodConfigException
     mapFunc ref =
@@ -172,21 +172,21 @@ withNamespaceConfig name extract withConfig tr = do
           eitherConf <- liftIO $ readIORef ref
           case eitherConf of
             Right val -> do
-              tt <- withConfig (Just val) tr
+              let tt = withConfig (Just val) tr
               T.traceWith (unpackTrace tt) (lc, Right a)
             Left (cmap, Just v) ->
               case Map.lookup (lcNSPrefix lc ++ lcNSInner lc) cmap of
                     Just val -> do
-                      tt <- withConfig (Just val) tr
+                      let tt = withConfig (Just val) tr
                       T.traceWith (unpackTrace tt) (lc, Right a)
                     Nothing  -> do
-                      tt <- withConfig (Just v) tr
+                      let tt = withConfig (Just v) tr
                       T.traceWith (unpackTrace tt) (lc, Right a)
             -- This can happen during reconfiguration, so we don't throw an error any more
             Left (_cmap, Nothing) -> pure ()
         (lc, Left TCReset) -> do
           liftIO $ writeIORef ref (Left (Map.empty, Nothing))
-          tt <- withConfig Nothing tr
+          let tt = withConfig Nothing tr
           T.traceWith (unpackTrace tt) (lc, Left TCReset)
         (lc, Left (TCConfig c)) -> do
           let nst = lcNSPrefix lc ++ lcNSInner lc
@@ -198,12 +198,12 @@ withNamespaceConfig name extract withConfig tr = do
                 Nothing -> do
                   liftIO
                       $ writeIORef ref (Left (Map.insert nst val cmap, Nothing))
-                  tt <- withConfig (Just val) tr
+                  let tt = withConfig (Just val) tr
                   T.traceWith (unpackTrace tt) (lc, Left (TCConfig c))
                 Just v  -> do
                   if v == val
                     then do
-                      Trace tt <- withConfig (Just val) tr
+                      let Trace tt = withConfig (Just val) tr
                       T.traceWith tt (lc, Left (TCConfig c))
                     else configError $ "Inconsistent trace configuration with context "
                                       ++ show nst
@@ -220,7 +220,7 @@ withNamespaceConfig name extract withConfig tr = do
                 []     -> pure ()
                 [val]  -> do
                             liftIO $ writeIORef ref $ Right val
-                            Trace tt <- withConfig (Just val) tr
+                            let Trace tt = withConfig (Just val) tr
                             T.traceWith tt (lc, Left (TCOptimize cr))
                 _      -> let decidingDict =
                                 foldl
@@ -233,7 +233,7 @@ withNamespaceConfig name extract withConfig tr = do
                               newmap = Map.filter (/= mostCommon) cmap
                           in do
                             liftIO $ writeIORef ref (Left (newmap, Just mostCommon))
-                            Trace tt <- withConfig Nothing tr
+                            let Trace tt = withConfig Nothing tr
                             T.traceWith tt (lc, Left (TCOptimize cr))
             Right _val -> configError $ "Trace not reset before reconfiguration (3)"
                                 ++ show nst
@@ -245,16 +245,16 @@ withNamespaceConfig name extract withConfig tr = do
           let nst = lcNSPrefix lc ++ lcNSInner lc
           case eitherConf of
             Right val -> do
-              tt <- withConfig (Just val) tr
+              let tt = withConfig (Just val) tr
               T.traceWith
                 (unpackTrace tt) (lc, Left dc)
             Left (cmap, Just v) ->
               case Map.lookup nst cmap of
                     Just val -> do
-                      tt <- withConfig (Just val) tr
+                      let tt = withConfig (Just val) tr
                       T.traceWith (unpackTrace tt) (lc, Left dc)
                     Nothing  -> do
-                      tt <- withConfig (Just v) tr
+                      let tt = withConfig (Just v) tr
                       T.traceWith (unpackTrace tt) (lc, Left dc)
             Left (_cmap, Nothing) -> configError $ "Missing configuration(2) " <> name <> " ns " <> show nst
 
@@ -297,12 +297,12 @@ withDetailsFromConfig =
     "details"
     (\conf -> pure . getDetails conf)
     (\mbDtl b -> case mbDtl of
-              Just dtl -> pure $ setDetails dtl b
-              Nothing  -> pure $ setDetails DNormal b)
+              Just dtl -> setDetails dtl b
+              Nothing  -> setDetails DNormal b)
 
 -- | Routing and formatting of a trace from the config
 withBackendsFromConfig :: (MonadIO m) =>
-  (Maybe [BackendConfig] -> Trace m FormattedMessage -> m (Trace m a))
+  (Maybe [BackendConfig] -> Trace m FormattedMessage -> Trace m a)
   -> m (Trace m a)
 withBackendsFromConfig rappendPrefixNameAndFormatter =
   withNamespaceConfig
@@ -361,11 +361,11 @@ withLimitersFromConfig tri tr = do
     withLimiter ::
          Maybe (Maybe (Limiter m a))
       -> Trace m a
-      -> m (Trace m a)
-    withLimiter Nothing tr' = pure tr'
-    withLimiter (Just Nothing) tr' = pure tr'
+      -> Trace m a
+    withLimiter Nothing tr' = tr'
+    withLimiter (Just Nothing) tr' = tr'
     withLimiter (Just (Just (Limiter n d (Trace trli)))) (Trace tr') =
-      pure $ contramapM' (mapFunc (Limiter n d (Trace trli)) (Trace tr'))
+      Trace $ T.mkTracer (mapFunc (Limiter n d (Trace trli)) (Trace tr'))
     mapFunc (Limiter n d (Trace trli)) (Trace tr') =
         \case
           (lc, Right v) ->

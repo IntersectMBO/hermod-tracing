@@ -26,6 +26,7 @@ import qualified Data.List as L
 import           Data.Maybe (fromMaybe, isNothing)
 import qualified Data.Set as Set
 import           Data.Text hiding (map)
+import Data.Function ((&))
 
 
 -- | Construct a hermod tracer.
@@ -64,12 +65,12 @@ mkHermodTracer' :: forall evt evt1.
   -> IO (Trace IO evt)
 mkHermodTracer' trStdout trForward mbTrEkg tracerPrefix hook = do
 
-    !internalTr <-  backendsAndFormat
+    !internalTr <- backendsAndFormat
                       trStdout
                       trForward
                       Nothing
                       (Trace T.nullTracer)
-                    >>= addContextAndFilter
+                    & addContextAndFilter
 
     -- handle the messages
     !messageTrace <- withBackendsFromConfig (backendsAndFormat trStdout trForward)
@@ -132,7 +133,7 @@ backendsAndFormat ::
   -> Trace IO FormattedMessage
   -> Maybe [BackendConfig]
   -> Trace IO x
-  -> IO (Trace IO a)
+  -> Trace IO a
 backendsAndFormat trStdout trForward mbBackends _ = do
     let mbForwardTrace  = if forwarder
                             then Just $ filterTraceByPrivacy (Just Public)
@@ -146,7 +147,7 @@ backendsAndFormat trStdout trForward mbBackends _ = do
                         = Just (machineFormatter' trStdout)
                         | otherwise = Nothing
     case mbForwardTrace <> mbStdoutTrace of
-      Nothing -> pure $ Trace T.nullTracer
+      Nothing -> Trace T.nullTracer
       Just tr -> preFormatted (humColoured || humUncoloured || forwarder) tr
   where
     backends'     = fromMaybe
@@ -163,7 +164,7 @@ traceConfigWarnings ::
   -> [Text]
   -> IO ()
 traceConfigWarnings trStdout trForward errs = do
-    internalTr <- backendsAndFormat
+    let internalTr = backendsAndFormat
                       trStdout
                       trForward
                       Nothing
@@ -178,7 +179,7 @@ traceEffectiveConfiguration ::
   -> TraceConfig
   -> IO ()
 traceEffectiveConfiguration trStdout trForward trConfig = do
-    internalTr <- backendsAndFormat
+    let internalTr = backendsAndFormat
                       trStdout
                       trForward
                       Nothing
@@ -193,7 +194,7 @@ traceTracerInfo ::
   -> ConfigReflection
   -> IO ()
 traceTracerInfo trStdout trForward cr = do
-    internalTr <- backendsAndFormat
+    let internalTr = backendsAndFormat
                       trStdout
                       trForward
                       Nothing

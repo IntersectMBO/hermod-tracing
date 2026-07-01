@@ -115,6 +115,7 @@ library
                     , text
                     , directory
                     , hermod-tracing-core
+                    , hermod-tracing-api:public
                     , serialise
                     , bytestring
                     , time
@@ -152,6 +153,7 @@ executable hermod-recon
       , containers
       , hermod-recon-framework
       , hermod-tracing-core
+      , hermod-tracing-api:public
       , hermod-tracing-prometheus
       , aeson
       , streaming
@@ -184,6 +186,7 @@ executable hermod-recon-grep
       , time
       , hermod-recon-framework
       , hermod-tracing-core
+      , hermod-tracing-api:public
       , optparse-applicative
 
     hs-source-dirs:   app

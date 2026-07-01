@@ -20,6 +20,7 @@ module Hermod.Tracing.Trace.Annotations (
   , appendInnerName
   , appendInnerNames
   , withInnerNames
+  , withLoggingContext
 ) where
 
 import           Hermod.Tracing.Trace (filterTrace)
@@ -209,3 +210,8 @@ appendInnerNames names (Trace tr) = Trace $
     T.contramap
       (\(lc, cont) -> (lc {lcNSInner = names ++ lcNSInner lc}, cont))
       tr
+
+-- | Replace the logging context for all messages passing through this trace.
+withLoggingContext :: Monad m => LoggingContext -> Trace m a -> Trace m a
+withLoggingContext lc (Trace tr) = Trace $
+    T.contramap (\(_lc, cont) -> (lc, cont)) tr

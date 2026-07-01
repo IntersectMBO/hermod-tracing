@@ -30,7 +30,6 @@ import           Hermod.Tracing.Types.TraceMessage
 import           Codec.Serialise (Serialise (..), serialise)
 import           Control.DeepSeq (NFData)
 import           Data.ByteString (ByteString)
-import           Data.Time (UTCTime)
 import           GHC.Generics (Generic)
 import           Control.Concurrent (myThreadId)
 import           Control.Monad.IO.Class (MonadIO, liftIO)
@@ -45,10 +44,11 @@ import           Data.Text as T (Text, intercalate, null, pack)
 import           Data.Text.Lazy (toStrict)
 import           Data.Text.Lazy.Builder as TB
 import           Data.Text.Lazy.Encoding (decodeUtf8)
-import           Data.Time (defaultTimeLocale, formatTime, getCurrentTime)
+import           Data.Time (UTCTime, defaultTimeLocale, formatTime, getCurrentTime)
 import           Network.HostName
 import           System.Environment (lookupEnv)
 import           System.IO.Unsafe (unsafePerformIO)
+
 
 
 data FormattedMessage =
@@ -122,26 +122,24 @@ preFormatted ::
   ,  MonadIO m)
   => Bool
   -> Trace m PreFormatted
-  -> m (Trace m a)
+  -> Trace m a
 preFormatted withForHuman =
-  flip contramapM
-    (\case
-      (lc, Right msg) -> do
-        time     <- liftIO getCurrentTime
-        threadId <- liftIO myThreadId
-        let
-            pf = PreFormatted
-              { pfTime              = time
-              , pfNamespace         = intercalate "." (lcNSPrefix lc ++ lcNSInner lc)
-              , pfThreadId          = T.pack $ drop 9 $ show threadId                           -- drop "ThreadId " prefix
-              , pfForHuman          = if withForHuman then (let txt = forHuman msg in if T.null txt then Nothing else Just txt) else Nothing
-              , pfForMachineObject  = forMachine (fromMaybe DNormal (lcDetails lc)) msg
-              }
-        pure (lc, Right pf)
+  flip contramapM $ \case
+    (lc, Right msg) -> do
+      time     <- liftIO getCurrentTime
+      threadId <- liftIO myThreadId
+      let
+          pf = PreFormatted
+            { pfTime              = time
+            , pfNamespace         = intercalate "." (lcNSPrefix lc ++ lcNSInner lc)
+            , pfThreadId          = T.pack $ drop 9 $ show threadId                           -- drop "ThreadId " prefix
+            , pfForHuman          = if withForHuman then (let txt = forHuman msg in if T.null txt then Nothing else Just txt) else Nothing
+            , pfForMachineObject  = forMachine (fromMaybe DNormal (lcDetails lc)) msg
+            }
+      pure (lc, Right pf)
 
-      (lc, Left ctrl) ->
-        pure (lc, Left ctrl)
-    )
+    (lc, Left ctrl) ->
+      pure (lc, Left ctrl)
 
 -- | Format this trace as TraceObject for the trace forwarder
 forwardFormatter'
@@ -296,7 +294,7 @@ humanFormatter
      )
   => Bool
   -> Trace m FormattedMessage
-  -> m (Trace m a)
+  -> Trace m a
 humanFormatter withColor =
   preFormatted True . humanFormatter' withColor
 
@@ -306,7 +304,7 @@ machineFormatter
      , LogFormatting a
      )
   => Trace m FormattedMessage
-  -> m (Trace m a)
+  -> Trace m a
 machineFormatter =
   preFormatted False . machineFormatter'
 
@@ -316,7 +314,7 @@ cborFormatter
      , LogFormatting a
      )
   => Trace m FormattedMessage
-  -> m (Trace m a)
+  -> Trace m a
 cborFormatter =
   preFormatted False . cborFormatter'
 
@@ -326,6 +324,6 @@ forwardFormatter
      , LogFormatting a
      )
   => Trace m FormattedMessage
-  -> m (Trace m a)
+  -> Trace m a
 forwardFormatter =
   preFormatted True . forwardFormatter'
