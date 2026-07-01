@@ -1,6 +1,6 @@
 # Revision history for trace-dispatcher
 
-## 2.13.0 -- June 2026
+## 2.13.0 -- July 2026
 
 * Drop compatibility with `contra-tracer-0.1`.
 * Remove internal `contra-tracer` fork and depend on `contra-tracer ^>= 0.2.1`.

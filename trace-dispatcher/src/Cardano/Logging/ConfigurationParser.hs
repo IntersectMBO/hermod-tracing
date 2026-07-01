@@ -187,7 +187,7 @@ readConfigurationWithDefault = readConfigurationWithFallbackAndDefault Notice DN
 --   TraceConfig fields not specified in the file will be taken from the provided @defaultConf@ (when given there).
 --   Fallback options for the namespace root: custom values.
 readConfigurationWithFallbackAndDefault :: SeverityS -> DetailLevel -> BackendConfig -> ConfigSource -> TraceConfig -> IO TraceConfig
-readConfigurationWithFallbackAndDefault fallbSev fallbDet fallbBack fp defaultConf = readConfigurationInt (apFallback . apDefault) fp
+readConfigurationWithFallbackAndDefault fallbSev fallbDet fallbBack cs defaultConf = readConfigurationInt (apFallback . apDefault) cs
   where
     apFallback = applyFallback fallbSev fallbDet fallbBack
     apDefault  = mergeWithDefault defaultConf
