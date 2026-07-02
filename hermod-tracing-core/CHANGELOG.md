@@ -9,7 +9,7 @@
   combinators (`traceWith`, `contramapM`, `foldTraceM`,
   `filterTrace`, …) have been extracted into the new thin package
   `hermod-tracing-api`.  `hermod-tracing-core` now depends on that package.
-* `routingTrace` and `contramapM'` combinators removed.
+* `contramapM'` combinator removed.
 * `Hermod.Tracing` (the top-level re-export module) now carries an explicit
   export list, trimming it to the approved public surface.
 * `mkCardanoTracer` / `mkCardanoTracer'` renamed to `mkHermodTracer` / `mkHermodTracer'`.

@@ -107,6 +107,7 @@ test-suite hermod-tracing-core-test
                         Hermod.Tracing.Test.Unit.TestObjects
                         Hermod.Tracing.Test.Unit.Aggregation
                         Hermod.Tracing.Test.Unit.Trivial
+                        Hermod.Tracing.Test.Unit.Routing
                         Hermod.Tracing.Test.Unit.EKG
                         Hermod.Tracing.Test.Unit.Configuration
                         Hermod.Tracing.Test.Unit.DataPoint

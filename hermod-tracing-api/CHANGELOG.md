@@ -12,7 +12,7 @@
   and doc-collector types.
 * `Hermod.Tracing.Trace` and `Hermod.Tracing.Trace.Combinators` expose the
   structural pipeline combinators: `traceWith`, `contramapM`, `contramapMCond`,
-  `foldTraceM`, `foldCondTraceM`, `filterTrace`, `filterTraceMaybe`.
+  `foldTraceM`, `foldCondTraceM`, `routingTrace`, `filterTrace`, `filterTraceMaybe`.
 * `Hermod.Tracing.API` is the recommended single-import front door for packages
   that only need to define trace types and dispatch messages. Combinators in
   this module have ergonomic signatures: `contramapM`/`contramapMCond` take

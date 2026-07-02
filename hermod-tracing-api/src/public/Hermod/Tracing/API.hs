@@ -10,7 +10,7 @@
 --   for your domain message types.
 --
 -- * __Dispatch messages__: call 'traceWith' to emit, 'contramapM' \/ 'contramapM''
---   to adapt types, 'foldTraceM' to accumulate state.
+--   to adapt types, 'foldTraceM' to accumulate state, 'routingTrace' to fan out.
 --
 -- * __Filter__: 'filterTrace', 'filterTraceMaybe'.
 --
@@ -40,7 +40,7 @@ module Hermod.Tracing.API (module Export, contramapM, contramapMCond, foldTraceM
 
 import           Hermod.Tracing.Types as Export hiding (Trace(..), TraceControl(..), LoggingContext(..), LogDoc(..))
 import           Hermod.Tracing.Types as Export (Trace)
-import           Hermod.Tracing.Trace.Combinators as Export (traceWith)
+import           Hermod.Tracing.Trace.Combinators as Export (traceWith, routingTrace)
 import           Hermod.Tracing.Trace as Export (filterTraceMaybe)
 
 import           qualified Hermod.Tracing.Trace.Combinators as Internal (contramapM, contramapMCond , foldTraceM, foldCondTraceM)

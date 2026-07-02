@@ -15,6 +15,7 @@ module Hermod.Tracing.Trace.Combinators (
   , contramapMCond
   , foldTraceM
   , foldCondTraceM
+  , routingTrace
 ) where
 
 import           Hermod.Tracing.Types
@@ -97,3 +98,19 @@ foldCondTraceM cata initial flt (Trace tr) = do
             else pure Nothing
         (lc, Left control) ->
           pure $ Just (lc, Left control)
+
+-- | Route messages to different tracers based on the message content.
+--
+--   The second argument must @mappend@ all possible tracers of the first
+--   argument to one tracer. This is required for the configuration!
+routingTrace :: forall m a. Monad m
+  => (a -> m (Trace m a))
+  -> Trace m a
+  -> Trace m a
+routingTrace rf rc = Trace $ T.Tracer $ T.emit $
+  \case
+    (lc, Right a) -> do
+        nt <- rf a
+        T.traceWith (unpackTrace nt) (lc, Right a)
+    (lc, Left control) ->
+        T.traceWith (unpackTrace rc) (lc, Left control)
