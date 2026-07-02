@@ -121,7 +121,7 @@ setupTraceDispatcher :: Maybe FilePath -> IO (Trace IO App.TraceMessage)
 setupTraceDispatcher optTraceDispatcherConfigFile = do
   stdTr <- standardTracer
   configReflection <- emptyConfigReflection
-  cfg <- fromMaybe defaultTraceConfig <$> traverse (`readConfigurationWithDefault` defaultTraceConfig) optTraceDispatcherConfigFile
+  cfg <- fromMaybe defaultTraceConfig <$> traverse (`readConfigurationWithDefault` defaultTraceConfig) (FromFile <$> optTraceDispatcherConfigFile)
   ekgStore <- EKG.newStore
   ekgTrace <- ekgTracer cfg ekgStore
   tr <- mkCardanoTracer @App.TraceMessage stdTr mempty (Just ekgTrace) ["ReCon"]

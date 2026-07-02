@@ -595,6 +595,7 @@ toForest = unfoldForest build . groupByHead
 
   build :: [[Text]] -> (Text, [[[Text]]])
   build grp@(representative : _) = (head representative, (groupByHead . filter (not . null) . map tail) grp)
+  build [] = error "toForest: implementation error"
 
 -- this reflects the type cardano-tracer expects the metrics help texts to be serialized from:
 -- simple key-value map

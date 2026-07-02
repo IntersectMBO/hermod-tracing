@@ -29,12 +29,12 @@ newtype NSLookup = NSLookup (Map.Map T.Text NSLookup)
 --   The namespaces in allNamespaces are consistent with the namespaces for the
 --   severityFor, privacyFor, detailsFor, documentFor and metricsDocFor functions.
 checkTraceConfiguration ::
-     FilePath
+     ConfigSource
   -> TraceConfig
   -> [([T.Text], [T.Text])]
   -> IO NSWarnings
-checkTraceConfiguration configFileName defaultTraceConfig allNamespaces' = do
-    trConfig <- readConfigurationWithDefault configFileName defaultTraceConfig
+checkTraceConfiguration configSource defaultTraceConfig allNamespaces' = do
+    trConfig <- readConfigurationWithDefault configSource defaultTraceConfig
     pure $ checkTraceConfiguration' trConfig allNamespaces'
 
 checkTraceConfiguration' ::
