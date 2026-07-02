@@ -111,7 +111,7 @@ setupHermodTracing :: Maybe FilePath -> IO (Trace IO App.TraceMessage)
 setupHermodTracing optTracingConfigFile = do
   stdTr <- standardTracer
   configReflection <- emptyConfigReflection
-  cfg <- fromMaybe defaultTraceConfig <$> traverse (`readConfigurationWithDefault` defaultTraceConfig) optTracingConfigFile
+  cfg <- fromMaybe defaultTraceConfig <$> traverse (`readConfigurationWithDefault` defaultTraceConfig) (FromFile <$> optTracingConfigFile)
   ekgStore <- EKG.newStore
   ekgTrace <- ekgTracer cfg ekgStore
   tr <- mkHermodTracer @App.TraceMessage stdTr mempty (Just ekgTrace) ["ReCon"]
