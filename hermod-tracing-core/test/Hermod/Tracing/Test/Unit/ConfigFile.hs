@@ -43,7 +43,7 @@ testConfigFileParsingResult = TraceConfig
       , (["Node", "BlockFetchClient", "CompletedBlockFetch"], [ConfLimiter 2])
       ]
   , tcForwarder = Nothing
-  , tcNodeName = Nothing
+  , tcApplicationName = Nothing
   , tcMetricsPrefix = Nothing
   , tcPeriodicTracers = Map.fromList [("resources", 5000)]
   , tcPrometheusSimpleRun = Nothing

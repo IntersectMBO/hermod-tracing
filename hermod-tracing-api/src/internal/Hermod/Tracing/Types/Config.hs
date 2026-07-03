@@ -232,8 +232,8 @@ data TraceConfig = TraceConfig {
     tcOptions                :: Map [Text] [ConfigOption]
     -- | Options for the forwarder.
   , tcForwarder              :: Maybe TraceOptionForwarder
-    -- | Optional human-readable name of the node.
-  , tcNodeName               :: Maybe Text
+    -- | Optional human-readable name of the application.
+  , tcApplicationName        :: Maybe Text
     -- | Optional prefix for metrics.
   , tcMetricsPrefix          :: Maybe Text
     -- | Named periodic tracers: an arbitrary identifier mapped to a cardinal
@@ -249,7 +249,7 @@ emptyTraceConfig :: TraceConfig
 emptyTraceConfig = TraceConfig
   { tcOptions                = Map.empty
   , tcForwarder              = Nothing
-  , tcNodeName               = Nothing
+  , tcApplicationName        = Nothing
   , tcMetricsPrefix          = Nothing
   , tcPeriodicTracers        = Map.empty
   , tcPrometheusSimpleRun    = Nothing

@@ -38,3 +38,4 @@
   map from an arbitrary periodic-tracer identifier to a cardinal number
   interpreted in an application-specific timeunit, potentially distinct per
   identifier.
+* `TraceConfig`'s `tcNodeName` field renamed to `tcApplicationName`.

@@ -57,7 +57,7 @@ config1 = TraceConfig {
       , tofVerbosity = Minimum
       , tofMaxReconnectDelay = 60
       }
-    , tcNodeName = Nothing
+    , tcApplicationName = Nothing
     , tcMetricsPrefix = Nothing
     , tcPeriodicTracers = Map.empty
     , tcPrometheusSimpleRun = Nothing
@@ -75,7 +75,7 @@ config2 = TraceConfig {
       , tofVerbosity = Minimum
       , tofMaxReconnectDelay = 60
       }
-    , tcNodeName = Just "node-1"
+    , tcApplicationName = Just "node-1"
     , tcMetricsPrefix = Nothing
     , tcPeriodicTracers = Map.empty
     , tcPrometheusSimpleRun = Nothing

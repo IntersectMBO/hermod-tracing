@@ -224,7 +224,7 @@ mergeWithDefault defaultConf fileConf =
       then tcOptions fileConf
       else tcOptions defaultConf)
     (tcForwarder fileConf <|> tcForwarder defaultConf)
-    (tcNodeName fileConf <|> tcNodeName defaultConf)
+    (tcApplicationName fileConf <|> tcApplicationName defaultConf)
     (tcMetricsPrefix fileConf <|> tcMetricsPrefix defaultConf)
     (if (not . Map.null) (tcPeriodicTracers fileConf)
       then tcPeriodicTracers fileConf
@@ -323,7 +323,7 @@ configToRepresentation traceConfig =
      ConfigRepresentation
         (toOptionRepresentation (tcOptions traceConfig))
         (tcForwarder traceConfig)
-        (tcNodeName traceConfig)
+        (tcApplicationName traceConfig)
         (tcMetricsPrefix traceConfig)
         (tcPeriodicTracers traceConfig)
         (tcPrometheusSimpleRun traceConfig)
