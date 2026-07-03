@@ -110,6 +110,7 @@ test-suite hermod-tracing-core-test
                         Hermod.Tracing.Test.Unit.Routing
                         Hermod.Tracing.Test.Unit.EKG
                         Hermod.Tracing.Test.Unit.Configuration
+                        Hermod.Tracing.Test.Unit.ConfigFile
                         Hermod.Tracing.Test.Unit.DataPoint
                         Hermod.Tracing.Test.Unit.FrequencyLimiting
                         Hermod.Tracing.Test.Unit.Documentation

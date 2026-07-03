@@ -18,6 +18,7 @@ import           Hermod.Tracing.Test.Oracles
 import           Hermod.Tracing.Test.Script
 import           Hermod.Tracing.Test.Tracer
 import           Hermod.Tracing.Test.Unit.Aggregation
+import           Hermod.Tracing.Test.Unit.ConfigFile
 import           Hermod.Tracing.Test.Unit.Configuration
 import           Hermod.Tracing.Test.Unit.DataPoint
 import           Hermod.Tracing.Test.Unit.Documentation
@@ -60,6 +61,11 @@ unitTests = testGroup "hermod-tracing-core-unit-tests"
         res <- testConfig
         bres <- testLoggingMessagesEq res testConfigResult
         assertBool "testConfig" bres
+    , testCase "testConfigFileParsing" $ do
+        res <- testConfigFileParsing
+        assertEqual "testConfigFileParsing"
+            (show testConfigFileParsingResult)
+            (show res)
 #ifdef linux_HOST_OS
     , testCase "testDocGeneration" $ do
         actual <- docTracers

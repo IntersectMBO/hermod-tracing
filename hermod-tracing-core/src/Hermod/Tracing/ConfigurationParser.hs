@@ -25,6 +25,7 @@ import           Control.Applicative                 ((<|>))
 import           Control.Exception                   (throwIO)
 import qualified Data.Aeson                          as AE
 import           Data.List                           as List (foldl')
+import           Data.Map.Strict                     (Map)
 import qualified Data.Map.Strict                     as Map
 import           Data.Maybe
 import           Data.Text                           as T (Text, intercalate, last,
@@ -55,7 +56,7 @@ data ConfigRepresentation = ConfigRepresentation {
   , traceOptionForwarder       :: Maybe TraceOptionForwarder
   , traceOptionNodeName        :: Maybe Text
   , traceOptionMetricsPrefix   :: Maybe Text
-  , traceOptionPeriodicTracers :: Map.Map Text Word64
+  , traceOptionPeriodicTracers :: Map Text Word64
   , tracePrometheusSimpleRun   :: Maybe PrometheusSimpleRun
   }
   deriving Show
