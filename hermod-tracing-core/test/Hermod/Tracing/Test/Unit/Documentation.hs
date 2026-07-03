@@ -41,9 +41,8 @@ config1 = TraceConfig {
       , tofMaxReconnectDelay = 60
       }
     , tcNodeName = Nothing
-    , tcResourceFrequency = Nothing
     , tcMetricsPrefix = Just "cardano"
-    , tcLedgerMetricsFrequency = Nothing
+    , tcPeriodicTracers = Map.empty
     , tcPrometheusSimpleRun = Nothing
     }
 

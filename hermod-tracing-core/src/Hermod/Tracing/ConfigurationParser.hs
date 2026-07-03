@@ -32,6 +32,7 @@ import           Data.Text                           as T (Text, intercalate, la
 
 import           Data.ByteString                     as BS (ByteString)
 import           Data.ByteString.Lazy                as BL (ByteString, toStrict)
+import           Data.Word                           (Word64)
 import           Data.Yaml                           hiding (decodeFileEither)
 import           Data.Yaml.Include                   (decodeFileEither)
 import           System.Directory                    (doesFileExist)
@@ -50,31 +51,19 @@ data ConfigSource =
 
 -- | The external representation of a configuration source
 data ConfigRepresentation = ConfigRepresentation {
-    traceOptions                      :: OptionsRepresentation
-  , traceOptionForwarder              :: Maybe TraceOptionForwarder
-  , traceOptionNodeName               :: Maybe Text
-  , traceOptionMetricsPrefix          :: Maybe Text
-  , traceOptionResourceFrequency      :: Maybe Int
-  , traceOptionLedgerMetricsFrequency :: Maybe Int
-  , tracePrometheusSimpleRun          :: Maybe PrometheusSimpleRun
+    traceOptions               :: OptionsRepresentation
+  , traceOptionForwarder       :: Maybe TraceOptionForwarder
+  , traceOptionNodeName        :: Maybe Text
+  , traceOptionMetricsPrefix   :: Maybe Text
+  , traceOptionPeriodicTracers :: Map.Map Text Word64
+  , tracePrometheusSimpleRun   :: Maybe PrometheusSimpleRun
   }
   deriving Show
 
 instance AE.FromJSON ConfigRepresentation where
     parseJSON = withObject "HermodTracing" $ \obj ->
-      parseAsLegacy obj <|> parseAsOuter obj <|> parseAsInner obj
+      parseAsOuter obj <|> parseAsInner obj
       where
-        -- the legacy format which current config files use
-        parseAsLegacy obj =
-          ConfigRepresentation
-            <$> obj .:  "TraceOptions"
-            <*> obj .:? "TraceOptionForwarder"
-            <*> obj .:? "TraceOptionNodeName"
-            <*> obj .:? "TraceOptionMetricsPrefix"
-            <*> obj .:? "TraceOptionResourceFrequency"
-            <*> obj .:? "TraceOptionLedgerMetricsFrequency"
-            <*> obj .:? "TracePrometheusSimpleRun"
-
         -- configuration object has a top-level key -> object value "HermodTracing": {}
         parseAsOuter obj =
           obj .: "HermodTracing" >>= parseAsInner
@@ -86,11 +75,7 @@ instance AE.FromJSON ConfigRepresentation where
             <*> obj .:? "Forwarder"
             <*> obj .:? "ApplicationName"
             <*> obj .:? "MetricsPrefix"
-
-            -- Those two will eventually be covered by a generalized configration for named periodic tracers.
-            <*> pure Nothing
-            <*> pure Nothing
-
+            <*> obj .:? "PeriodicTracers" .!= Map.empty
             <*> obj .:? "PrometheusSimpleRun"
 
 
@@ -100,9 +85,8 @@ instance AE.ToJSON ConfigRepresentation where
     , "Forwarder"                .= traceOptionForwarder
     , "ApplicationName"          .= traceOptionNodeName
     , "MetricsPrefix"            .= traceOptionMetricsPrefix
+    , "PeriodicTracers"          .= traceOptionPeriodicTracers
     , "PrometheusSimpleRun"      .= tracePrometheusSimpleRun
-    -- Both *Frequency fields are scheduled for removal from the data type.
-    -- The current data loss on round-trip wrt. `parseAsLegacy` above is deliberate.
     ]
 
 type OptionsRepresentation = Map.Map Text ConfigOptionRep
@@ -241,8 +225,9 @@ mergeWithDefault defaultConf fileConf =
     (tcForwarder fileConf <|> tcForwarder defaultConf)
     (tcNodeName fileConf <|> tcNodeName defaultConf)
     (tcMetricsPrefix fileConf <|> tcMetricsPrefix defaultConf)
-    (tcResourceFrequency fileConf <|> tcResourceFrequency defaultConf)
-    (tcLedgerMetricsFrequency fileConf <|> tcLedgerMetricsFrequency defaultConf)
+    (if (not . Map.null) (tcPeriodicTracers fileConf)
+      then tcPeriodicTracers fileConf
+      else tcPeriodicTracers defaultConf)
     (tcPrometheusSimpleRun fileConf <|> tcPrometheusSimpleRun defaultConf)
 
 -- left biased merge
@@ -318,8 +303,7 @@ representationToConfig = transform emptyTraceConfig
           (traceOptionForwarder cr)
           (traceOptionNodeName cr)
           (traceOptionMetricsPrefix cr)
-          (traceOptionResourceFrequency cr)
-          (traceOptionLedgerMetricsFrequency cr)
+          (traceOptionPeriodicTracers cr)
           (tracePrometheusSimpleRun cr)
 
 -- | Convert options from external to internal representation
@@ -340,8 +324,7 @@ configToRepresentation traceConfig =
         (tcForwarder traceConfig)
         (tcNodeName traceConfig)
         (tcMetricsPrefix traceConfig)
-        (tcResourceFrequency traceConfig)
-        (tcLedgerMetricsFrequency traceConfig)
+        (tcPeriodicTracers traceConfig)
         (tcPrometheusSimpleRun traceConfig)
   where
     toOptionRepresentation :: Map.Map [Text] [ConfigOption]

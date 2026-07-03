@@ -38,6 +38,7 @@ import qualified Data.Map.Strict  as Map
 import           Data.Text        (Text)
 import qualified Data.Text        as T
 import           Data.Text.Read   (decimal)
+import           Data.Word        (Word64)
 import           GHC.Generics
 import           Network.HostName (HostName)
 import           Network.Socket   (PortNumber)
@@ -235,10 +236,10 @@ data TraceConfig = TraceConfig {
   , tcNodeName               :: Maybe Text
     -- | Optional prefix for metrics.
   , tcMetricsPrefix          :: Maybe Text
-    -- | Optional resource trace frequency in milliseconds.
-  , tcResourceFrequency      :: Maybe Int
-    -- | Optional ledger metrics frequency in milliseconds.
-  , tcLedgerMetricsFrequency :: Maybe Int
+    -- | Named periodic tracers: an arbitrary identifier mapped to a cardinal
+    --   number interpreted in an application-specific timeunit, potentially
+    --   distinct per identifier.
+  , tcPeriodicTracers        :: Map Text Word64
     -- | Optional parameter overrides for PrometheusSimple DoS protection.
   , tcPrometheusSimpleRun    :: Maybe PrometheusSimpleRun
   }
@@ -250,7 +251,6 @@ emptyTraceConfig = TraceConfig
   , tcForwarder              = Nothing
   , tcNodeName               = Nothing
   , tcMetricsPrefix          = Nothing
-  , tcResourceFrequency      = Nothing
-  , tcLedgerMetricsFrequency = Nothing
+  , tcPeriodicTracers        = Map.empty
   , tcPrometheusSimpleRun    = Nothing
   }

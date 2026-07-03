@@ -23,3 +23,10 @@
   removed — these were cardano-node–specific types with no generic utility.
 * `contra-tracer` version bound loosened from `^>= 0.2.1` to unconstrained.
 * Introduce `ConfigSource` in `Hermod.Tracing.ConfigurationParser`, replacing the `FilePath` parameter in `readConfiguration` and related functions. Supported sources: File (YAML or JSON), strict or lazy `ByteString`s (YAML or JSON), and pre-parsed `Aeson.Object`s.
+* `Hermod.Tracing.ConfigurationParser`: dropped the legacy top-level
+  `"TraceOptions"`/`"TraceOptionForwarder"`/… config format
+  (`parseAsLegacy`); only the `"HermodTracing"`-wrapped and flattened
+  top-level formats are now accepted. `"TraceOptionResourceFrequency"` and
+  `"TraceOptionLedgerMetricsFrequency"` are replaced by a
+  `"PeriodicTracers"` map (see `hermod-tracing-api`'s CHANGELOG for
+  `tcPeriodicTracers`).

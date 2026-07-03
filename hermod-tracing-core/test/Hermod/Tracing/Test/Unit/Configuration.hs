@@ -58,9 +58,8 @@ config1 = TraceConfig {
       , tofMaxReconnectDelay = 60
       }
     , tcNodeName = Nothing
-    , tcResourceFrequency = Nothing
     , tcMetricsPrefix = Nothing
-    , tcLedgerMetricsFrequency = Nothing
+    , tcPeriodicTracers = Map.empty
     , tcPrometheusSimpleRun = Nothing
     }
 
@@ -77,9 +76,8 @@ config2 = TraceConfig {
       , tofMaxReconnectDelay = 60
       }
     , tcNodeName = Just "node-1"
-    , tcResourceFrequency = Nothing
     , tcMetricsPrefix = Nothing
-    , tcLedgerMetricsFrequency = Nothing
+    , tcPeriodicTracers = Map.empty
     , tcPrometheusSimpleRun = Nothing
     }
 

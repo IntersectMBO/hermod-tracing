@@ -33,3 +33,8 @@
   front door). Consumers depending on `hermod-tracing-api` and importing
   `Hermod.Tracing.API` are unaffected.
 * Made `contramap` strict and removed `contramap'` and `>!$!<`.
+* `TraceConfig`'s `tcResourceFrequency` and `tcLedgerMetricsFrequency` fields
+  removed; replaced by `tcPeriodicTracers :: Map Text Word64`, a generalized
+  map from an arbitrary periodic-tracer identifier to a cardinal number
+  interpreted in an application-specific timeunit, potentially distinct per
+  identifier.
