@@ -54,7 +54,7 @@ data ConfigSource =
 data ConfigRepresentation = ConfigRepresentation {
     traceOptions               :: OptionsRepresentation
   , traceOptionForwarder       :: Maybe TraceOptionForwarder
-  , traceOptionNodeName        :: Maybe Text
+  , traceOptionApplicationName :: Maybe Text
   , traceOptionMetricsPrefix   :: Maybe Text
   , traceOptionPeriodicTracers :: Map Text Word64
   , tracePrometheusSimpleRun   :: Maybe PrometheusSimpleRun
@@ -84,7 +84,7 @@ instance AE.ToJSON ConfigRepresentation where
   toJSON ConfigRepresentation{..} = object
     [ "Options"                  .= traceOptions
     , "Forwarder"                .= traceOptionForwarder
-    , "ApplicationName"          .= traceOptionNodeName
+    , "ApplicationName"          .= traceOptionApplicationName
     , "MetricsPrefix"            .= traceOptionMetricsPrefix
     , "PeriodicTracers"          .= traceOptionPeriodicTracers
     , "PrometheusSimpleRun"      .= tracePrometheusSimpleRun
@@ -302,7 +302,7 @@ representationToConfig = transform emptyTraceConfig
       in TraceConfig
           to''
           (traceOptionForwarder cr)
-          (traceOptionNodeName cr)
+          (traceOptionApplicationName cr)
           (traceOptionMetricsPrefix cr)
           (traceOptionPeriodicTracers cr)
           (tracePrometheusSimpleRun cr)
