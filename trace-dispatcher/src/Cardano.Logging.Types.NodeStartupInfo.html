@@ -30,7 +30,7 @@
 </span><a href="Cardano.Logging.Types.NodeStartupInfo.html#suiSlotsPerKESPeriod"><span class="hs-identifier hs-var hs-var">suiSlotsPerKESPeriod</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Word.html#Word64"><span class="hs-identifier hs-type">Word64</span></a></span><span>
 </span><span id="line-27"></span><span>  </span><span class="hs-special">}</span><span>
 </span><span id="line-28"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span>
-</span><span id="line-29"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679143586"><span id="local-6989586621679143595"><span class="annot"><span class="annottext">NodeStartupInfo -&gt; NodeStartupInfo -&gt; Bool
+</span><span id="line-29"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679143978"><span id="local-6989586621679143987"><span class="annot"><span class="annottext">NodeStartupInfo -&gt; NodeStartupInfo -&gt; Bool
 (NodeStartupInfo -&gt; NodeStartupInfo -&gt; Bool)
 -&gt; (NodeStartupInfo -&gt; NodeStartupInfo -&gt; Bool)
 -&gt; Eq NodeStartupInfo
@@ -39,7 +39,7 @@ $c== :: NodeStartupInfo -&gt; NodeStartupInfo -&gt; Bool
 == :: NodeStartupInfo -&gt; NodeStartupInfo -&gt; Bool
 $c/= :: NodeStartupInfo -&gt; NodeStartupInfo -&gt; Bool
 /= :: NodeStartupInfo -&gt; NodeStartupInfo -&gt; Bool
-</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Classes.html#Eq"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679143600"><span id="local-6989586621679143611"><span id="local-6989586621679143615"><span class="annot"><span class="annottext">Int -&gt; NodeStartupInfo -&gt; ShowS
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Classes.html#Eq"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679143992"><span id="local-6989586621679144003"><span id="local-6989586621679144007"><span class="annot"><span class="annottext">Int -&gt; NodeStartupInfo -&gt; ShowS
 [NodeStartupInfo] -&gt; ShowS
 NodeStartupInfo -&gt; String
 (Int -&gt; NodeStartupInfo -&gt; ShowS)
@@ -54,7 +54,7 @@ $cshow :: NodeStartupInfo -&gt; String
 show :: NodeStartupInfo -&gt; String
 $cshowList :: [NodeStartupInfo] -&gt; ShowS
 showList :: [NodeStartupInfo] -&gt; ShowS
-</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Show.html#Show"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679143619"><span id="local-6989586621679143621"><span class="annot"><span class="annottext">(forall x. NodeStartupInfo -&gt; Rep NodeStartupInfo x)
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Show.html#Show"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679144011"><span id="local-6989586621679144013"><span class="annot"><span class="annottext">(forall x. NodeStartupInfo -&gt; Rep NodeStartupInfo x)
 -&gt; (forall x. Rep NodeStartupInfo x -&gt; NodeStartupInfo)
 -&gt; Generic NodeStartupInfo
 forall x. Rep NodeStartupInfo x -&gt; NodeStartupInfo
@@ -67,12 +67,12 @@ $cto :: forall x. Rep NodeStartupInfo x -&gt; NodeStartupInfo
 to :: forall x. Rep NodeStartupInfo x -&gt; NodeStartupInfo
 </span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Generics.html#Generic"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></a></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-30"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span>
-</span><span id="line-31"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679143625"><span class="annot"><span class="annottext">NodeStartupInfo -&gt; ()
+</span><span id="line-31"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679144017"><span class="annot"><span class="annottext">NodeStartupInfo -&gt; ()
 (NodeStartupInfo -&gt; ()) -&gt; NFData NodeStartupInfo
 forall a. (a -&gt; ()) -&gt; NFData a
 $crnf :: NodeStartupInfo -&gt; ()
 rnf :: NodeStartupInfo -&gt; ()
-</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/deepseq-1.4.8.1/src/Control.DeepSeq.html#NFData"><span class="hs-identifier hs-var hs-var hs-var hs-var">NFData</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679143653"><span id="local-6989586621679143660"><span id="local-6989586621679143663"><span id="local-6989586621679143666"><span id="local-6989586621679143669"><span class="annot"><span class="annottext">[NodeStartupInfo] -&gt; Encoding
+</span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/deepseq-1.4.8.1/src/Control.DeepSeq.html#NFData"><span class="hs-identifier hs-var hs-var hs-var hs-var">NFData</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679144045"><span id="local-6989586621679144052"><span id="local-6989586621679144055"><span id="local-6989586621679144058"><span id="local-6989586621679144061"><span class="annot"><span class="annottext">[NodeStartupInfo] -&gt; Encoding
 [NodeStartupInfo] -&gt; Value
 NodeStartupInfo -&gt; Bool
 NodeStartupInfo -&gt; Encoding
@@ -100,7 +100,7 @@ $ctoEncodingList :: [NodeStartupInfo] -&gt; Encoding
 toEncodingList :: [NodeStartupInfo] -&gt; Encoding
 $comitField :: NodeStartupInfo -&gt; Bool
 omitField :: NodeStartupInfo -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">ToJSON</span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679143804"><span id="local-6989586621679143811"><span id="local-6989586621679143814"><span class="annot"><span class="annottext">Maybe NodeStartupInfo
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">ToJSON</span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679144196"><span id="local-6989586621679144203"><span id="local-6989586621679144206"><span class="annot"><span class="annottext">Maybe NodeStartupInfo
 Value -&gt; Parser [NodeStartupInfo]
 Value -&gt; Parser NodeStartupInfo
 (Value -&gt; Parser NodeStartupInfo)

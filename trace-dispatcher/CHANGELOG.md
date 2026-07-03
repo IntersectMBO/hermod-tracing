@@ -1,6 +1,6 @@
 # Revision history for trace-dispatcher
 
-## 2.13.0 -- June 2026
+## 2.13.0 -- July 2026
 
 * Drop compatibility with `contra-tracer-0.1`.
 * Remove internal `contra-tracer` fork and depend on `contra-tracer ^>= 0.2.1`.
@@ -14,6 +14,7 @@
 * New exception type `HermodException` - currently only used for config errors.
 * Safeguard ceiling for PrometheusSimple response size, corresponding to roughly 56,000 distinct application metrics.
 * When `"HermodTracing"` config key references an external file via a relative path, make that relative to the original config file.
+* Introduce `ConfigSource` in `Cardano.Logging.ConfigurationParser`, replacing the `FilePath` parameter in `readConfiguration` and related functions. Supported sources: File (YAML or JSON), strict or lazy `ByteString`s (YAML or JSON), and pre-parsed `Aeson.Object`s.
 
 ## 2.12.1 -- Apr 2026
 

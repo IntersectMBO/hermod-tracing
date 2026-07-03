@@ -545,6 +545,13 @@ infixl 4 >!$!<
 
 module Cardano.Logging.ConfigurationParser
 
+-- | The configuration source that should be ingested
+data ConfigSource
+FromFile :: FilePath -> ConfigSource
+FromJSONObject :: Object -> ConfigSource
+FromLazyBytes :: ByteString -> ConfigSource
+FromStrictBytes :: ByteString -> ConfigSource
+
 -- | Creates the minimal viable configuration by only setting fallback
 --   values in an empty TraceConfig. Fallback options for the namespace
 --   root: Notice severity, normal detail, JSON stdout logging. Notice
@@ -557,14 +564,14 @@ mkConfiguration :: TraceConfig
 --   namespace root: custom values.
 mkConfigurationWithFallback :: SeverityS -> DetailLevel -> BackendConfig -> TraceConfig
 
--- | Read a configuration file and return the internal representation.
+-- | Read a configuration source and return the internal representation.
 --   Fallback options for the namespace root: Notice severity, normal
 --   detail, JSON stdout logging.
-readConfiguration :: FilePath -> IO TraceConfig
+readConfiguration :: ConfigSource -> IO TraceConfig
 
--- | Read a configuration file and return the internal representation.
+-- | Read a configuration source and return the internal representation.
 --   Fallback options for the namespace root: custom values.
-readConfigurationWithFallback :: SeverityS -> DetailLevel -> BackendConfig -> FilePath -> IO TraceConfig
+readConfigurationWithFallback :: SeverityS -> DetailLevel -> BackendConfig -> ConfigSource -> IO TraceConfig
 
 -- | Read a configuration file and return the internal representation. This
 --   will silently provide a minimal viable config via
@@ -579,18 +586,18 @@ readConfiguration' :: FilePath -> IO TraceConfig
 --   options for the namespace root: custom values.
 readConfigurationWithFallback' :: SeverityS -> DetailLevel -> BackendConfig -> FilePath -> IO TraceConfig
 
--- | Read a configuration file and return the internal representation.
+-- | Read a configuration source and return the internal representation.
 --   TraceConfig fields not specified in the file will be taken from the
 --   provided <tt>defaultConf</tt> (when given there). Fallback options for
 --   the namespace root: Notice severity, normal detail, JSON stdout
 --   logging.
-readConfigurationWithDefault :: FilePath -> TraceConfig -> IO TraceConfig
+readConfigurationWithDefault :: ConfigSource -> TraceConfig -> IO TraceConfig
 
--- | Read a configuration file and return the internal representation.
+-- | Read a configuration source and return the internal representation.
 --   TraceConfig fields not specified in the file will be taken from the
 --   provided <tt>defaultConf</tt> (when given there). Fallback options for
 --   the namespace root: custom values.
-readConfigurationWithFallbackAndDefault :: SeverityS -> DetailLevel -> BackendConfig -> FilePath -> TraceConfig -> IO TraceConfig
+readConfigurationWithFallbackAndDefault :: SeverityS -> DetailLevel -> BackendConfig -> ConfigSource -> TraceConfig -> IO TraceConfig
 
 -- | Applies the fallback values to the namespace root, or creates a
 --   namespace root from them if none is present. Furthermore, it ensures a
@@ -603,6 +610,8 @@ applyFallback :: SeverityS -> DetailLevel -> BackendConfig -> TraceConfig -> Tra
 
 -- | Convert config from internal to external representation
 configToRepresentation :: TraceConfig -> ConfigRepresentation
+instance GHC.Classes.Eq Cardano.Logging.ConfigurationParser.ConfigSource
+instance GHC.Show.Show Cardano.Logging.ConfigurationParser.ConfigSource
 instance GHC.Show.Show Cardano.Logging.ConfigurationParser.ConfigOptionRep
 instance GHC.Show.Show Cardano.Logging.ConfigurationParser.ConfigRepresentation
 instance Data.Aeson.Types.FromJSON.FromJSON Cardano.Logging.ConfigurationParser.ExternalFile
@@ -624,7 +633,7 @@ type NSWarnings = [Text]
 --   another namespace. The namespaces in allNamespaces are consistent with
 --   the namespaces for the severityFor, privacyFor, detailsFor,
 --   documentFor and metricsDocFor functions.
-checkTraceConfiguration :: FilePath -> TraceConfig -> [([Text], [Text])] -> IO NSWarnings
+checkTraceConfiguration :: ConfigSource -> TraceConfig -> [([Text], [Text])] -> IO NSWarnings
 checkTraceConfiguration' :: TraceConfig -> [([Text], [Text])] -> NSWarnings
 instance GHC.Show.Show Cardano.Logging.Consistency.NSLookup
 
@@ -1137,6 +1146,13 @@ data HermodException
 HermodConfigException :: String -> HermodException
 [excMessage] :: HermodException -> String
 
+-- | The configuration source that should be ingested
+data ConfigSource
+FromFile :: FilePath -> ConfigSource
+FromJSONObject :: Object -> ConfigSource
+FromLazyBytes :: ByteString -> ConfigSource
+FromStrictBytes :: ByteString -> ConfigSource
+
 -- | Warnings as a list of text
 type NSWarnings = [Text]
 data LimiterSpec
@@ -1548,14 +1564,14 @@ mkConfiguration :: TraceConfig
 --   namespace root: custom values.
 mkConfigurationWithFallback :: SeverityS -> DetailLevel -> BackendConfig -> TraceConfig
 
--- | Read a configuration file and return the internal representation.
+-- | Read a configuration source and return the internal representation.
 --   Fallback options for the namespace root: Notice severity, normal
 --   detail, JSON stdout logging.
-readConfiguration :: FilePath -> IO TraceConfig
+readConfiguration :: ConfigSource -> IO TraceConfig
 
--- | Read a configuration file and return the internal representation.
+-- | Read a configuration source and return the internal representation.
 --   Fallback options for the namespace root: custom values.
-readConfigurationWithFallback :: SeverityS -> DetailLevel -> BackendConfig -> FilePath -> IO TraceConfig
+readConfigurationWithFallback :: SeverityS -> DetailLevel -> BackendConfig -> ConfigSource -> IO TraceConfig
 
 -- | Read a configuration file and return the internal representation. This
 --   will silently provide a minimal viable config via
@@ -1570,18 +1586,18 @@ readConfiguration' :: FilePath -> IO TraceConfig
 --   options for the namespace root: custom values.
 readConfigurationWithFallback' :: SeverityS -> DetailLevel -> BackendConfig -> FilePath -> IO TraceConfig
 
--- | Read a configuration file and return the internal representation.
+-- | Read a configuration source and return the internal representation.
 --   TraceConfig fields not specified in the file will be taken from the
 --   provided <tt>defaultConf</tt> (when given there). Fallback options for
 --   the namespace root: Notice severity, normal detail, JSON stdout
 --   logging.
-readConfigurationWithDefault :: FilePath -> TraceConfig -> IO TraceConfig
+readConfigurationWithDefault :: ConfigSource -> TraceConfig -> IO TraceConfig
 
--- | Read a configuration file and return the internal representation.
+-- | Read a configuration source and return the internal representation.
 --   TraceConfig fields not specified in the file will be taken from the
 --   provided <tt>defaultConf</tt> (when given there). Fallback options for
 --   the namespace root: custom values.
-readConfigurationWithFallbackAndDefault :: SeverityS -> DetailLevel -> BackendConfig -> FilePath -> TraceConfig -> IO TraceConfig
+readConfigurationWithFallbackAndDefault :: SeverityS -> DetailLevel -> BackendConfig -> ConfigSource -> TraceConfig -> IO TraceConfig
 
 -- | Applies the fallback values to the namespace root, or creates a
 --   namespace root from them if none is present. Furthermore, it ensures a
@@ -1602,7 +1618,7 @@ configToRepresentation :: TraceConfig -> ConfigRepresentation
 --   another namespace. The namespaces in allNamespaces are consistent with
 --   the namespaces for the severityFor, privacyFor, detailsFor,
 --   documentFor and metricsDocFor functions.
-checkTraceConfiguration :: FilePath -> TraceConfig -> [([Text], [Text])] -> IO NSWarnings
+checkTraceConfiguration :: ConfigSource -> TraceConfig -> [([Text], [Text])] -> IO NSWarnings
 checkTraceConfiguration' :: TraceConfig -> [([Text], [Text])] -> NSWarnings
 
 -- | Format this trace as metrics
