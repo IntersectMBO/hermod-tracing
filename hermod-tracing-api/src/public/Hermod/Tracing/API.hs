@@ -9,7 +9,7 @@
 --   metrics) and 'MetaTrace' (namespace, severity, documentation) instances
 --   for your domain message types.
 --
--- * __Dispatch messages__: call 'traceWith' to emit, 'contramapM' \/ 'contramapM''
+-- * __Dispatch messages__: call 'traceWith' to emit, 'contramapM'
 --   to adapt types, 'foldTraceM' to accumulate state, 'routingTrace' to fan out.
 --
 -- * __Filter__: 'filterTrace', 'filterTraceMaybe'.

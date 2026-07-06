@@ -113,7 +113,7 @@ traceWith myTracer (RequestReceived 42 "/api/v1/ping")
 |---|---|
 | `traceWith tr msg` | Emit a message into a trace |
 | `contramapM tr f` | Adapt message type monadically |
-| `contramapM' tr f` | Like `contramapM`, but strict |
+| `contramapMCond tr f` | Like `contramapM`, but can also drop messages by returning `Nothing` |
 | `foldTraceM tr acc f` | Accumulate state across messages |
 | `foldCondTraceM tr acc f` | Like `foldTraceM`, but can drop messages |
 | `routingTrace f tracers` | Fan a message out to multiple traces |
