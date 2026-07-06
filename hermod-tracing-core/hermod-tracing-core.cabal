@@ -18,6 +18,7 @@ license-files:          LICENSE
 extra-doc-files:        CHANGELOG.md
                         README.md
                         doc/hermod-tracing-core.md
+data-files:             doc/config.json
 
 common project-config
   default-language:     Haskell2010
@@ -114,6 +115,9 @@ test-suite hermod-tracing-core-test
                         Hermod.Tracing.Test.Unit.DataPoint
                         Hermod.Tracing.Test.Unit.FrequencyLimiting
                         Hermod.Tracing.Test.Unit.Documentation
+                        Paths_hermod_tracing_core
+
+  autogen-modules:      Paths_hermod_tracing_core
 
   ghc-options:          -Wno-incomplete-patterns
 

@@ -7,11 +7,15 @@ import           Hermod.Tracing
 
 import qualified Data.Map.Strict as Map
 
+import           Paths_hermod_tracing_core (getDataFileName)
+
 
 -- | Parse the example config shipped in @doc/config.json@ and return the
 --   resulting 'TraceConfig'.
 testConfigFileParsing :: IO TraceConfig
-testConfigFileParsing = readConfiguration (FromFile "doc/config.json")
+testConfigFileParsing = do
+  configPath <- getDataFileName "doc/config.json"
+  readConfiguration (FromFile configPath)
 
 -- | The 'TraceConfig' that @doc/config.json@ is expected to parse to.
 testConfigFileParsingResult :: TraceConfig
