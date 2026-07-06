@@ -81,14 +81,15 @@ instance AE.FromJSON ConfigRepresentation where
 
 
 instance AE.ToJSON ConfigRepresentation where
-  toJSON ConfigRepresentation{..} = object
+  toJSON ConfigRepresentation{..} = object $
     [ "Options"                  .= traceOptions
     , "Forwarder"                .= traceOptionForwarder
     , "ApplicationName"          .= traceOptionApplicationName
     , "MetricsPrefix"            .= traceOptionMetricsPrefix
-    , "PeriodicTracers"          .= traceOptionPeriodicTracers
     , "PrometheusSimpleRun"      .= tracePrometheusSimpleRun
     ]
+    ++ [ "PeriodicTracers" .= traceOptionPeriodicTracers
+       | not (Map.null traceOptionPeriodicTracers) ]
 
 type OptionsRepresentation = Map.Map Text ConfigOptionRep
 
