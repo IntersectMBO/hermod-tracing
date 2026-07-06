@@ -5,7 +5,7 @@
     let
       project = pkgs.haskell-nix.cabalProject' ({ config, pkgs, ... }: {
         src = ./..;
-        name = "hermod-tracing-core";
+        name = "hermod-tracing";
         compiler-nix-name = lib.mkDefault "ghc967";
 
         inputMap = {
