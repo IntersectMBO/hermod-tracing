@@ -57,6 +57,7 @@ contramapMCond (Trace tr) mFunc = Trace $ T.Tracer $ T.emit rFunc
       condMes <- mFunc arg
       forM_ condMes (T.traceWith tr)
 
+{-# INLINE foldTraceM #-}
 -- | Fold a monadic accumulator function over a trace.
 --   Uses an 'MVar' to hold the state.
 foldTraceM :: forall a acc m . (MonadUnliftIO m)
@@ -76,6 +77,7 @@ foldTraceM cata initial (Trace tr) = do
       (lc, Left control) ->
         pure (lc, Left control)
 
+{-# INLINE foldCondTraceM #-}
 -- | Like 'foldTraceM' but additionally filter the trace by a predicate.
 foldCondTraceM :: forall a acc m . (MonadUnliftIO m)
   => (acc -> LoggingContext -> a -> m acc)

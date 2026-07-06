@@ -22,6 +22,7 @@ import           Hermod.Tracing.Types
 import qualified Control.Tracer as T
 
 
+{-# INLINE filterTrace #-}
 filterTrace :: Monad m
   => ((LoggingContext, a) -> Bool)
   -> Trace m a
