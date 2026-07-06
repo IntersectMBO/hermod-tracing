@@ -1,4 +1,4 @@
-# Cardano Trace Documentation
+# Tracing Documentation
 
 ## Table Of Contents
 

@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-unused-imports  #-}
 
@@ -66,7 +65,6 @@ unitTests = testGroup "hermod-tracing-core-unit-tests"
         assertEqual "testConfigFileParsing"
             (show testConfigFileParsingResult)
             (show res)
-#ifdef linux_HOST_OS
     , testCase "testDocGeneration" $ do
         actual <- docTracers
         expected <- readFile "test/data/docGeneration.md"
@@ -74,7 +72,6 @@ unitTests = testGroup "hermod-tracing-core-unit-tests"
         assertEqual "testDocGeneration"
             (stripEnd expected)
             (stripEnd actual')
-#endif
     , testCase "testEKG" $ do
         res <- testEKG
         assertBool "testEKG" (res == 1000)
