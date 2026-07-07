@@ -134,17 +134,9 @@ data TraceOptionForwarder = TraceOptionForwarder {
 -- hold enough traces for 10 subsequent polls by cardano-tracer.
 instance AE.FromJSON TraceOptionForwarder where
     parseJSON = AE.withObject "TraceOptionForwarder" $ \obj -> do
-      -- Field "queueSize" is the new field that replaces and unifies
-      -- both "connQueueSize" and "disconnQueueSize".
-      maybeQueueSize <- obj AE..:? "queueSize"
-      queueSize <- case maybeQueueSize of
-                     (Just qs) -> return qs
-                     Nothing   -> do
-                       connQueueSize    <- obj AE..:? "connQueueSize"    AE..!= 128
-                       disconnQueueSize <- obj AE..:? "disconnQueueSize" AE..!= 192
-                       return $ max connQueueSize disconnQueueSize
-      verbosity         <- obj AE..:? "verbosity"         AE..!= Minimum
-      maxReconnectDelay <- obj AE..:? "maxReconnectDelay" AE..!= 45
+      queueSize         <- obj AE..:? "queueSize"         AE..!= tofQueueSize         defaultForwarder
+      verbosity         <- obj AE..:? "verbosity"         AE..!= tofVerbosity         defaultForwarder
+      maxReconnectDelay <- obj AE..:? "maxReconnectDelay" AE..!= tofMaxReconnectDelay defaultForwarder
       return $ TraceOptionForwarder queueSize verbosity maxReconnectDelay
 
 instance AE.ToJSON TraceOptionForwarder where
@@ -237,8 +229,14 @@ data TraceConfig = TraceConfig {
     -- | Optional prefix for metrics.
   , tcMetricsPrefix          :: Maybe Text
     -- | Named periodic tracers: an arbitrary identifier mapped to a cardinal
-    --   number interpreted in an application-specific timeunit, potentially
-    --   distinct per identifier.
+    --   number. The numbers are interpreted by the host application - as potentially
+    --   distinct timeunits, event counts, or whatever constitutes a logical period or
+    --   interval for the tracer to emit.
+    --   As Hermod does not currently manage setup or life cycle of periodic tracers itself,
+    --   this config object has to be understood as a convenience interface for the application.
+    --   A value of @0@ conventionally signals that the tracer should not run.
+    --   An absent key leaves the host application free to apply a hard-coded default or
+    --   fallback; the library imposes none.
   , tcPeriodicTracers        :: Map Text Word64
     -- | Optional parameter overrides for PrometheusSimple DoS protection.
   , tcPrometheusSimpleRun    :: Maybe PrometheusSimpleRun

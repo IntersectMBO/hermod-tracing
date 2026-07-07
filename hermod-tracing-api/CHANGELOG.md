@@ -28,6 +28,8 @@
   `Hermod.Tracing.Types.Annotations`.
 * `CounterM` field type changed from `Maybe Int` to `CounterAction` for
   clarity of intent (`CounterIncrement` / `CounterAdd`).
+* `TraceOptionForwarder` JSON parsing no longer accepts the deprecated
+  `connQueueSize` / `disconnQueueSize` fields. Use `queueSize` instead.
 * Package split into two sublibraries: `hermod-tracing-api:internal` (types
   and combinators) and `hermod-tracing-api:public` (the `Hermod.Tracing.API`
   front door). Consumers depending on `hermod-tracing-api` and importing

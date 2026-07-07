@@ -191,6 +191,8 @@ instance LogFormatting (TraceForgeEvent LogBlock) where
       , "tip" AE..= AE.toJSON (unSlotNo tip)
       ]
 
+  -- Metric names use the "cardano.node" prefix as a representative example,
+  -- reflecting Hermod's origins as the tracing system for the Cardano node.
   asMetrics (TraceStartLeadershipCheck slotNo) =
     [IntM "cardano.node.aboutToLeadSlotLast" (fromIntegral $ unSlotNo slotNo)]
   asMetrics (TraceSlotIsImmutable slot _tipPoint _tipBlkNo) =

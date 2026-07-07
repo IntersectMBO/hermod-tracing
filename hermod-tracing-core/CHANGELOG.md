@@ -30,7 +30,9 @@
   `"TraceOptionLedgerMetricsFrequency"` are replaced by a
   `"PeriodicTracers"` map (see `hermod-tracing-api`'s CHANGELOG for
   `tcPeriodicTracers`).
-* `Hermod.Tracing.ConfigurationParser`'s internal `ConfigRepresentation`
-  field `traceOptionNodeName` renamed to `traceOptionApplicationName`,
-  matching `hermod-tracing-api`'s `TraceConfig.tcApplicationName`. The
-  `"ApplicationName"` JSON key is unchanged.
+* **Breaking config change**: the JSON key previously parsed as
+  `"TraceOptionNodeName"` is now `"ApplicationName"`. Config files using
+  `"TraceOptionNodeName"` must rename that key; the old key is silently
+  ignored. Internally, `ConfigRepresentation` field `traceOptionNodeName`
+  is renamed to `traceOptionApplicationName`, matching `hermod-tracing-api`'s
+  `TraceConfig.tcApplicationName`.

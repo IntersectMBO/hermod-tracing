@@ -1,7 +1,15 @@
 Re(altime) Con(formance) Framework Overview
 ==========================
 
-Explain a version of linear temporal logic that is suitable for realtime conformance testing of Cardano nodes (via trace messages).
+This document describes a version of linear temporal logic suitable for realtime conformance
+checking of systems that emit structured trace messages. The framework is built to ingest Hermod
+trace records as defined in `Hermod.Tracing.Types.TraceMessage`, and is general-purpose: any
+application that produces a stream of typed, metadata-rich trace records can be targeted.
+
+The worked examples in section 6 use a Cardano blockchain node as a concrete, real-world
+illustration — its forging pipeline provides richly structured, temporally ordered events that
+make for clear and non-trivial LTL propositions. Readers unfamiliar with Cardano can treat
+the namespace strings and field names as opaque identifiers and still follow the logical structure.
 
 1. Temporal Vocabulary
 ----------------------
@@ -10,7 +18,7 @@ Explain a version of linear temporal logic that is suitable for realtime conform
 
 2. Atomic Predicates & Trace Records
 ------------------------------------
-- Each trace record should be normalised into a canonical structure that exposes the metadata the Cardano node already emits: namespace (e.g., `["Forge","Loop","ForgedBlock"]`), severity, host, thread id, slot number, block number, plus an extensible map of additional fields (block hash, failure reason, ledger point, etc.).
+- Each trace record should be normalised into a canonical structure that exposes standard metadata: namespace (e.g., `["Forge","Loop","ForgedBlock"]`), severity, host, thread id, plus an extensible map of domain-specific fields (in the Cardano example: slot number, block number, block hash, failure reason, ledger point, etc.).
 - Atomic predicates state facts about that structured record: “namespace equals Forge.ForgedBlock”, “slot equals 423115”, “reason belongs to {BlockFromFuture, SlotIsImmutable}”, “severity is at least Warning”, “field `prev` matches a given block hash pattern”.
 
 3. Trace Model
@@ -30,7 +38,7 @@ Explain a version of linear temporal logic that is suitable for realtime conform
 
 6. Worked Examples
 ------------------
-The following invariants operate on the standard Cardano forging messages. `k`, `m` denote window sizes chosen large enough to accommodate intermediate bookkeeping events between the paired messages.
+The following invariants are drawn from the Cardano forging pipeline (some Cardano familiarity assumed). `k`, `m` denote window sizes chosen large enough to accommodate intermediate bookkeeping events between the paired messages.
 
 1. **Leadership outcome within a window**
    `☐ ᪲ (∀i ∈ ℤ. Forge.Loop.StartLeadershipCheck{slot = i} ⇒ ♢ᵏ (Forge.Loop.NodeIsLeader{slot = i} ∨ Forge.Loop.NodeNotLeader{slot = i}))`

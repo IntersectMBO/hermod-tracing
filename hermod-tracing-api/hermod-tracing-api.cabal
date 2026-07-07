@@ -8,6 +8,14 @@ description:            Core types (Trace, MetaTrace, LogFormatting) and combina
                         stable API surface of the Hermod tracing system. Packages that
                         implement or consume tracers can depend on this package without
                         pulling in the full hermod-tracing-core implementation.
+                        .
+                        This package exposes two sublibraries. User-space packages should
+                        depend only on @hermod-tracing-api@ (the @public@ sublibrary).
+                        The @internal@ sublibrary is not a stable API — it may change
+                        between any two releases without a major version bump. Its
+                        @visibility: public@ declaration exists solely to allow
+                        @hermod-tracing-core@ (a separate Cabal package) to depend on it;
+                        this is an accepted Haskell ecosystem pattern (cf. @text:text-internal@).
 category:               System,
                         Logging,
                         Tracing,
@@ -15,6 +23,8 @@ category:               System,
 copyright:              2020-2023 Input Output Global Inc (IOG), 2023-2026 Intersect.
 author:                 Juergen Nicklisch, Michael Karg, Ruslan Feizerakhmanov
 maintainer:             operations@iohk.io
+homepage:               https://github.com/IntersectMBO/hermod-tracing
+bug-reports:            https://github.com/IntersectMBO/hermod-tracing/issues
 license:                Apache-2.0
 license-files:          LICENSE
                         NOTICE
@@ -42,7 +52,9 @@ common project-config
     ghc-options:        -Wno-x-partial
 
 
--- For internal use only. End users shall depend on the hygienic @public@ library.
+-- Not a stable API. May change between any two releases without a major version bump.
+-- visibility: public exists solely so that hermod-tracing-core (a separate Cabal package)
+-- can depend on it. User-space packages shall depend on the public sublibrary only.
 library internal
   import:             project-config
   visibility:         public

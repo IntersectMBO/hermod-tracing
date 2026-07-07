@@ -1,62 +1,65 @@
-TraceOptions:
-  "":
-    severity: Notice
-    detail: DNormal
-    backends:
-      - Stdout MachineFormat
-      - EKGBackend
-      - Forwarder
+HermodTracing:
+  Options:
+    Node:
+      severity: Notice
+      detail: DNormal
+      backends:
+        - Stdout MachineFormat
+        - EKGBackend
+        - Forwarder
 
-# More interesting tracers
+    # More interesting tracers
 
-  ChainDB:
-    severity: Info
+    Node.ChainDB:
+      severity: Info
 
-  AcceptPolicy:
-    severity: Info
+    Node.AcceptPolicy:
+      severity: Info
 
-  DNSResolver:
-    severity: Info
+    Node.DNSResolver:
+      severity: Info
 
-  DNSSubscription:
-    severity: Info
+    Node.DNSSubscription:
+      severity: Info
 
-  DiffusionInit:
-    severity: Info
+    Node.DiffusionInit:
+      severity: Info
 
-  ErrorPolicy:
-    severity: Info
+    Node.ErrorPolicy:
+      severity: Info
 
-  Forge:
-    severity: Info
+    Node.Forge:
+      severity: Info
 
-  IpSubscription:
-    severity: Info
+    Node.IpSubscription:
+      severity: Info
 
-  LocalErrorPolicy:
-    severity: Info
+    Node.LocalErrorPolicy:
+      severity: Info
 
-  Mempool:
-    severity: Info
+    Node.Mempool:
+      severity: Info
 
-  Resources:
-    severity: Info
+    Node.Resources:
+      severity: Info
 
-#---------------------------
-# Frequency limited tracer
-  ChainDB.AddBlockEvent.AddedBlockToQueue:
-    maxFrequency: 2.0
+    #---------------------------
+    # Frequency limited tracers
 
-  ChainDB.AddBlockEvent.AddedBlockToVolatileDB:
-    maxFrequency: 2.0
+    Node.ChainDB.AddBlockEvent.AddedBlockToQueue:
+      maxFrequency: 2.0
 
-  ChainDB.CopyToImmutableDBEvent.CopiedBlockToImmutableDB:
-    maxFrequency: 2.0
+    Node.ChainDB.AddBlockEvent.AddedBlockToVolatileDB:
+      maxFrequency: 2.0
 
-  ChainDB.AddBlockEvent.AddBlockValidation.ValidCandidate:
-    maxFrequency: 2.0
+    Node.ChainDB.CopyToImmutableDBEvent.CopiedBlockToImmutableDB:
+      maxFrequency: 2.0
 
-  BlockFetchClient.CompletedBlockFetch:
-    maxFrequency: 2.0
+    Node.ChainDB.AddBlockEvent.AddBlockValidation.ValidCandidate:
+      maxFrequency: 2.0
 
-TraceOptionResourceFrequency: 5000
+    Node.BlockFetchClient.CompletedBlockFetch:
+      maxFrequency: 2.0
+
+  PeriodicTracers:
+    resources: 5000

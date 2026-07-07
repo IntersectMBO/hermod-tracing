@@ -28,6 +28,11 @@ The package exposes two sublibraries:
 
 User-space packages shall depend on `hermod-tracing-api:public` and `import Hermod.Tracing.API`.
 
+**`hermod-tracing-api:internal` is not a stable API.** It may change between any two releases
+without a major version bump. Its `visibility: public` declaration exists solely to allow
+`hermod-tracing-core` (a separate Cabal package) to depend on it — this is an established
+Haskell ecosystem pattern (cf. `text:text-internal`). Do not depend on `:internal` directly.
+
 ## Quickstart
 
 ```haskell

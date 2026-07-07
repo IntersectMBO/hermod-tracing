@@ -41,7 +41,7 @@ config1 = TraceConfig {
       , tofMaxReconnectDelay = 60
       }
     , tcApplicationName = Nothing
-    , tcMetricsPrefix = Just "cardano"
+    , tcMetricsPrefix = Just "cardano" -- representative prefix from Hermod's Cardano origins
     , tcPeriodicTracers = Map.empty
     , tcPrometheusSimpleRun = Nothing
     }
