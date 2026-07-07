@@ -10,7 +10,7 @@ module Hermod.Tracing.Resources.Types
     ) where
 
 
-import           Cardano.Logging
+import           Hermod.Tracing
 
 import           Data.Aeson
 import           Data.Text (pack)

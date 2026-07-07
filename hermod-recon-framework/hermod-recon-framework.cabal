@@ -13,6 +13,10 @@ maintainer:         ruslan.feizerakhmanov@iohk.io
 build-type:         Simple
 extra-doc-files:
     CHANGELOG.md
+    docs/*.txt
+data-files:
+    README.md
+    recon-language-overview.md
     examples/cfgs/context.yaml
     examples/cfgs/formulas.yaml
     examples/extracts/ok-1.txt
@@ -26,10 +30,6 @@ extra-doc-files:
     examples/extracts/fail-4.txt
     examples/extracts/fail-5.txt
     examples/extracts/fail-6.txt
-    docs/*.txt
-data-files:
-    README.md
-    recon-language-overview.md
 
 flag debug
   description:          Enable some pure verbose debug traces.
@@ -114,7 +114,8 @@ library
                     , mtl
                     , text
                     , directory
-                    , trace-dispatcher
+                    , hermod-tracing-core
+                    , hermod-tracing-api:public
                     , serialise
                     , bytestring
                     , time
@@ -151,7 +152,9 @@ executable hermod-recon
       , text
       , containers
       , hermod-recon-framework
-      , trace-dispatcher
+      , hermod-tracing-core
+      , hermod-tracing-api:public
+      , hermod-tracing-prometheus
       , aeson
       , streaming
       , async
@@ -182,7 +185,8 @@ executable hermod-recon-grep
       , mtl
       , time
       , hermod-recon-framework
-      , trace-dispatcher
+      , hermod-tracing-core
+      , hermod-tracing-api:public
       , optparse-applicative
 
     hs-source-dirs:   app

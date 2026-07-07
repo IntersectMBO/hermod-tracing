@@ -5,14 +5,13 @@ efficiently-routed tracing framework built on contravariant tracers, with
 support for structured logging, EKG metrics, trace forwarding, and runtime
 reconfiguration.
 
-This repository currently hosts the `trace-dispatcher` package, migrated from
-[cardano-node](https://github.com/IntersectMBO/cardano-node). It will be
-renamed as part of the broader hermod-tracing rebranding effort.
+This repository hosts the `hermod-tracing-core` package, migrated from
+[cardano-node](https://github.com/IntersectMBO/cardano-node) as part of the
+hermod-tracing rebranding effort.
 
 ## Overview
 
-`trace-dispatcher` replaces the legacy `iohk-monitoring` framework. Its design
-goals are:
+`hermod-tracing-core` is a tracing framework whose design goals are:
 
 - **Simplicity** — define tracers with two typeclasses; the framework handles
   routing, formatting, and dispatch
@@ -70,9 +69,9 @@ Three backend tracers are available; each should be instantiated once:
 
 | Backend | Function | Notes |
 |---|---|---|
-| `Cardano.Logging.Tracer.Standard` | stdout | thread-safe, bounded buffer, human or machine format |
-| `Cardano.Logging.Tracer.Forward` | TCP/socket forwarding | sends to `cardano-tracer`; public traces only |
-| `Cardano.Logging.Tracer.EKG` | EKG metrics store | Counter, Gauge, Label; always active regardless of severity |
+| `Hermod.Tracing.Tracer.Standard` | stdout | thread-safe, bounded buffer, human or machine format |
+| `Hermod.Tracing.Tracer.Forward` | TCP/socket forwarding | sends to `cardano-tracer`; public traces only |
+| `Hermod.Tracing.Tracer.EKG` | EKG metrics store | Counter, Gauge, Label; always active regardless of severity |
 
 ### Configuration
 
@@ -116,10 +115,10 @@ by configuration, preventing inadvertent network exposure of sensitive data.
 nix develop
 
 # Build the library
-cabal build trace-dispatcher
+cabal build hermod-tracing-core
 
 # Run the test suite
-cabal test trace-dispatcher
+cabal test hermod-tracing-core
 ```
 
 ### Without Nix
@@ -129,7 +128,7 @@ repository list:
 
 ```sh
 cabal update
-cabal build trace-dispatcher
+cabal build hermod-tracing-core
 ```
 
 See `cabal.project` for the required CHaP repository stanza and index-state.
@@ -141,7 +140,7 @@ Haddock documentation is published at
 and rebuilt nightly.
 
 Extended design documentation is in
-[`trace-dispatcher/doc/trace-dispatcher.md`](trace-dispatcher/doc/trace-dispatcher.md).
+[`hermod-tracing-core/doc/hermod-tracing-core.md`](hermod-tracing-core/doc/hermod-tracing-core.md).
 
 ## Contributing
 

@@ -2,7 +2,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 module Hermod.ReCon.Trace.Event where
 
-import           Cardano.Logging.Types.TraceMessage (TraceMessage (..))
+import           Hermod.Tracing.Types.TraceMessage (TraceMessage (..))
 import           Hermod.ReCon.LTL.Formula
 import           Hermod.ReCon.Trace.Feed (TemporalEvent (..))
 

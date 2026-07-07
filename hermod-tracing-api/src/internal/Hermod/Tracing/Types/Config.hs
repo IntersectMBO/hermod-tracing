@@ -1,0 +1,245 @@
+{-# LANGUAGE DeriveAnyClass      #-}
+{-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE DerivingStrategies  #-}
+{-# LANGUAGE RecordWildCards     #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
+{-# OPTIONS_GHC -Wno-partial-fields #-}
+
+-- | Configuration types for the tracing pipeline: backend selection, forwarder
+--   options, Prometheus tuning, and the per-namespace config map.
+--
+--   These types are consumed by @hermod-tracing-core@ when wiring up backends and
+--   applying a @TraceConfig@ to a live tracer net.  Tracer authors writing
+--   'Hermod.Tracing.Types.LogFormatting' or 'Hermod.Tracing.Types.MetaTrace'
+--   instances typically do not need this module directly.
+module Hermod.Tracing.Types.Config (
+    FormatLogging(..)
+  , ConfigOption(..)
+  , ForwarderMode(..)
+  , Verbosity(..)
+  , TraceOptionForwarder(..)
+  , defaultForwarder
+  , BackendConfig(..)
+  , parsePrometheusString
+  , PrometheusSimpleRun(..)
+  , prometheusSimpleNoOverrides
+  , TraceConfig(..)
+  , emptyTraceConfig
+) where
+
+import           Hermod.Tracing.Types.Annotations (DetailLevel, SeverityF)
+
+import qualified Data.Aeson       as AE
+import           Data.Bool        (bool)
+import           Data.Map.Strict  (Map)
+import qualified Data.Map.Strict  as Map
+import           Data.Text        (Text)
+import qualified Data.Text        as T
+import           Data.Text.Read   (decimal)
+import           Data.Word        (Word64)
+import           GHC.Generics
+import           Network.HostName (HostName)
+import           Network.Socket   (PortNumber)
+
+
+data FormatLogging =
+    HumanFormatColoured
+  | HumanFormatUncoloured
+  | MachineFormat
+  deriving stock (Eq, Ord, Show)
+
+
+-- | Configuration options for individual namespace elements.
+data ConfigOption =
+    -- | Severity level for a filter (default is Warning).
+    ConfSeverity {severity :: SeverityF}
+    -- | Detail level (default is DNormal).
+  | ConfDetail {detail :: DetailLevel}
+    -- | To which backend to pass.
+    --   Default is @[EKGBackend, Forwarder, Stdout MachineFormat]@.
+  | ConfBackend {backends :: [BackendConfig]}
+    -- | Construct a limiter with limiting to the Double,
+    --   which represents frequency in number of messages per second.
+  | ConfLimiter {maxFrequency :: Double}
+  deriving stock (Eq, Ord, Show, Generic)
+
+
+-- | Whether the forwarder acts as client (Initiator) or server (Responder).
+data ForwarderMode =
+    -- | Forwarder works as a client: it initiates a forwarding protocol connection
+    --   to a consumer service / application.
+    Initiator
+    -- | Forwarder works as a server: it accepts a forwarding protocol connection
+    --   from a consumer service / application.
+  | Responder
+  deriving stock (Eq, Ord, Show, Generic)
+
+instance AE.FromJSON ForwarderMode where
+  parseJSON (AE.String "Initiator") = pure Initiator
+  parseJSON (AE.String "Responder") = pure Responder
+  parseJSON other = fail $ "Parsing of ForwarderMode failed."
+                    <> "Unknown ForwarderMode: " <> show other
+
+
+data Verbosity =
+    -- | Maximum verbosity for all tracers in the forwarding protocols.
+    Maximum
+    -- | Minimum verbosity, the forwarding will work as silently as possible.
+  | Minimum
+  deriving stock (Eq, Ord, Show, Generic)
+  deriving anyclass AE.ToJSON
+
+instance AE.FromJSON Verbosity where
+  parseJSON (AE.String "Maximum") = pure Maximum
+  parseJSON (AE.String "Minimum") = pure Minimum
+  parseJSON other = fail $ "Parsing of Verbosity failed."
+                    <> "Unknown Verbosity: " <> show other
+
+
+data TraceOptionForwarder = TraceOptionForwarder {
+    tofQueueSize         :: Word
+  , tofVerbosity         :: Verbosity
+  , tofMaxReconnectDelay :: Word
+  } deriving stock (Eq, Ord, Show, Generic)
+
+-- A word regarding queue size:
+--
+-- In case of a missing forwarding consumer service connection, trace messages will be
+-- buffered. This mitigates short forwarding interruptions, or delays at startup time.
+--
+-- The queue capacity should thus correlate to the expected log lines per second
+-- given a particular tracing configuration - to avoid unnecessarily increasing
+-- memory footprint.
+--
+-- The default values here are chosen to accomodate moderate tracing output
+-- (i.e., buffering 6s worth of trace data given ~32 messages per second). A
+-- config that results in less than 5 msgs per second can also choose
+-- `TraceOptionForwarder` a queue size value considerably lower.
+--
+-- The queue size also ties in with the max number of trace objects (batch size) the consuming service
+-- requests periodically: As long as there are objects in the queue, they retain heap references
+-- inside the host application. Make sure the batch size is configured reasonably on the consumer end,
+-- to guarantee timely forwarding given the amount of tracing output of your application.
+-- However, it's not mandatory the batch size empties the queue entirely. E.g., the default values here
+-- were picked with a batch size of max 100 objects per request in mind.
+instance AE.FromJSON TraceOptionForwarder where
+    parseJSON = AE.withObject "TraceOptionForwarder" $ \obj -> do
+      queueSize         <- obj AE..:? "queueSize"         AE..!= tofQueueSize         defaultForwarder
+      verbosity         <- obj AE..:? "verbosity"         AE..!= tofVerbosity         defaultForwarder
+      maxReconnectDelay <- obj AE..:? "maxReconnectDelay" AE..!= tofMaxReconnectDelay defaultForwarder
+      return $ TraceOptionForwarder queueSize verbosity maxReconnectDelay
+
+instance AE.ToJSON TraceOptionForwarder where
+  toJSON TraceOptionForwarder{..} = AE.object
+    [ "queueSize"         AE..= tofQueueSize
+    , "verbosity"         AE..= tofVerbosity
+    , "maxReconnectDelay" AE..= tofMaxReconnectDelay
+    ]
+
+defaultForwarder :: TraceOptionForwarder
+defaultForwarder = TraceOptionForwarder
+  { tofQueueSize         = 192
+  , tofVerbosity         = Minimum
+  , tofMaxReconnectDelay = 45
+  }
+
+
+data BackendConfig =
+    Forwarder
+  | Stdout FormatLogging
+  | EKGBackend
+  | DatapointBackend
+  | PrometheusSimple Bool (Maybe HostName) PortNumber
+    -- ^ Boolean: drop suffixes like @_int@ in exposition; default: False.
+  deriving stock (Eq, Ord, Show, Generic)
+
+instance AE.ToJSON BackendConfig where
+  toJSON Forwarder          = AE.String "Forwarder"
+  toJSON DatapointBackend   = AE.String "DatapointBackend"
+  toJSON EKGBackend         = AE.String "EKGBackend"
+  toJSON (Stdout f)         = AE.String $ "Stdout " <> T.pack (show f)
+  toJSON (PrometheusSimple s h p) = AE.String $ "PrometheusSimple "
+    <> bool mempty "nosuffix" s
+    <> maybe mempty ((<> " ") . T.pack) h
+    <> T.pack (show p)
+
+instance AE.FromJSON BackendConfig where
+  parseJSON = AE.withText "BackendConfig" $ \case
+    "Forwarder"                     -> pure Forwarder
+    "EKGBackend"                    -> pure EKGBackend
+    "DatapointBackend"              -> pure DatapointBackend
+    "Stdout HumanFormatColoured"    -> pure $ Stdout HumanFormatColoured
+    "Stdout HumanFormatUncoloured"  -> pure $ Stdout HumanFormatUncoloured
+    "Stdout MachineFormat"          -> pure $ Stdout MachineFormat
+    prometheus                      -> either fail pure (parsePrometheusString prometheus)
+
+parsePrometheusString :: Text -> Either String BackendConfig
+parsePrometheusString t = case T.words t of
+  ["PrometheusSimple", portNo_] ->
+    parsePort portNo_ >>= Right . PrometheusSimple False Nothing
+  ["PrometheusSimple", arg, portNo_] ->
+    parsePort portNo_ >>= Right .
+      if validSuffix arg
+        then PrometheusSimple (isNoSuffix arg) Nothing
+        else PrometheusSimple False (Just $ T.unpack arg)
+  ["PrometheusSimple", noSuff, host, portNo_]
+    | validSuffix noSuff -> parsePort portNo_ >>= Right . PrometheusSimple (isNoSuffix noSuff) (Just $ T.unpack host)
+    | otherwise          -> Left $ "invalid modifier for PrometheusSimple: " ++ show noSuff
+  _ -> Left $ "unknown backend: " ++ show t
+  where
+    validSuffix s  = s == "suffix" || s == "nosuffix"
+    isNoSuffix     = (== "nosuffix")
+    parsePort p    = case decimal p of
+      Right (portNo :: Word, rest)
+        | T.null rest && 0 < portNo && portNo < 65536 -> Right $ fromIntegral portNo
+      _ -> Left $ "invalid PrometheusSimple port: " ++ show p
+
+
+-- | Parameter overrides for PrometheusSimple DoS protection.
+data PrometheusSimpleRun = PrometheusSimpleRun
+  { connTimeout      :: Maybe Word    -- ^ Release socket after inactivity (seconds); default: 22
+  , connCountGlobal  :: Maybe Word    -- ^ Limit total number of incoming connections; default: 16
+  , connCountPerHost :: Maybe Word    -- ^ Limit number of incoming connections from the same host; default: 5
+  , connPerSecond    :: Maybe Double  -- ^ Limit requests per second (may be < 1.0); default: 8.0
+  }
+  deriving stock (Show, Generic)
+  deriving anyclass (AE.FromJSON, AE.ToJSON)
+
+prometheusSimpleNoOverrides :: PrometheusSimpleRun
+prometheusSimpleNoOverrides = PrometheusSimpleRun Nothing Nothing Nothing Nothing
+
+
+data TraceConfig = TraceConfig {
+    -- | Options specific to a certain namespace.
+    tcOptions                :: Map [Text] [ConfigOption]
+    -- | Options for the forwarder.
+  , tcForwarder              :: Maybe TraceOptionForwarder
+    -- | Optional human-readable name of the application.
+  , tcApplicationName        :: Maybe Text
+    -- | Optional prefix for metrics.
+  , tcMetricsPrefix          :: Maybe Text
+    -- | Named periodic tracers: an arbitrary identifier mapped to a cardinal
+    --   number. The numbers are interpreted by the host application - as potentially
+    --   distinct timeunits, event counts, or whatever constitutes a logical period or
+    --   interval for the tracer to emit.
+    --   As Hermod does not currently manage setup or life cycle of periodic tracers itself,
+    --   this config object has to be understood as a convenience interface for the application.
+    --   A value of @0@ conventionally signals that the tracer should not run.
+    --   An absent key leaves the host application free to apply a hard-coded default or
+    --   fallback; the library imposes none.
+  , tcPeriodicTracers        :: Map Text Word64
+    -- | Optional parameter overrides for PrometheusSimple DoS protection.
+  , tcPrometheusSimpleRun    :: Maybe PrometheusSimpleRun
+  }
+  deriving stock Show
+
+emptyTraceConfig :: TraceConfig
+emptyTraceConfig = TraceConfig
+  { tcOptions                = Map.empty
+  , tcForwarder              = Nothing
+  , tcApplicationName        = Nothing
+  , tcMetricsPrefix          = Nothing
+  , tcPeriodicTracers        = Map.empty
+  , tcPrometheusSimpleRun    = Nothing
+  }

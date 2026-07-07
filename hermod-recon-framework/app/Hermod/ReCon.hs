@@ -1,15 +1,11 @@
 {-# LANGUAGE CPP #-}
 
-#if !MIN_VERSION_trace_dispatcher(2,13,0)
-{-# LANGUAGE PackageImports #-}
-#endif
-
 module Main(main) where
 
-import           Cardano.Logging
-import           Cardano.Logging.Prometheus.TCPServer (TracePrometheusSimple (..),
+import           Hermod.Tracing
+import           Hermod.Tracing.Prometheus.TCPServer (TracePrometheusSimple (..),
                    runPrometheusSimple)
-import           Cardano.Logging.Types.TraceMessage ()
+import           Hermod.Tracing.Types.TraceMessage ()
 import           Hermod.ReCon.Cli (CliOptions (..), Mode (..), opts, timeunitToMicrosecond)
 import           Hermod.ReCon.Trace.Event ()
 import           Hermod.ReCon.LTL.Check (checkFormula, prettyError)
@@ -47,12 +43,6 @@ import           System.Exit (die)
 import qualified System.Metrics as EKG
 
 import           Streaming
-
-#if   !MIN_VERSION_trace_dispatcher(2,13,0) && !MIN_VERSION_contra_tracer(0,2,0)
-import          "contra-tracer" Control.Tracer (Tracer(..))
-#elif !MIN_VERSION_trace_dispatcher(2,13,0) && MIN_VERSION_contra_tracer(0,2,0)
-import          "contra-tracer" Control.Tracer (mkTracer)
-#endif
 
 
 check :: OnMissingKey -> Bool -> Word -> Trace IO App.TraceMessage -> Formula TemporalEvent Text -> [TemporalEvent] -> IO ()
@@ -117,15 +107,15 @@ checkOffline omk greppable tr eventDuration file phis = do
     check omk greppable idx tr phi events
   threadDelay 200_000 -- Give the tracer a grace period to output the logs to whatever backend
 
-setupTraceDispatcher :: Maybe FilePath -> IO (Trace IO App.TraceMessage)
-setupTraceDispatcher optTraceDispatcherConfigFile = do
+setupHermodTracing :: Maybe FilePath -> IO (Trace IO App.TraceMessage)
+setupHermodTracing optTracingConfigFile = do
   stdTr <- standardTracer
   configReflection <- emptyConfigReflection
-  cfg <- fromMaybe defaultTraceConfig <$> traverse (`readConfigurationWithDefault` defaultTraceConfig) (FromFile <$> optTraceDispatcherConfigFile)
+  cfg <- fromMaybe defaultTraceConfig <$> traverse (`readConfigurationWithDefault` defaultTraceConfig) (FromFile <$> optTracingConfigFile)
   ekgStore <- EKG.newStore
   ekgTrace <- ekgTracer cfg ekgStore
-  tr <- mkCardanoTracer @App.TraceMessage stdTr mempty (Just ekgTrace) ["ReCon"]
-  prometheusSimpleTr <- mkCardanoTracer @TracePrometheusSimple stdTr mempty Nothing ["ReCon"]
+  tr <- mkHermodTracer @App.TraceMessage stdTr mempty (Just ekgTrace) ["ReCon"]
+  prometheusSimpleTr <- mkHermodTracer @TracePrometheusSimple stdTr mempty Nothing ["ReCon"]
   configureTracers configReflection cfg [tr]
   configureTracers configReflection cfg [prometheusSimpleTr]
   for_ (prometheusSimple cfg) $ \ps -> do
@@ -177,7 +167,7 @@ main = do
         <> Text.unlines (fmap (("— " <>) . prettyError) (e : es))
     (_, []) -> pure ()
   let formulas' = fmap (interpTimeunit (\u -> timeunitToMicrosecond options.timeunit u `div` fromIntegral options.duration)) formulas
-  tr <- setupTraceDispatcher options.traceDispatcherCfg
+  tr <- setupHermodTracing options.hermodTracingCfg
   traceWith tr $ ContextDump (map (second showT) ctx)
   case options.mode of
     Offline -> do

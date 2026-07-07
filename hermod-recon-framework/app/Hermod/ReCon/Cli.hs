@@ -93,9 +93,9 @@ parseDumpMetrics = option readBool $
 parseFormulasFile :: Parser FilePath
 parseFormulasFile = option str (long "formulas" <> metavar "FILE" <> help "YAML file with a list of formulas to check")
 
-parseTraceDispatcherCfgFile :: Parser (Maybe FilePath)
-parseTraceDispatcherCfgFile =
-  option (optional str) (long "trace-dispatcher-cfg" <> value Nothing <> metavar "FILE" <> help "trace dispatcher configuration file")
+parseHermodTracingCfgFile :: Parser (Maybe FilePath)
+parseHermodTracingCfgFile =
+  option (optional str) (long "hermod-tracing-cfg" <> value Nothing <> metavar "FILE" <> help "hermod-tracing configuration file")
 
 parseContext :: Parser (Maybe FilePath)
 parseContext =
@@ -145,7 +145,7 @@ data CliOptions = CliOptions
   , duration            :: Word
   , traces              :: [FilePath]
   , retention           :: Word
-  , traceDispatcherCfg  :: Maybe FilePath
+  , hermodTracingCfg    :: Maybe FilePath
   , context             :: Maybe FilePath
   , enableProgressDumps :: Bool
   , enableSeekToEnd     :: Bool
@@ -161,7 +161,7 @@ parseCliOptions = CliOptions
               <*> parseEventDuration
               <*> parseTraceFiles
               <*> parseRetention
-              <*> parseTraceDispatcherCfgFile
+              <*> parseHermodTracingCfgFile
               <*> parseContext
               <*> parseDumpMetrics
               <*> parseSeekToEnd

@@ -15,6 +15,9 @@ index-state:
 
 packages:
   trace-dispatcher
+  hermod-tracing-api
+  hermod-tracing-core
+  hermod-tracing-prometheus
   hermod-trace-resources
   hermod-recon-framework
 

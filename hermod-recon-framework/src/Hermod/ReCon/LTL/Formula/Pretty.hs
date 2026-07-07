@@ -7,7 +7,7 @@ module Hermod.ReCon.LTL.Formula.Pretty (
   , prettyPropConstraints
   , prettyFormula) where
 
-import           Cardano.Logging (showT)
+import           Hermod.Tracing (showT)
 import           Hermod.ReCon.LTL.Formula
 import           Hermod.ReCon.LTL.Formula.Prec (Prec)
 import qualified Hermod.ReCon.LTL.Formula.Prec as Prec

@@ -1,4 +1,4 @@
-import           Cardano.Logging
+import           Hermod.Tracing
 import           Hermod.Tracing.Resources
 
 import           Control.Monad.IO.Class
@@ -25,7 +25,7 @@ playScript = ioProperty $ do
   forwardTracer'  <- testTracer forwardTrRef
   ekgTrRef        <- newIORef []
   ekgTracer'      <- testTracer ekgTrRef
-  tr              <- mkCardanoTracer
+  tr              <- mkHermodTracer
                       stdoutTracer'
                       forwardTracer'
                       (Just ekgTracer')

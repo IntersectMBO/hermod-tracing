@@ -2,9 +2,9 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 module Hermod.ReCon.TraceMessage where
 
-import           Cardano.Logging
-import           Cardano.Logging.Prometheus.TCPServer (TracePrometheusSimple (..))
-import qualified Cardano.Logging.Types.TraceMessage as Envelop
+import           Hermod.Tracing
+import           Hermod.Tracing.Prometheus.TCPServer (TracePrometheusSimple (..))
+import qualified Hermod.Tracing.Types.TraceMessage as Envelop
 import           Hermod.ReCon.LTL.Formula (Formula, Relevance)
 import qualified Hermod.ReCon.LTL.Formula.Prec as Prec
 import           Hermod.ReCon.LTL.Formula.Pretty (prettyFormula)

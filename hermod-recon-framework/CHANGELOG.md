@@ -1,5 +1,11 @@
 # Revision history for hermod-recon-framework
 
+## NEXT
+
+* Replace `trace-dispatcher` dependency with `hermod-tracing-core`.
+* Update all `Cardano.Logging.*` imports to `Hermod.Tracing.*`.
+* Rename CLI flag `--trace-dispatcher-cfg` to `--hermod-tracing-cfg`.
+
 ## 1.4.0 -- June 2026
 
 * All Unicode operators in the formula parsers now have ASCII spellings accepted
