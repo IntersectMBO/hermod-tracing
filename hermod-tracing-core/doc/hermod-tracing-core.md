@@ -44,7 +44,7 @@ The `hermod-tracing-core` library serves as a sophisticated solution for streaml
 
 - Seamless transmission of traces to a dedicated server capable of handling traces from multiple clients.
 
-- Dynamic reconfiguration (i.e. hot-reloading) of tracing settings within a running node (after removal of legacy tracing).
+- Dynamic reconfiguration (i.e. hot-reloading) of tracing settings within a running application.
 
 - Automatic generation of comprehensive documentation encompassing all trace messages, metrics, and datapoints.
 
@@ -60,7 +60,7 @@ Kindly consider the following important suggestions:
 
 - When developing new tracers, consider creating the new tracers first and subsequently mapping to old tracers.
 
-- For inquiries and reviews, please reach out to the Performance & Tracing team. Your collaboration and questions are welcome to ensure a seamless transition and optimal utilization of the new tracing framework.
+- Bug reports and contributions are welcome via the project issue tracker.
 
 # Basic Tracer Topics
 
@@ -203,8 +203,10 @@ data Metric
     = IntM Text Integer
   -- Double metric with a named identifier.
     | DoubleM Text Double
-  -- Counter metric with a named identifier and an optional limit.
-    | CounterM Text (Maybe Int)
+  -- Counter metric: increment by one or add a given value.
+    | CounterM Text CounterAction
+  -- Labelled set of key-value pairs for dimensional metrics.
+    | LabelSetM Text [(Text, Text)]
   deriving (Show, Eq)
 ```
 
@@ -252,7 +254,7 @@ Metrics are seamlessly incorporated into the system through regular trace messag
 
 It is essential to implement the metricsDoc function of the MetaTrace typeclass, as this information is utilized to optimize system performance.
 
-The configuration option TraceOptionMetricsPrefix can be used to prepend a prefix to any metrics name. For example, the prefix could be "cardano.node".
+The `MetricsPrefix` configuration option (under `HermodTracing`) can be used to prepend a prefix to any metrics name. For example, the prefix could be `"my.application"`.
 
 ## Frequency Limiting in Trace Filtering
 
@@ -292,72 +294,88 @@ The configurability provided by this library relies on:
 The usual form to provide a configuration is via a configuration file, which can be in JSON or YAML format. The options that
 can be given based on a namespace are: `severity`, `detail`, `backends` and `maxFrequency`.
 
+The top-level `HermodTracing` object also accepts three optional global keys:
+
+- `Forwarder` — forwarder connection options (queue size, verbosity, reconnect delay).
+- `MetricsPrefix` — a string prepended to all metric names.
+- `PeriodicTracers` — a map from arbitrary tracer identifiers to cardinal numbers. The numbers are interpreted by the host application (as millisecond delays, slot counts, or any other application-defined unit). A value of `0` signals that the named tracer should not run; an absent key leaves the host free to apply its own default.
+
 Backends can be a combination of `Forwarder`, `EKGBackend`, `PrometheusSimple [suffix|nosuffix] [bindhost] <port>` and
 one of `Stdout MachineFormat`, `Stdout HumanFormatColoured` and `Stdout HumanFormatUncoloured`.
 
-The connection for the `Forwarder` backend is provided on the application command line. It is a socket path over which applications like `cardano-node` connect with `cardano-tracer`. `--tracer-socket-path-connect /path/to/forward.sock` sets
-the backends's role to `Initiator`, whereas `--tracer-socket-path-accept /path/to/forward.sock` sets it to `Responder`. Except for debugging purposes, the former should be chosen: the application takes the `Initiator` role, and `cardano-tracer` is
-in the `Responder` role, which means setting its network `tag` to `AcceptAt` in its config (see there).
+The connection for the `Forwarder` backend is configured in the host application via the `HowToConnect` value passed when constructing the forward sink. Both local socket paths and TCP connections are supported. The host application typically takes the `Initiator` role (connecting to a fixed acceptor endpoint), though `Responder` mode (accepting incoming connections) is also supported for debugging or specific deployment scenarios.
 
-The `PrometheusSimple` backend provides Prometheus metrics _directly from the process_, without forwarding. It always applies to all tracers globally, and should only be configured once.
+The `PrometheusSimple` backend provides Prometheus metrics _directly from the process_, without forwarding. It is implemented in the separate `hermod-tracing-prometheus` package, which must be added as a dependency and wired up at application startup. It always applies to all tracers globally, and should only be configured once.
 Providing an available port number in the connection string is mandatory; this will bind to localhost only by default. By specifying a bind host, the metrics can be queried remotely, e.g. over IPv4 by
 binding to `0.0.0.0`, or IPv6 by binding to `::`. Metrics will be available under the URL `/metrics`.
 The `nosuffix` modifier removes suffixes like `_int` from metrics names, making them more similar to those in the old system; `suffix` is the implicit default and can be omitted.
 
 *CAUTION*: Generally allowing remote queries of Prometheus metrics is risky and should only be done in an environment you control.
 
+The empty-string namespace key `""` matches all tracers and serves as the catch-all default. `_root_` may be used as a more readable alias for `""` in both YAML and JSON configs.
+
 ```yaml
-TraceOptions:
-  "": # Options for all tracers, if not overwritten:
-    severity: Notice
-    detail: DNormal
-    backends:
-      - Stdout MachineFormat
-      - EKGBackend
-      - Forwarder
-      - 'PrometheusSimple :: 1234' # Prometheus metrics available over IPv6 (and localhost) on port 1234
+HermodTracing:
+  Options:
+    _root_: # Options for all tracers, if not overwritten (alias for ""):
+      severity: Notice
+      detail: DNormal
+      backends:
+        - Stdout MachineFormat
+        - EKGBackend
+        - Forwarder
+        - 'PrometheusSimple :: 1234' # Prometheus metrics available over IPv6 (and localhost) on port 1234
 
-  ChainDB: # Show as well messages with severity Info for all ChainDB traces.
-    severity: Info
-    detail: DDetailed
+    ChainDB: # Show as well messages with severity Info for all ChainDB traces.
+      severity: Info
+      detail: DDetailed
 
-  ChainDB.AddBlockEvent.AddedBlockToQueue: # Limit the AddedBlockToQueue events to a maximum of two per second.
-    maxFrequency: 2.0
+    ChainDB.AddBlockEvent.AddedBlockToQueue: # Limit the AddedBlockToQueue events to a maximum of two per second.
+      maxFrequency: 2.0
 
-TraceOptionForwarder: # Configure the forwarder
+  Forwarder: # Configure the forwarder
     maxReconnectDelay: 20
 
-# Any metrics emitted will get this prefix
-TraceOptionMetricsPrefix: "cardano.node.metrics."
+  # Any metrics emitted will get this prefix
+  MetricsPrefix: "my.application.metrics."
+
+  # Named periodic tracers: host-interpreted cardinal numbers (0 = do not run)
+  PeriodicTracers:
+    heartbeat: 5000
 ```
 
 The same in JSON looks like this:
 
 ```json
 {
-  "TraceOptions": {
-    "": {
-      "severity": "Notice",
-      "detail": "DNormal",
-      "backends": [
-        "Stdout MachineFormat",
-        "EKGBackend",
-        "Forwarder",
-        "PrometheusSimple :: 1234"
-      ]
+  "HermodTracing": {
+    "Options": {
+      "": {
+        "severity": "Notice",
+        "detail": "DNormal",
+        "backends": [
+          "Stdout MachineFormat",
+          "EKGBackend",
+          "Forwarder",
+          "PrometheusSimple :: 1234"
+        ]
+      },
+      "ChainDB": {
+        "severity": "Info",
+        "detail": "DDetailed"
+      },
+      "ChainDB.AddBlockEvent.AddedBlockToQueue": {
+        "maxFrequency": 2.0
+      }
     },
-    "ChainDB": {
-      "severity": "Info",
-      "detail": "DDetailed"
+    "Forwarder": {
+      "maxReconnectDelay": 20
     },
-    "ChainDB.AddBlockEvent.AddedBlockToQueue": {
-      "maxFrequency": 2.0
+    "MetricsPrefix": "my.application.metrics.",
+    "PeriodicTracers": {
+      "resources": 5000
     }
-  },
-  "TraceOptionForwarder": {
-    "maxReconnectDelay": 20
-  },
-  "TraceOptionMetricsPrefix": "cardano.node.metrics."
+  }
 }
 ```
 
@@ -485,14 +503,14 @@ When there is a need for aggregating information from multiple consecutive messa
 -- Folds the monadic cata function with acc over a.
 -- Uses an MVar to store the state
 foldTraceM :: forall a acc m . (MonadUnliftIO m)
-  => (acc -> LoggingContext -> a -> m acc)
+  => (acc -> a -> m acc)
   -> acc
   -> Trace m (Folding a acc)
   -> m (Trace m a)
 
 -- Like foldTraceM, but filters the trace by a predicate.
 foldCondTraceM :: forall a acc m . (MonadUnliftIO m)
-  => (acc -> LoggingContext -> a -> m acc)
+  => (acc -> a -> m acc)
   -> acc
   -> (a -> Bool)
   -> Trace m (Folding a acc)
@@ -518,16 +536,16 @@ data Stats = Stats {
     sSum     :: Double
     }
 
-calculateS :: MonadIO m => Stats -> LoggingContext -> Double -> m Stats
-calculateS Stats{..} _ val = pure $ Stats val (sSum + val)
+calculateS :: MonadIO m => Stats -> Double -> m Stats
+calculateS Stats{..} val = pure $ Stats val (sSum + val)
 ```
 
 With these components in place, we can define the aggregation tracer using the `foldTraceM` procedure. Subsequently, when we log measurement values, the tracer outputs the corresponding `Stats`:
 
 ```haskell
 aggregationTracer <- foldTraceM calculateS (Stats 0.0 0.0) exampleTracer
-traceWith 1.1 aggregationTracer -- measure: 1.1 sum: 1.1
-traceWith 2.0 aggregationTracer -- measure: 2.0 sum: 3.1
+traceWith aggregationTracer 1.1 -- measure: 1.1 sum: 1.1
+traceWith aggregationTracer 2.0 -- measure: 2.0 sum: 3.1
 ```
 
 This demonstrates how fold-based aggregation facilitates the accumulation of information over consecutive messages, enabling insightful data summaries.
@@ -570,42 +588,31 @@ let resTrace = tracer1 <> tracer2
 
 ## Documentation Generation
 
-The documentation for tracers is periodically generated and can be accessed in the cardano-node-wiki repository at the following path: [cardano-node-wiki/tracers_doc_generated.md](https://github.com/input-output-hk/cardano-node-wiki/blob/main/docs/new-tracing/tracers_doc_generated.md).
+The self-documentation capabilities of Hermod rely on annotation / doc-strings defined via the `documentFor` and `metricsDocFor` methods within the `MetaTrace` typeclass. A specialized execution of the system mode emits documentation for all annotated traces,
+utilizing the tracer namespace to structure the document.  
 
-To generate the documentation within GHCi, load the `Cardano.Node.Tracing.Documentation` module and execute the `runTraceDocumentationCmd` function with the appropriate parameters:
+To generate the documentation, import the `Hermod.Tracing.DocuGenerator` module. First, call `documentTracer` for each tracer your application defines. The resulting `DocTracer` values can be combined with `<>` and then passed to one of:
 
-```haskell
-data TraceDocumentationCmd
-  = TraceDocumentationCmd
-    { tdcConfigFile :: FilePath -- file path to a node config file
-    , tdcOutput     :: FilePath -- file path to output the documentation
-    }
+* `docuResultsToText` to render a comprehensive markdown document of all traces (requires a `TraceConfig`)
+* `docuResultsToNamespaces` to render a flat list of trace message namespaces
+* `docuResultsToMetricsHelptext` to render a JSON object where metric names are mapped to their docstrings
 
-runTraceDocumentationCmd
-  :: TraceDocumentationCmd
-  -> IO ()
-```
-
-The self-documentation capabilities of `hermod-tracing-core` rely on documentation annotations provided by the `documentFor` and `metricsDocFor` methods within the `MetaTrace` typeclass. Additionally, a specialized execution mode emits documentation for all annotated traces, utilizing the tracer namespace to structure the document.
-
-To generate the documentation, first, call `documentTracer` for each message type with the associated tracers, then use `docuResultsToText` with the accumulated lists.
+For `docuResultsToText`, a full application config yields the most accurate output, but the library's `emptyTraceConfig` will suffice for a minimal run.
 
 ```haskell
--- This function calls document tracers and returns a DocTracer result
+-- | Document a single tracer and return a DocTracer result.
 documentTracer :: forall a.
      MetaTrace a
   => Trace IO a
   -> IO DocTracer
 
--- Finally, generate text from all the builders
-docuResultsToText :: DocTracer -> TraceConfig -> IO Text
+-- | Render a comprehensive markdown document from collected DocTracer results.
+docuResultsToText :: DocTracer -> TraceConfig -> Text
 
--- For example
-  b1 <- documentTracer traceForgeEventDocu [t1, t2]
-  b2 <- documentTracer .. ..
-  ..
-  bn <- documentTracer .. ..
-  writeFile "Docu.md" (docuResultsToText (b1 ++ b2 ++ ... ++ bn))
+-- For example:
+b1 <- documentTracer tracer1
+b2 <- documentTracer tracer2
+T.writeFile "Docu.md" (docuResultsToText (b1 <> b2) myTraceConfig)
 ```
 
 A generated documentation snippet for a simple message may appear as follows:
@@ -628,20 +635,27 @@ Filtered `Visible` by config value: `Info`
 
 ## Consistency Checking
 
-As namespaces are essentially strings, the type system doesn't inherently ensure the consistency of namespaces. To address this concern, we have incorporated consistency check functionality into `hermod-tracing-core`. Within the node, you can invoke the following procedure from the `Cardano.Node.Tracing.Consistency` module. It returns an array of `Text`, an empty list indicating that everything is in order.
+As namespaces are essentially strings, the type system doesn't inherently ensure the consistency of namespaces. To address this concern, we have incorporated consistency check functionality into `hermod-tracing-core`. You can invoke the following functions from the `Hermod.Tracing.Consistency` module. They return a list of `Text` warnings; an empty list indicates that everything is in order.
 
 ```haskell
--- | Check the configuration in the given file.
--- Check the general structure of namespaces.
+-- | Check the configuration source against all registered namespaces.
 -- An empty return list means everything is well.
-checkNodeTraceConfiguration ::
-     FilePath -- path to a node configuration file
-  -> IO [Text]
+checkTraceConfiguration ::
+     ConfigSource          -- configuration source (file, bytes, or JSON object)
+  -> TraceConfig           -- default config (used as fallback)
+  -> [([Text], [Text])]    -- all namespaces as (prefix, inner) pairs
+  -> IO NSWarnings
+
+-- | Pure variant: check an already-loaded TraceConfig.
+checkTraceConfiguration' ::
+     TraceConfig
+  -> [([Text], [Text])]
+  -> NSWarnings
 ```
 
-An example text is "Config namespace error: i.am.an.invalid.namespace" .
+An example warning is "Config namespace error: i.am.an.invalid.namespace".
 
-This check is performed within a `cardano-node` test case (`Test.Cardano.Tracing.NewTracing.Consistency.tests`), ensuring that it is automatically verified with each pull request.
+It is recommended to run these checks as part of the application's test suite to catch misconfigured namespaces before deployment.
 
 The consistency checks cover the following aspects:
 
@@ -689,13 +703,11 @@ It's imperative to note that constructing more than one instance of each tracer 
 
 ## Data Points Overview and Deprecation Notice
 
-In the imminent future, `DataPoint`s will be deprecated and replaced by a subscription model.
+`DataPoint`s provide a means for external processes to inquire about the host application's runtime state. Essentially similar to metrics, `DataPoint`s, however, have an Algebraic Data Type (ADT) structure, allowing them to represent structured information beyond simple metrics. This feature enables external processes to query and access specific details of a running application, such as its basic runtime information.
 
-`DataPoint`s provide a means for processes outside of `cardano-node` to inquire about the node's runtime state. Essentially similar to metrics, `DataPoint`s, however, have an Algebraic Data Type (ADT) structure, allowing them to represent structured information beyond simple metrics. This feature enables external processes to query and access specific details of a running cardano-node, such as the node's basic information.
+Implemented as special tracers, `DataPoint`s package objects into `DataPoint` constructors and necessitate a `ToJSON` instance for these objects. The set of `DataPoint`s follows the same namespace structure as metrics and log messages. While `DataPoint`s operate independently of tracing, they are stored locally, facilitating on-demand queries for the latest values of a specific `DataPoint`.
 
-Implemented as special tracers, `DataPoint`s package objects into `DataPoint` constructors and necessitate a `ToJSON` instance for these objects. The set of `DataPoint`s provided by the node follows the same namespace structure as metrics and log messages. While `DataPoint`s operate independently of tracing, they are stored locally, facilitating on-demand queries for the latest values of a specific `DataPoint`.
-
-It is important to note that DataPoints will soon be deprecated, and a subscription model will take their place. Additionally, detailed information on accepting DataPoints from an external process can be found in [this document](https://github.com/input-output-hk/cardano-node-wiki/wiki/cardano-node-and-DataPoints:-demo). The [`demo-acceptor`](https://github.com/intersectmbo/cardano-node/blob/master/cardano-tracer/demo/acceptor.hs) application is available for requesting specific DataPoints by name and displaying their values.
+Note: `DataPoint` support is tied to the current version of the forwarding protocol. Future versions of the protocol may not carry `DataPoint`s. For a future-proof approach to exposing application state, host applications should consider alternatives such as a gRPC interface.
 
 ```haskell
 -- A simple dataPointTracer supporting the construction of a namespace.
@@ -708,13 +720,8 @@ mkDataPointTracer :: forall dp. (ToJSON dp, MetaTrace dp, NFData dp)
 
 ## References
 
-The following document is periodically regenerated to provide comprehensive documentation for all trace messages, metrics, and data points within `cardano-node`. It also outlines the handling of these messages based on the current default configuration:
-
-[Generated Cardano Trace Documentation](https://github.com/input-output-hk/cardano-node-wiki/wiki/tracers_doc_generated)
-
-A third-party application that employs hermod-tracing designed for logging and monitoring Cardano nodes:
-
-[Cardano Tracer](https://github.com/intersectmbo/cardano-node/blob/master/cardano-tracer/docs/cardano-tracer.md)
+- [hermod-tracing on GitHub](https://github.com/IntersectMBO/hermod-tracing) — source repository and issue tracker
+- [contra-tracer](https://hackage.haskell.org/package/contra-tracer) — the contravariant tracing primitive that `hermod-tracing-core` builds upon
 
 ## Future work
 
@@ -722,14 +729,12 @@ A third-party application that employs hermod-tracing designed for logging and m
 
 Versioning for trace messages stands as a crucial component that significantly contributes to the functionality and maintainability of our system. We acknowledge the importance of associating version numbers with log messages, ensuring transparency and consistency throughout the application lifecycle.
 
-Adhering to a change protocol and establishing a clear correlation between node version numbers and trace version numbers is a prudent strategy. This approach aids in the effective management and communication of updates, alterations, and improvements to our tracing system. Such alignment guarantees that any modifications to the tracing system are accurately reflected and comprehended by both the development team and the broader Cardano community.
+Adhering to a change protocol and establishing a clear correlation between application version numbers and trace version numbers is a prudent strategy. This approach aids in the effective management and communication of updates, alterations, and improvements to our tracing system. Such alignment guarantees that any modifications to the tracing system are accurately reflected and comprehended by both the development team and the broader developer community.
 
 Anticipating the forthcoming development phase, we are eager to design and implement this versioning feature. Our goal is to seamlessly integrate it into our overall system architecture, bolstering our capacity to adapt and evolve. This ensures a clear, consistent, and structured approach to trace messages, enhancing our system's resilience and comprehensibility.
 
 ### Trace Consumers
 
-We are excited to introduce the innovative concept of "trace consumers" into the Cardano Tracer system. This novel approach empowers trace consumers to register with the `cardano-tracer` application and selectively receive messages based on their subscriptions. We anticipate that this concept will significantly improve the efficiency and flexibility of our tracing system.
+A future direction for Hermod's trace and metrics forwarding capability is a subscription-based trace consumer model. This approach would allow consumer processes to register with a trace acceptor service and selectively receive messages based on their subscriptions, providing a more efficient and targeted alternative to the current `DataPoint` pull model.
 
-The introduction of trace consumers represents a robust and tailored approach to message retrieval, aligning seamlessly with the evolving needs of our network. This concept provides consumers with the ability to specify their message preferences, ensuring that they receive only the data directly relevant to their operations.
-
-As part of this development initiative, we plan to phase out the use of data points. We believe that this evolution will render data points redundant in future versions of the tracing system. The transition to trace consumers aims to streamline our data retrieval processes, eliminating the need for unnecessary data points and offering a more sophisticated and focused mechanism for trace message consumption.
+`DataPoint` support may not be carried forward into the next version of the forwarding protocol. In the meantime, host applications that require robust, future-proof state exposure should consider complementary mechanisms such as a gRPC interface.

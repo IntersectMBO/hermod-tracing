@@ -16,7 +16,6 @@
 module Hermod.Tracing.Types.Config (
     FormatLogging(..)
   , ConfigOption(..)
-  , ForwarderAddr(..)
   , ForwarderMode(..)
   , Verbosity(..)
   , TraceOptionForwarder(..)
@@ -66,23 +65,13 @@ data ConfigOption =
   deriving stock (Eq, Ord, Show, Generic)
 
 
--- | Which network address the forwarder connects to.
-newtype ForwarderAddr
-  = LocalSocket FilePath
-  deriving stock (Eq, Ord, Show)
-
-instance AE.FromJSON ForwarderAddr where
-  parseJSON = AE.withObject "ForwarderAddr" $ \o ->
-    LocalSocket <$> o AE..: "filePath"
-
-
 -- | Whether the forwarder acts as client (Initiator) or server (Responder).
 data ForwarderMode =
-    -- | Forwarder works as a client: it initiates network connection with
-    --   @cardano-tracer@ and/or another Haskell acceptor application.
+    -- | Forwarder works as a client: it initiates a forwarding protocol connection
+    --   to a consumer service / application.
     Initiator
-    -- | Forwarder works as a server: it accepts network connection from
-    --   @cardano-tracer@ and/or another Haskell acceptor application.
+    -- | Forwarder works as a server: it accepts a forwarding protocol connection
+    --   from a consumer service / application.
   | Responder
   deriving stock (Eq, Ord, Show, Generic)
 
@@ -116,22 +105,24 @@ data TraceOptionForwarder = TraceOptionForwarder {
 
 -- A word regarding queue size:
 --
--- In case of a missing forwarding service consumer, traces messages will be
--- buffered. This mitigates short forwarding interruptions, or delays at startup
--- time.
+-- In case of a missing forwarding consumer service connection, trace messages will be
+-- buffered. This mitigates short forwarding interruptions, or delays at startup time.
 --
 -- The queue capacity should thus correlate to the expected log lines per second
 -- given a particular tracing configuration - to avoid unnecessarily increasing
 -- memory footprint.
 --
--- The default values here are chosen to accomodate verbose tracing output
--- (i.e., buffering 1min worth of trace data given ~32 messages per second). A
--- config that results in less than 5 msgs per second should also provide
+-- The default values here are chosen to accomodate moderate tracing output
+-- (i.e., buffering 6s worth of trace data given ~32 messages per second). A
+-- config that results in less than 5 msgs per second can also choose
 -- `TraceOptionForwarder` a queue size value considerably lower.
 --
--- The queue size ties in with the max number of trace objects cardano-tracer
--- requests periodically, the default for that being 100. Here, the queue can
--- hold enough traces for 10 subsequent polls by cardano-tracer.
+-- The queue size also ties in with the max number of trace objects (batch size) the consuming service
+-- requests periodically: As long as there are objects in the queue, they retain heap references
+-- inside the host application. Make sure the batch size is configured reasonably on the consumer end,
+-- to guarantee timely forwarding given the amount of tracing output of your application.
+-- However, it's not mandatory the batch size empties the queue entirely. E.g., the default values here
+-- were picked with a batch size of max 100 objects per request in mind.
 instance AE.FromJSON TraceOptionForwarder where
     parseJSON = AE.withObject "TraceOptionForwarder" $ \obj -> do
       queueSize         <- obj AE..:? "queueSize"         AE..!= tofQueueSize         defaultForwarder

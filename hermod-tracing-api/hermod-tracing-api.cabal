@@ -46,7 +46,6 @@ common project-config
                         -Widentities
                         -Wredundant-constraints
                         -Wmissing-export-lists
-                        -Wno-incomplete-patterns
 
   if impl(ghc >= 9.8)
     ghc-options:        -Wno-x-partial

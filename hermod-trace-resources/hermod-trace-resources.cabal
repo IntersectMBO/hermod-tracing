@@ -56,7 +56,6 @@ library
                         -Widentities
                         -Wredundant-constraints
                         -Wmissing-export-lists
-                        -Wno-incomplete-patterns
 
   if flag(with-netstat)
     CPP-options:        -DWITH_NETSTAT

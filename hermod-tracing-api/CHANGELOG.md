@@ -41,3 +41,5 @@
   interpreted in an application-specific timeunit, potentially distinct per
   identifier.
 * `TraceConfig`'s `tcNodeName` field renamed to `tcApplicationName`.
+* Removed `ForwarderAddr` newtype. To specify forwarder connection, use
+  `HowToConnect`.
