@@ -5,11 +5,90 @@
 -- | Provides a single IO action, <a>readResourceStats</a>, that samples
 --   the calling process's resource usage (CPU, GC, memory, I/O, threads)
 --   and returns it as a <a>LogFormatting</a> / <a>MetaTrace</a> value
---   ready to feed into the trace-dispatcher pipeline. Supports Linux,
---   macOS, and Windows; falls back to GHC RTS metrics only on other
---   platforms.
+--   ready to feed into the hermod-tracing pipeline. Supports Linux, macOS,
+--   and Windows; falls back to GHC RTS metrics only on other platforms.
 @package hermod-trace-resources
 @version 1.0.0
+
+module Hermod.Tracing.Resources.Types
+
+-- | A snapshot of resource usage for the current process, parameterised
+--   over the numeric type <tt>a</tt>. The concrete alias
+--   <a>ResourceStats</a> fixes <tt>a ~ Word64</tt>.
+--   
+--   Fields that cannot be measured on the current platform are set to
+--   <tt>0</tt>.
+data Resources a
+Resources :: !a -> !a -> !a -> !a -> !a -> !a -> !a -> !a -> !a -> !a -> !a -> !a -> !a -> !a -> !a -> Resources a
+
+-- | CPU time in centiseconds (1/100 s) since process start, from
+--   <tt>/proc/self/stat</tt> on Linux or equivalent OS API.
+[rCentiCpu] :: Resources a -> !a
+
+-- | CPU centiseconds spent in the GHC garbage collector (RTS stats).
+[rCentiGC] :: Resources a -> !a
+
+-- | CPU centiseconds spent in the mutator, i.e. application code (RTS
+--   stats).
+[rCentiMut] :: Resources a -> !a
+
+-- | Number of major (full-heap) GC runs since process start (RTS stats).
+[rGcsMajor] :: Resources a -> !a
+
+-- | Number of minor GC runs since process start (RTS stats).
+[rGcsMinor] :: Resources a -> !a
+
+-- | Cumulative bytes allocated in the heap since process start (RTS
+--   stats).
+[rAlloc] :: Resources a -> !a
+
+-- | Live heap bytes immediately after the last GC run (RTS stats).
+[rLive] :: Resources a -> !a
+
+-- | Committed heap bytes (total heap size reserved from the OS) (RTS
+--   stats).
+[rHeap] :: Resources a -> !a
+
+-- | Resident set size in bytes: physical memory currently mapped to the
+--   process (from the OS kernel).
+[rRSS] :: Resources a -> !a
+
+-- | Centiseconds spent waiting for block I/O (Linux
+--   <tt>/proc/self/stat</tt> only; <tt>0</tt> on other platforms).
+[rCentiBlkIO] :: Resources a -> !a
+
+-- | IP packet bytes received since boot (Linux
+--   <tt>/proc/self/net/netstat</tt>, only when the <tt>with-netstat</tt>
+--   flag is enabled; <tt>0</tt> otherwise).
+[rNetRd] :: Resources a -> !a
+
+-- | IP packet bytes transmitted since boot (Linux
+--   <tt>/proc/self/net/netstat</tt>, only when the <tt>with-netstat</tt>
+--   flag is enabled; <tt>0</tt> otherwise).
+[rNetWr] :: Resources a -> !a
+
+-- | Filesystem bytes read by the process (from <tt>/proc/self/io</tt> on
+--   Linux or equivalent OS API).
+[rFsRd] :: Resources a -> !a
+
+-- | Filesystem bytes written by the process (from <tt>/proc/self/io</tt>
+--   on Linux or equivalent OS API).
+[rFsWr] :: Resources a -> !a
+
+-- | Number of live GHC green threads (RTS stats).
+[rThreads] :: Resources a -> !a
+
+-- | Concrete snapshot of resource usage with all fields as <a>Word64</a>
+--   counts.
+type ResourceStats = Resources Word64
+instance GHC.Show.Show a => GHC.Show.Show (Hermod.Tracing.Resources.Types.Resources a)
+instance GHC.Generics.Generic (Hermod.Tracing.Resources.Types.Resources a)
+instance GHC.Base.Functor Hermod.Tracing.Resources.Types.Resources
+instance Hermod.Tracing.Types.LogFormatting Hermod.Tracing.Resources.Types.ResourceStats
+instance Hermod.Tracing.Types.MetaTrace Hermod.Tracing.Resources.Types.ResourceStats
+instance GHC.Base.Applicative Hermod.Tracing.Resources.Types.Resources
+instance Data.Aeson.Types.FromJSON.FromJSON a => Data.Aeson.Types.FromJSON.FromJSON (Hermod.Tracing.Resources.Types.Resources a)
+instance Data.Aeson.Types.ToJSON.ToJSON a => Data.Aeson.Types.ToJSON.ToJSON (Hermod.Tracing.Resources.Types.Resources a)
 
 
 -- | OS-level and RTS resource sampling for the Hermod tracing system.

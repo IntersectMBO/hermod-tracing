@@ -1,0 +1,49 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">-- | Batteries-included public interface for the Hermod tracing system.</span><span>
+</span><span id="line-2"></span><span class="hs-comment">--</span><span>
+</span><span id="line-3"></span><span class="hs-comment">-- A typical application wires up tracing in three steps:</span><span>
+</span><span id="line-4"></span><span class="hs-comment">--</span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- 1. __Define trace types__: for each domain-specific message type, write</span><span>
+</span><span id="line-6"></span><span class="hs-comment">--    'LogFormatting' (human\/machine rendering, metrics) and 'MetaTrace'</span><span>
+</span><span id="line-7"></span><span class="hs-comment">--    (namespace, severity, documentation) instances.</span><span>
+</span><span id="line-8"></span><span class="hs-comment">--</span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- 2. __Construct backends__: call 'mkHermodTracer' (or 'mkHermodTracer'')</span><span>
+</span><span id="line-10"></span><span class="hs-comment">--    with 'standardTracer', 'ekgTracer', and\/or 'forwardTracer' to build a</span><span>
+</span><span id="line-11"></span><span class="hs-comment">--    'Trace IO YourType'.</span><span>
+</span><span id="line-12"></span><span class="hs-comment">--</span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- 3. __Configure__: load a 'TraceConfig' with 'readConfiguration' and apply it</span><span>
+</span><span id="line-14"></span><span class="hs-comment">--    with 'configureTracers'.  Use 'checkTraceConfiguration' to validate the</span><span>
+</span><span id="line-15"></span><span class="hs-comment">--    config against all known namespaces at startup.</span><span>
+</span><span id="line-16"></span><span class="hs-comment">--</span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Hermod.Tracing</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-19"></span><span>    </span><span class="hs-keyword">module</span><span> </span><span class="annot"><span class="hs-identifier">X</span></span><span>
+</span><span id="line-20"></span><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span class="hs-comment">-- Core API types and combinators (from hermod-tracing-api)</span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><span class="hs-identifier">Hermod.Tracing.Types</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">X</span></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><span class="hs-identifier">Hermod.Tracing.Trace</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">X</span></span><span>
+</span><span id="line-25"></span><span>
+</span><span id="line-26"></span><span class="hs-comment">-- Backend constructors</span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="Hermod.Tracing.Tracer.Composed.html"><span class="hs-identifier">Hermod.Tracing.Tracer.Composed</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">X</span></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="Hermod.Tracing.Tracer.DataPoint.html"><span class="hs-identifier">Hermod.Tracing.Tracer.DataPoint</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">X</span></span><span>
+</span><span id="line-29"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="Hermod.Tracing.Tracer.EKG.html"><span class="hs-identifier">Hermod.Tracing.Tracer.EKG</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">X</span></span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="Hermod.Tracing.Tracer.Forward.html"><span class="hs-identifier">Hermod.Tracing.Tracer.Forward</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">X</span></span><span>
+</span><span id="line-31"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="Hermod.Tracing.Tracer.Standard.html"><span class="hs-identifier">Hermod.Tracing.Tracer.Standard</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">X</span></span><span>
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span class="hs-comment">-- Configuration: loading, parsing, applying, and checking</span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="Hermod.Tracing.Configuration.html"><span class="hs-identifier">Hermod.Tracing.Configuration</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">X</span></span><span>
+</span><span id="line-35"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="Hermod.Tracing.ConfigurationParser.html"><span class="hs-identifier">Hermod.Tracing.ConfigurationParser</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">X</span></span><span>
+</span><span id="line-36"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="Hermod.Tracing.Consistency.html"><span class="hs-identifier">Hermod.Tracing.Consistency</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">X</span></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="Hermod.Tracing.FrequencyLimiter.html"><span class="hs-identifier">Hermod.Tracing.FrequencyLimiter</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">X</span></span><span>
+</span><span id="line-38"></span><span>
+</span><span id="line-39"></span><span class="hs-comment">-- Output types produced by the backend pipeline</span><span>
+</span><span id="line-40"></span><span class="hs-comment">-- (FormattedMessage, TraceObject, PreFormatted)</span><span>
+</span><span id="line-41"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="Hermod.Tracing.Formatter.html"><span class="hs-identifier">Hermod.Tracing.Formatter</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">X</span></span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span class="hs-comment">-- Utilities: showT, showTHex, showTReal, runInLoop</span><span>
+</span><span id="line-44"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="Hermod.Tracing.Utils.html"><span class="hs-identifier">Hermod.Tracing.Utils</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">X</span></span><span>
+</span><span id="line-45"></span><span>
+</span><span id="line-46"></span><span class="hs-comment">-- Re-exports arrow/emit/squelch from contra-tracer for custom backend authors.</span><span>
+</span><span id="line-47"></span><span class="hs-comment">-- traceWith, contramapM, nullTracer, Tracer are shadowed by this package's own versions.</span><span>
+</span><span id="line-48"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><span class="hs-identifier">Control.Tracer</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">X</span></span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Tracer</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">contramapM</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">nullTracer</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">traceWith</span></span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span></pre></body></html>

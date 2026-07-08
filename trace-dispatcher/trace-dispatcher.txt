@@ -700,7 +700,7 @@ module Cardano.Logging.Types.NodeStartupInfo
 -- | NodeStartupInfo
 --   
 --   This information is taken from <tt>BasicInfoShelleyBased</tt>. It is
---   required for 'cardano-tracer' service (particularly, for RTView).
+--   required for 'cardano-tracer' service.
 data NodeStartupInfo
 NodeStartupInfo :: Text -> NominalDiffTime -> Word64 -> Word64 -> NodeStartupInfo
 

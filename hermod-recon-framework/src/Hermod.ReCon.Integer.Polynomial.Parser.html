@@ -151,15 +151,15 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span id="line-34"></span><span class="annot"><a href="Hermod.ReCon.Integer.Polynomial.Parser.html#intTerm"><span class="hs-identifier hs-type">intTerm</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Hermod.ReCon.Common.Types.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="Hermod.ReCon.Integer.Polynomial.Term.html#IntTerm"><span class="hs-identifier hs-type">IntTerm</span></a></span><span>
 </span><span id="line-35"></span><span id="intTerm"><span class="annot"><span class="annottext">intTerm :: Parser IntTerm
 </span><a href="Hermod.ReCon.Integer.Polynomial.Parser.html#intTerm"><span class="hs-identifier hs-var hs-var">intTerm</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-36"></span><span>  </span><span id="local-6989586621679126794"><span class="annot"><span class="annottext">IntTerm
-</span><a href="#local-6989586621679126794"><span class="hs-identifier hs-var">hd</span></a></span></span><span>   </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser IntTerm
+</span><span id="line-36"></span><span>  </span><span id="local-6989586621679126700"><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679126700"><span class="hs-identifier hs-var">hd</span></a></span></span><span>   </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser IntTerm
 </span><a href="Hermod.ReCon.Integer.Polynomial.Parser.html#intTermAtom"><span class="hs-identifier hs-var">intTermAtom</span></a></span><span>
-</span><span id="line-37"></span><span>  </span><span id="local-6989586621679126795"><span class="annot"><span class="annottext">[Either IntTerm IntTerm]
-</span><a href="#local-6989586621679126795"><span class="hs-identifier hs-var">rest</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ParsecT Void Text Identity (Either IntTerm IntTerm)
+</span><span id="line-37"></span><span>  </span><span id="local-6989586621679126701"><span class="annot"><span class="annottext">[Either IntTerm IntTerm]
+</span><a href="#local-6989586621679126701"><span class="hs-identifier hs-var">rest</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ParsecT Void Text Identity (Either IntTerm IntTerm)
 -&gt; ParsecT Void Text Identity [Either IntTerm IntTerm]
 forall (m :: * -&gt; *) a. MonadPlus m =&gt; m a -&gt; m [a]
 </span><span class="hs-identifier hs-var">many</span></span><span> </span><span class="annot"><span class="annottext">ParsecT Void Text Identity (Either IntTerm IntTerm)
-</span><a href="#local-6989586621679126797"><span class="hs-identifier hs-var">addOp</span></a></span><span>
+</span><a href="#local-6989586621679126703"><span class="hs-identifier hs-var">addOp</span></a></span><span>
 </span><span id="line-38"></span><span>  </span><span class="annot"><span class="annottext">IntTerm -&gt; Parser IntTerm
 forall a. a -&gt; ParsecT Void Text Identity a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
@@ -170,14 +170,14 @@ forall (t :: * -&gt; *) b a.
 Foldable t =&gt;
 (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b
 </span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Foldable.html#foldl"><span class="hs-identifier hs-var">foldl</span></a></span><span> </span><span class="annot"><span class="annottext">IntTerm -&gt; Either IntTerm IntTerm -&gt; IntTerm
-</span><a href="#local-6989586621679126799"><span class="hs-identifier hs-var">applyOp</span></a></span><span> </span><span class="annot"><span class="annottext">IntTerm
-</span><a href="#local-6989586621679126794"><span class="hs-identifier hs-var">hd</span></a></span><span> </span><span class="annot"><span class="annottext">[Either IntTerm IntTerm]
-</span><a href="#local-6989586621679126795"><span class="hs-identifier hs-var">rest</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679126705"><span class="hs-identifier hs-var">applyOp</span></a></span><span> </span><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679126700"><span class="hs-identifier hs-var">hd</span></a></span><span> </span><span class="annot"><span class="annottext">[Either IntTerm IntTerm]
+</span><a href="#local-6989586621679126701"><span class="hs-identifier hs-var">rest</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-39"></span><span>  </span><span class="hs-keyword">where</span><span>
 </span><span id="line-40"></span><span>    </span><span class="hs-comment">-- Each alternative wraps the leading space in `try` so that whitespace</span><span>
 </span><span id="line-41"></span><span>    </span><span class="hs-comment">-- consumed before a non-additive token (e.g. '&lt;') is backtracked.</span><span>
-</span><span id="line-42"></span><span>    </span><span id="local-6989586621679126797"><span class="annot"><span class="annottext">addOp :: ParsecT Void Text Identity (Either IntTerm IntTerm)
-</span><a href="#local-6989586621679126797"><span class="hs-identifier hs-var hs-var">addOp</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-42"></span><span>    </span><span id="local-6989586621679126703"><span class="annot"><span class="annottext">addOp :: ParsecT Void Text Identity (Either IntTerm IntTerm)
+</span><a href="#local-6989586621679126703"><span class="hs-identifier hs-var hs-var">addOp</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-43"></span><span>          </span><span class="annot"><span class="annottext">ParsecT Void Text Identity (Either IntTerm IntTerm)
 -&gt; ParsecT Void Text Identity (Either IntTerm IntTerm)
 forall a.
@@ -273,19 +273,19 @@ ParsecT Void Text Identity a
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f a -&gt; f b -&gt; f b
 </span><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Base.html#%2A%3E"><span class="hs-operator hs-var">*&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Parser IntTerm
 </span><a href="Hermod.ReCon.Integer.Polynomial.Parser.html#intTermAtom"><span class="hs-identifier hs-var">intTermAtom</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-45"></span><span>    </span><span id="local-6989586621679126799"><span class="annot"><span class="annottext">applyOp :: IntTerm -&gt; Either IntTerm IntTerm -&gt; IntTerm
-</span><a href="#local-6989586621679126799"><span class="hs-identifier hs-var hs-var">applyOp</span></a></span></span><span> </span><span id="local-6989586621679126827"><span class="annot"><span class="annottext">IntTerm
-</span><a href="#local-6989586621679126827"><span class="hs-identifier hs-var">acc</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Either.html#Left"><span class="hs-identifier hs-type">Left</span></a></span><span>  </span><span id="local-6989586621679126828"><span class="annot"><span class="annottext">IntTerm
-</span><a href="#local-6989586621679126828"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IntTerm -&gt; IntTerm -&gt; IntTerm
+</span><span id="line-45"></span><span>    </span><span id="local-6989586621679126705"><span class="annot"><span class="annottext">applyOp :: IntTerm -&gt; Either IntTerm IntTerm -&gt; IntTerm
+</span><a href="#local-6989586621679126705"><span class="hs-identifier hs-var hs-var">applyOp</span></a></span></span><span> </span><span id="local-6989586621679126733"><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679126733"><span class="hs-identifier hs-var">acc</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Either.html#Left"><span class="hs-identifier hs-type">Left</span></a></span><span>  </span><span id="local-6989586621679126734"><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679126734"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IntTerm -&gt; IntTerm -&gt; IntTerm
 </span><a href="Hermod.ReCon.Integer.Polynomial.Term.html#IntSum"><span class="hs-identifier hs-var">IntSum</span></a></span><span> </span><span class="annot"><span class="annottext">IntTerm
-</span><a href="#local-6989586621679126827"><span class="hs-identifier hs-var">acc</span></a></span><span> </span><span class="annot"><span class="annottext">IntTerm
-</span><a href="#local-6989586621679126828"><span class="hs-identifier hs-var">t</span></a></span><span>
-</span><span id="line-46"></span><span>    </span><span class="annot"><a href="#local-6989586621679126799"><span class="hs-identifier hs-var">applyOp</span></a></span><span> </span><span id="local-6989586621679126830"><span class="annot"><span class="annottext">IntTerm
-</span><a href="#local-6989586621679126830"><span class="hs-identifier hs-var">acc</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Either.html#Right"><span class="hs-identifier hs-type">Right</span></a></span><span> </span><span id="local-6989586621679126831"><span class="annot"><span class="annottext">IntTerm
-</span><a href="#local-6989586621679126831"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IntTerm -&gt; IntTerm -&gt; IntTerm
+</span><a href="#local-6989586621679126733"><span class="hs-identifier hs-var">acc</span></a></span><span> </span><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679126734"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-46"></span><span>    </span><span class="annot"><a href="#local-6989586621679126705"><span class="hs-identifier hs-var">applyOp</span></a></span><span> </span><span id="local-6989586621679126736"><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679126736"><span class="hs-identifier hs-var">acc</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/pdlvkcn31k7dw3q5bcndp7f9d2z5l0h3-ghc-9.6.7-doc/share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/Data.Either.html#Right"><span class="hs-identifier hs-type">Right</span></a></span><span> </span><span id="local-6989586621679126737"><span class="annot"><span class="annottext">IntTerm
+</span><a href="#local-6989586621679126737"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IntTerm -&gt; IntTerm -&gt; IntTerm
 </span><a href="Hermod.ReCon.Integer.Polynomial.Term.html#IntSum"><span class="hs-identifier hs-var">IntSum</span></a></span><span> </span><span class="annot"><span class="annottext">IntTerm
-</span><a href="#local-6989586621679126830"><span class="hs-identifier hs-var">acc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">IntValue -&gt; IntTerm -&gt; IntTerm
+</span><a href="#local-6989586621679126736"><span class="hs-identifier hs-var">acc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">IntValue -&gt; IntTerm -&gt; IntTerm
 </span><a href="Hermod.ReCon.Integer.Polynomial.Term.html#mul"><span class="hs-identifier hs-var">mul</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">-</span><span class="annot"><span class="annottext">IntValue
 </span><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">IntTerm
-</span><a href="#local-6989586621679126831"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679126737"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-47"></span></pre></body></html>
