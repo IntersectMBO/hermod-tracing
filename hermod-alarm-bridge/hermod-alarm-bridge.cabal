@@ -1,0 +1,111 @@
+cabal-version:      3.4
+name:               hermod-alarm-bridge
+description:        A small standalone bridge process that translates hermod-recon's
+                     machine-formatted JSON trace output into cardano-tracer's alarm
+                     ingress wire format, and delivers it over HTTP. It has no
+                     Haskell-level dependency on hermod-recon-framework: it only knows
+                     hermod-recon's documented JSON-lines wire format.
+category:           Testing
+copyright:          2026 Intersect.
+version:            0.1.0
+license:            Apache-2.0
+license-files:      LICENSE
+                    NOTICE
+author:             Intersect
+maintainer:         operations@iohk.io
+
+build-type:         Simple
+
+common common
+    ghc-options:      -Wall
+
+    if impl(ghc >= 9.8)
+      ghc-options:
+        -Wno-x-partial
+
+    default-language: Haskell2010
+
+    default-extensions:
+      DerivingStrategies
+      LambdaCase
+      NamedFieldPuns
+      OverloadedStrings
+      RecordWildCards
+      ScopedTypeVariables
+      TupleSections
+
+library
+    import:           common
+    exposed-modules:
+                      Hermod.AlarmBridge.Severity
+                    , Hermod.AlarmBridge.Envelope
+                    , Hermod.AlarmBridge.Rules
+                    , Hermod.AlarmBridge.Classify
+                    , Hermod.AlarmBridge.Startup
+                    , Hermod.AlarmBridge.Deliver
+                    , Hermod.AlarmBridge.ReConProcess
+                    , Hermod.AlarmBridge.Cli
+
+    build-depends:    base
+                    , aeson
+                    , bytestring
+                    , text
+                    , time
+                    , containers
+                    , yaml
+                    , network
+                    , directory
+                    , stm
+                    , optparse-applicative
+
+    hs-source-dirs:   src
+
+    ghc-options:      -O2
+
+executable hermod-alarm-bridge
+    import:           common
+    main-is:          Main.hs
+
+    ghc-options:      -O2
+                      -threaded
+                      -rtsopts
+                      "-with-rtsopts=-N2"
+
+    build-depends:
+        base
+      , hermod-alarm-bridge
+      , optparse-applicative
+      , process
+      , async
+      , bytestring
+      , text
+      , time
+
+    hs-source-dirs:   app
+
+test-suite hermod-alarm-bridge-test
+    import:           common
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   test
+    main-is:          Hermod/AlarmBridge/Main.hs
+
+    other-modules:
+                      Hermod.AlarmBridge.Test.Severity
+                    , Hermod.AlarmBridge.Test.Envelope
+                    , Hermod.AlarmBridge.Test.Classify
+                    , Hermod.AlarmBridge.Test.Rules
+                    , Hermod.AlarmBridge.Test.Startup
+                    , Hermod.AlarmBridge.Test.Deliver
+                    , Hermod.AlarmBridge.Test.ReConProcess
+                    , Hermod.AlarmBridge.Test.Integration
+
+    build-depends:    base
+                    , hermod-alarm-bridge
+                    , aeson
+                    , bytestring
+                    , containers
+                    , directory
+                    , text
+                    , time
+                    , tasty
+                    , tasty-hunit

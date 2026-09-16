@@ -20,6 +20,7 @@ packages:
   hermod-tracing-prometheus
   hermod-trace-resources
   hermod-recon-framework
+  hermod-alarm-bridge
 
 program-options
   ghc-options: -Werror
