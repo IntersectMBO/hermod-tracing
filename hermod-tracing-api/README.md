@@ -23,10 +23,14 @@ The package exposes two sublibraries:
 - **`hermod-tracing-api:internal`** — the full type vocabulary and combinators
   (`src/internal/`): `Hermod.Tracing.Types.*`, `Hermod.Tracing.Trace`,
   `Hermod.Tracing.Trace.Combinators`.
-- **`hermod-tracing-api:public`** (the default library) — the single-import
-  end-user front door (`src/public/`): `Hermod.Tracing.API`.
+- **`hermod-tracing-api:public`** — the end-user front door (`src/public/`):
+  `Hermod.Tracing.API` (everything for tracer authors), `Hermod.Tracing.API.Trace`
+  (the narrow plumbing subset for library code), `Hermod.Tracing.API.Tracer`
+  (a `contra-tracer`-compatible vocabulary, see below) and
+  `Hermod.Tracing.API.ContraTracer` (bridges to third-party `contra-tracer` APIs).
 
-User-space packages shall depend on `hermod-tracing-api:public` and `import Hermod.Tracing.API`.
+There is no default library: user-space packages depend on **`hermod-tracing-api:public`**
+(note the `:public` suffix) and `import Hermod.Tracing.API`.
 
 **`hermod-tracing-api:internal` is not a stable API.** It may change between any two releases
 without a major version bump. Its `visibility: public` declaration exists solely to allow
@@ -141,3 +145,37 @@ asMetrics (BatchProcessed size) =
 
 Metric names follow the Prometheus data model; use `.` as a namespace
 separator (the backend rewrites them to `_` for Prometheus exposition).
+
+## Migrating a library from `contra-tracer`
+
+`Hermod.Tracing.API.Tracer` exports a strict subset of the names of `Control.Tracer`
+(contra-tracer 0.2.1) — `Tracer` (a synonym for `Trace`), `traceWith`, `mkTracer`,
+`nullTracer`, `natTracer`, `contramapM`, `contramap`, `(>$<)`, `debugTracer`,
+`stdoutTracer` — with the same signatures and argument order. A library therefore
+migrates in two mechanical steps:
+
+1. `import Control.Tracer …` → `import Hermod.Tracing.API.Tracer …`
+   (an `import Control.Tracer (Tracer (..))` becomes `(Tracer)`: there is no
+   constructor to import);
+2. in the `.cabal` file, `contra-tracer` → `hermod-tracing-api:public ^>=1.1`.
+
+Its tracer-typed API is then Hermod's `Trace`: an application hands it the traces
+it constructed and retained, and configuration/documentation control messages
+flow end to end. Where a third-party API still takes a `contra-tracer` `Tracer`,
+wrap the value with `toContraTracer` from `Hermod.Tracing.API.ContraTracer`.
+
+Rules for library code (details in the haddock of `Hermod.Tracing.API`):
+
+- **Control direction.** Control messages are injected at the root trace the
+  application constructed and flow downstream. `mkTracer` builds a terminal sink
+  that drops them — fine for test doubles and internal adapters, never for
+  anything the user should be able to configure.
+- **Parameter rule.** Anything user-visible arrives as a `Trace` parameter and is
+  only wrapped with control-preserving combinators (`contramap`, `contramapM`,
+  `natTracer`, `<>`).
+- **STM rule.** A `Trace (STM m) a` can never be configured or documented; use an
+  `STM m ()` callback for transactional bookkeeping.
+- **Never configure a merge.** `tr1 <> tr2` broadcasts control messages to both
+  branches; configure the components.
+- Do not import `Hermod.Tracing.API.Tracer` and `Hermod.Tracing.API` unqualified
+  into the same module: `contramapM` takes its arguments in the opposite order.

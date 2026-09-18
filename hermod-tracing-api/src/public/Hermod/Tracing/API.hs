@@ -9,10 +9,13 @@
 --   metrics) and 'MetaTrace' (namespace, severity, documentation) instances
 --   for your domain message types.
 --
--- * __Dispatch messages__: call 'traceWith' to emit, 'contramapM'
+-- * __Dispatch messages__: call 'traceWith' to emit, 'contramap' \/ 'contramapM'
 --   to adapt types, 'foldTraceM' to accumulate state, 'routingTrace' to fan out.
 --
 -- * __Filter__: 'filterTrace', 'filterTraceMaybe'.
+--
+-- * __Construct and bridge__: 'mkTrace', 'nullTrace', 'natTrace' and the
+--   test helpers 'debugTrace' \/ 'stdoutTrace'.
 --
 -- === For tracer authors
 --
@@ -27,12 +30,42 @@
 -- Privacy(..)            -- Public | Confidential
 -- DetailLevel(..)        -- DMinimal … DMaximum
 -- Folding(..)            -- wrapper for fold-based stateful tracers
+-- showT, showTHex, showTReal  -- Text rendering helpers for instances
 -- @
+--
+-- === Using a 'Trace' in a library
+--
+-- Libraries that take tracers as parameters (rather than configuring
+-- backends) should observe these rules; they keep the application able to
+-- configure, document and reconfigure every tracer from one place:
+--
+-- 1. /Control direction./ Control messages (configuration, optimisation,
+--    documentation) are injected by the application at the root 'Trace' it
+--    constructed and retained, and flow downstream to the backends.  A trace
+--    built with 'mkTrace' (or 'nullTrace') is a terminal sink that drops
+--    them: fine for test doubles and for internal adapters that sit upstream
+--    of the root, never for anything the user should be able to configure.
+--
+-- 2. /Parameter rule./ Anything user-visible arrives as a 'Trace' parameter
+--    and is only ever wrapped with control-preserving combinators
+--    ('contramap', 'contramapM', 'filterTrace', 'natTrace', @<>@).
+--
+-- 3. /STM rule./ A @Trace (STM m) a@ type-checks but can never be configured
+--    or documented (both need 'IO'); use a plain @STM m ()@ callback for
+--    transactional bookkeeping instead.
+--
+-- 4. /Never configure a merge./ @tr1 <> tr2@ broadcasts control messages to
+--    both branches; register and configure the components, not the merge.
+--
+-- Libraries that prefer @contra-tracer@'s spellings (@Tracer@, @mkTracer@,
+-- @nullTracer@, …) import "Hermod.Tracing.API.Tracer" instead of this
+-- module; the two must not be imported unqualified into one module, because
+-- 'contramapM' takes its arguments in the opposite order there.
 --
 -- === Configuration and control (consumed by @hermod-tracing-core@)
 --
 -- 'TraceConfig', 'ConfigOption', 'BackendConfig',
--- 'ConfigReflection', 'DocCollector', 'ForwarderAddr',
+-- 'ConfigReflection', 'DocCollector',
 -- 'ForwarderMode', 'TraceOptionForwarder', 'PrometheusSimpleRun'.
 -- These appear in type signatures throughout the system; tracer authors
 -- typically do not construct them directly.
@@ -42,6 +75,9 @@ import           Hermod.Tracing.Types as Export hiding (Trace(..), TraceControl(
 import           Hermod.Tracing.Types as Export (Trace)
 import           Hermod.Tracing.Trace.Combinators as Export (traceWith, routingTrace)
 import           Hermod.Tracing.Trace as Export (filterTraceMaybe)
+import           Hermod.Tracing.Trace.Construct as Export (mkTrace, nullTrace, natTrace, debugTrace, stdoutTrace)
+import           Hermod.Tracing.Types.ShowT as Export (showT, showTHex, showTReal)
+import           Data.Functor.Contravariant as Export (Contravariant (..), (>$<))
 
 import           qualified Hermod.Tracing.Trace.Combinators as Internal (contramapM, contramapMCond , foldTraceM, foldCondTraceM)
 import           qualified Hermod.Tracing.Trace as Internal (filterTrace)
