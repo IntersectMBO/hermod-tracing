@@ -92,3 +92,22 @@ library public
                       , hermod-tracing-api:internal
                       , unliftio
                       , unliftio-core
+
+test-suite hermod-tracing-api-test
+  import:             project-config
+  type:               exitcode-stdio-1.0
+  hs-source-dirs:     test
+  main-is:            hermod-tracing-api-test.hs
+  other-modules:      Hermod.Tracing.API.Test.Shapes
+
+  build-depends:        base >=4.12 && <5
+                      , hermod-tracing-api:internal
+                      , hermod-tracing-api:public
+                      , contra-tracer ^>= 0.2.1
+                      , tasty
+                      , tasty-hunit
+                      , transformers
+
+  ghc-options:        -threaded
+                      -rtsopts
+                      "-with-rtsopts=-N"

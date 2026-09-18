@@ -1,5 +1,14 @@
 # Revision history for hermod-tracing-core
 
+## 1.0.1 -- October 2026
+
+* `showT`, `showTHex` and `showTReal` now live in `hermod-tracing-api`
+  (`Hermod.Tracing.Types.ShowT`, re-exported by `Hermod.Tracing.API`);
+  `Hermod.Tracing.Utils` re-exports the same entities, so importing both
+  `Hermod.Tracing` and `Hermod.Tracing.API` is unambiguous.
+* Depends on `hermod-tracing-api ^>= 1.1` (both sublibraries); previously
+  unbounded.
+
 ## 1.0.0 -- July 2026
 
 * Initial release: based on `trace-dispatcher-2.13.0`.
