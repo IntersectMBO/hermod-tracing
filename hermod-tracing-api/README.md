@@ -173,8 +173,9 @@ Rules for library code (details in the haddock of `Hermod.Tracing.API`):
 - **Parameter rule.** Anything user-visible arrives as a `Trace` parameter and is
   only wrapped with control-preserving combinators (`contramap`, `contramapM`,
   `natTracer`, `<>`).
-- **STM rule.** A `Trace (STM m) a` can never be configured or documented; use an
-  `STM m ()` callback for transactional bookkeeping.
+- **STM rule.** A `Trace STM a` (with io-classes: `Trace (STM m) a`) can never be
+  configured or documented; use an `STM ()` (`STM m ()`) callback for
+  transactional bookkeeping.
 - **Never configure a merge.** `tr1 <> tr2` broadcasts control messages to both
   branches; configure the components.
 - Do not import `Hermod.Tracing.API.Tracer` and `Hermod.Tracing.API` unqualified

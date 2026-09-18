@@ -50,9 +50,10 @@
 --    and is only ever wrapped with control-preserving combinators
 --    ('contramap', 'contramapM', 'filterTrace', 'natTrace', @<>@).
 --
--- 3. /STM rule./ A @Trace (STM m) a@ type-checks but can never be configured
---    or documented (both need 'IO'); use a plain @STM m ()@ callback for
---    transactional bookkeeping instead.
+-- 3. /STM rule./ A @Trace STM a@ (with io-classes: @Trace (STM m) a@)
+--    type-checks but can never be configured or documented (both need
+--    'IO'); use a plain @STM ()@ (@STM m ()@) callback for transactional
+--    bookkeeping instead.
 --
 -- 4. /Never configure a merge./ @tr1 <> tr2@ broadcasts control messages to
 --    both branches; register and configure the components, not the merge.

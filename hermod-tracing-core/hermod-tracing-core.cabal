@@ -1,7 +1,7 @@
 cabal-version: 3.0
 
 name:                   hermod-tracing-core
-version:                1.0.0
+version:                1.0.1
 synopsis:               Modern, modular, configurable tracing and metrics system
 description:            This is Hermod's core package and API for development of simple and efficient tracers
                         around the arrow based contra-tracer package
@@ -65,8 +65,8 @@ library
   other-modules:      Hermod.Tracing.Types.DocuGenerator
 
   build-depends:        base >=4.12 && <5
-                      , hermod-tracing-api:internal
-                      , hermod-tracing-api:public
+                      , hermod-tracing-api:internal ^>= 1.1
+                      , hermod-tracing-api:public ^>= 1.1
                       , aeson >= 2.1.0.0
                       , aeson-pretty
                       , async
