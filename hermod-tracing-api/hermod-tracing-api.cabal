@@ -1,7 +1,7 @@
 cabal-version: 3.0
 
 name:                   hermod-tracing-api
-version:                1.0.0
+version:                1.1.0
 synopsis:               Thin API layer for the hermod-tracing-core tracing system
 description:            Core types (Trace, MetaTrace, LogFormatting) and combinators
                         (traceWith, contramapM, foldTraceM, routingTrace) that form the
@@ -34,9 +34,13 @@ extra-doc-files:        CHANGELOG.md
 common project-config
   default-language:     Haskell2010
 
-  default-extensions:   LambdaCase
+  default-extensions:   BlockArguments
+                        InstanceSigs
+                        LambdaCase
                         NamedFieldPuns
+                        NumericUnderscores
                         OverloadedStrings
+                        TypeApplications
 
   ghc-options:          -Wall
                         -Wcompat
@@ -82,8 +86,12 @@ library public
   visibility:         public
   hs-source-dirs:     src/public
   exposed-modules:    Hermod.Tracing.API
+                      Hermod.Tracing.Span
 
   build-depends:        base >=4.12 && <5
                       , hermod-tracing-api:internal
+                      , aeson >= 2.1.0.0
+                      , deepseq
+                      , text
                       , unliftio
                       , unliftio-core

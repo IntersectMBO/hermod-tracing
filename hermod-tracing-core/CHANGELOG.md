@@ -1,5 +1,12 @@
 # Revision history for hermod-tracing-core
 
+## 1.1.0 -- October 2026
+
+* `Hermod.Tracing.Span` moved to `hermod-tracing-api:public`. Callers
+  importing `Hermod.Tracing.Span` are unaffected but should now depend
+  on `hermod-tracing-api` directly rather than `hermod-tracing-core`
+  for span functionality.
+
 ## 1.0.0 -- July 2026
 
 * Initial release: based on `trace-dispatcher-2.13.0`.
