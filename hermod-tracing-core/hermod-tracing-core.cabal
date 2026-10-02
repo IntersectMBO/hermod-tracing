@@ -21,6 +21,7 @@ extra-doc-files:        CHANGELOG.md
                         README.md
                         doc/hermod-tracing-core.md
 data-files:             doc/config.json
+                        test/data/legacy-config.yaml
 
 common project-config
   default-language:     Haskell2010
