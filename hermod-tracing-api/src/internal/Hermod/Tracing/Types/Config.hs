@@ -34,6 +34,7 @@ import qualified Data.Aeson       as AE
 import           Data.Bool        (bool)
 import           Data.Map.Strict  (Map)
 import qualified Data.Map.Strict  as Map
+import           Data.Maybe       (fromMaybe)
 import           Data.Text        (Text)
 import qualified Data.Text        as T
 import           Data.Text.Read   (decimal)
@@ -125,10 +126,20 @@ data TraceOptionForwarder = TraceOptionForwarder {
 -- were picked with a batch size of max 100 objects per request in mind.
 instance AE.FromJSON TraceOptionForwarder where
     parseJSON = AE.withObject "TraceOptionForwarder" $ \obj -> do
-      queueSize         <- obj AE..:? "queueSize"         AE..!= tofQueueSize         defaultForwarder
+      queueSize         <- obj AE..:? "queueSize" >>= maybe (deprecatedQueueSize obj) pure
       verbosity         <- obj AE..:? "verbosity"         AE..!= tofVerbosity         defaultForwarder
       maxReconnectDelay <- obj AE..:? "maxReconnectDelay" AE..!= tofMaxReconnectDelay defaultForwarder
       return $ TraceOptionForwarder queueSize verbosity maxReconnectDelay
+      where
+        -- Deprecated: configurations written for trace-dispatcher may give
+        -- "connQueueSize" and "disconnQueueSize" instead of "queueSize". As there,
+        -- the larger of the two is used, each defaulting to its old value.
+        deprecatedQueueSize obj = do
+          connQueueSize    <- obj AE..:? "connQueueSize"
+          disconnQueueSize <- obj AE..:? "disconnQueueSize"
+          pure $ case (connQueueSize, disconnQueueSize) of
+            (Nothing, Nothing) -> tofQueueSize defaultForwarder
+            _                  -> max (fromMaybe 128 connQueueSize) (fromMaybe 192 disconnQueueSize)
 
 instance AE.ToJSON TraceOptionForwarder where
   toJSON TraceOptionForwarder{..} = AE.object

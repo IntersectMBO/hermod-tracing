@@ -300,6 +300,16 @@ The top-level `HermodTracing` object also accepts three optional global keys:
 - `MetricsPrefix` — a string prepended to all metric names.
 - `PeriodicTracers` — a map from arbitrary tracer identifiers to cardinal numbers. The numbers are interpreted by the host application (as millisecond delays, slot counts, or any other application-defined unit). A value of `0` signals that the named tracer should not run; an absent key leaves the host free to apply its own default.
 
+*Deprecated*: a configuration with a top-level `TraceOptions` is read in trace-dispatcher's layout, as the
+configurations generated for cardano-node still use it: `TraceOptions` → `Options`, `TraceOptionForwarder` →
+`Forwarder`, `TraceOptionNodeName` → `ApplicationName`, `TraceOptionMetricsPrefix` → `MetricsPrefix`,
+`TracePrometheusSimpleRun` → `PrometheusSimpleRun`, and `TraceOptionResourceFrequency` /
+`TraceOptionLedgerMetricsFrequency` → the `PeriodicTracers` entries `resources` / `ledgerMetrics` (a negative value
+is read as 0). As in trace-dispatcher, this layout takes precedence over a `HermodTracing` object or top-level
+`Options` in the same file, so remove the `TraceOption*` keys when moving to the current layout. Forwarder options
+without `queueSize` still honour the old `connQueueSize` / `disconnQueueSize` (the larger of the two). This layout
+will be removed once those configurations have moved to the current one.
+
 Backends can be a combination of `Forwarder`, `EKGBackend`, `PrometheusSimple [suffix|nosuffix] [bindhost] <port>` and
 one of `Stdout MachineFormat`, `Stdout HumanFormatColoured` and `Stdout HumanFormatUncoloured`.
 

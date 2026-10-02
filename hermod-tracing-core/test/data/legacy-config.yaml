@@ -1,0 +1,19 @@
+# trace-dispatcher's deprecated layout, as cardano-node's configuration files
+# have it, with an empty HermodTracing key and a negative frequency.
+Protocol: Cardano
+HermodTracing:
+TraceOptionMetricsPrefix: "cardano.node.metrics."
+TraceOptionResourceFrequency: -5
+TraceOptionForwarder:
+  connQueueSize: 64
+  disconnQueueSize: 128
+  maxReconnectDelay: 30
+TraceOptions:
+  _root_:
+    severity: Notice
+    detail: DNormal
+    backends:
+      - Stdout MachineFormat
+      - Forwarder
+  ChainDB:
+    severity: Info

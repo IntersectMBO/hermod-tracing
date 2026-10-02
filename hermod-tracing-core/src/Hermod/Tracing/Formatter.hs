@@ -89,13 +89,17 @@ data TraceObject = TraceObject {
 -- | If the @HERMOD_TRACING_LOGGING_HOSTNAME@ environment variable is set,
 --   it overrides the system hostname in the trace message. This is useful when
 --   multiple instances of a service or application on the same host.
+--   The deprecated name @TRACE_DISPATCHER_LOGGING_HOSTNAME@ is read when the
+--   new one is not set.
 --
 --   The env var is expected to be set (if desired) before the application emits its first trace, as this is evaluated only once.
 hostname :: Text
 {-# NOINLINE hostname #-}
 hostname = unsafePerformIO $
-  lookupEnv "HERMOD_TRACING_LOGGING_HOSTNAME" >>= maybe hostNameOnly (pure . T.pack)
+  lookupEnv "HERMOD_TRACING_LOGGING_HOSTNAME" >>= maybe deprecatedName (pure . T.pack)
   where
+    deprecatedName =
+      lookupEnv "TRACE_DISPATCHER_LOGGING_HOSTNAME" >>= maybe hostNameOnly (pure . T.pack)
     -- disregard FQDNs
     hostNameOnly = T.pack . takeWhile (/= '.') <$> getHostName
 
