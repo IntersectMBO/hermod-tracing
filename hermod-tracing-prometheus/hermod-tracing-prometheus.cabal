@@ -1,7 +1,7 @@
 cabal-version: 3.0
 
 name:                   hermod-tracing-prometheus
-version:                1.0.0
+version:                1.1.0
 synopsis:               Prometheus TCP server backend for hermod-tracing
 description:            Optional Prometheus exposition backend for the hermod-tracing
                         system. Exposes a minimal HTTP/TCP server that serves current
@@ -47,13 +47,12 @@ library
                       Hermod.Tracing.Prometheus.TCPServer
 
   build-depends:        base >=4.12 && <5
-                      , hermod-tracing-api:internal
-                      , hermod-tracing-core
+                      , hermod-tracing-api:internal ^>= 1.1
+                      , hermod-tracing-core ^>= 1.0
                       , aeson >= 2.1.0.0
                       , async
                       , bytestring
                       , containers
-                      , contra-tracer
                       , ekg-core
                       , hashable
                       , http-date

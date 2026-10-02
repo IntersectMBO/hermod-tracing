@@ -2,6 +2,8 @@
 
 ## NEXT
 
+* `hermod-recon` passes its configured trace to `runPrometheusSimple` directly and no longer
+  depends on `contra-tracer` (needs `hermod-tracing-prometheus` 1.1).
 * Replace `trace-dispatcher` dependency with `hermod-tracing-core`.
 * Update all `Cardano.Logging.*` imports to `Hermod.Tracing.*`.
 * Rename CLI flag `--trace-dispatcher-cfg` to `--hermod-tracing-cfg`.
