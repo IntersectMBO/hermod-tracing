@@ -58,7 +58,7 @@ renderExpositionFromSampleWith helpTextDict noSuffixes =
         Gauge g   -> annotate buildGauge   <> buildVal space  (TB.decimal g)
         Label l
           | Just ('{', _) <- T.uncons l
-                  -> annotate buildInfo    <> buildVal mempty (TB.fromText l)
+                  -> annotate buildGauge   <> buildVal mempty (TB.fromText l)
           | otherwise
                   -> helpAnnotation        <> buildVal space  (TB.fromText l)
         _         -> mempty
@@ -83,10 +83,9 @@ renderExpositionFromSampleWith helpTextDict noSuffixes =
         buildVal spacing v =
           buildName <> spacing <> v <> newline
 
-buildGauge, buildCounter, buildInfo, buildEOF, newline, space :: Builder
+buildGauge, buildCounter, buildEOF, newline, space :: Builder
 buildGauge    = TB.fromText " gauge"
 buildCounter  = TB.fromText " counter"
-buildInfo     = TB.fromText " info"
 buildEOF      = TB.fromText "# EOF\n"
 newline       = TB.singleton '\n'
 space         = TB.singleton ' '

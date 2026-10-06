@@ -1,5 +1,9 @@
 # Revision history for trace-dispatcher
 
+## 2.31.1 -- October 2026
+
+* Expose label sets as `# TYPE ... gauge` for full conformance with Prometheus text exposition format.
+
 ## 2.13.0 -- July 2026
 
 * Drop compatibility with `contra-tracer-0.1`.
