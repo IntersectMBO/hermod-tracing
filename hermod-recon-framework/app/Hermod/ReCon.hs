@@ -1,5 +1,3 @@
-{-# LANGUAGE CPP #-}
-
 module Main(main) where
 
 import           Hermod.Tracing
@@ -118,16 +116,8 @@ setupHermodTracing optTracingConfigFile = do
   prometheusSimpleTr <- mkHermodTracer @TracePrometheusSimple stdTr mempty Nothing ["ReCon"]
   configureTracers configReflection cfg [tr]
   configureTracers configReflection cfg [prometheusSimpleTr]
-  for_ (prometheusSimple cfg) $ \ps -> do
-    let
-
-#if !MIN_VERSION_contra_tracer(0,2,0)
-      t = Tracer (traceWith prometheusSimpleTr)
-#else
-      t = mkTracer (traceWith prometheusSimpleTr)
-#endif
-
-    runPrometheusSimple t ekgStore ps >>= link
+  for_ (prometheusSimple cfg) $ \ps ->
+    runPrometheusSimple prometheusSimpleTr ekgStore ps >>= link
   pure tr
   where
     defaultTraceConfig :: TraceConfig

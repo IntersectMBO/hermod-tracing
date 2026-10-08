@@ -28,6 +28,7 @@ import           UnliftIO.MVar
 
 
 -- | Emit a message into a trace.
+{-# INLINE traceWith #-}
 traceWith :: Monad m => Trace m a -> a -> m ()
 traceWith (Trace tr) a = T.traceWith tr (emptyLoggingContext, Right a)
 

@@ -1,7 +1,7 @@
 cabal-version: 3.0
 
 name:                   hermod-tracing-api
-version:                1.0.0
+version:                1.1.0
 synopsis:               Thin API layer for the hermod-tracing-core tracing system
 description:            Core types (Trace, MetaTrace, LogFormatting) and combinators
                         (traceWith, contramapM, foldTraceM, routingTrace) that form the
@@ -60,10 +60,12 @@ library internal
   hs-source-dirs:     src/internal
   exposed-modules:    Hermod.Tracing.Trace
                       Hermod.Tracing.Trace.Combinators
+                      Hermod.Tracing.Trace.Construct
                       Hermod.Tracing.Types
                       Hermod.Tracing.Types.Annotations
                       Hermod.Tracing.Types.Config
                       Hermod.Tracing.Types.Doc
+                      Hermod.Tracing.Types.ShowT
 
   build-depends:        base >=4.12 && <5
                       , aeson >= 2.1.0.0
@@ -82,8 +84,30 @@ library public
   visibility:         public
   hs-source-dirs:     src/public
   exposed-modules:    Hermod.Tracing.API
+                      Hermod.Tracing.API.ContraTracer
+                      Hermod.Tracing.API.Trace
+                      Hermod.Tracing.API.Tracer
 
   build-depends:        base >=4.12 && <5
                       , hermod-tracing-api:internal
                       , unliftio
                       , unliftio-core
+
+test-suite hermod-tracing-api-test
+  import:             project-config
+  type:               exitcode-stdio-1.0
+  hs-source-dirs:     test
+  main-is:            hermod-tracing-api-test.hs
+  other-modules:      Hermod.Tracing.API.Test.Shapes
+
+  build-depends:        base >=4.12 && <5
+                      , hermod-tracing-api:internal
+                      , hermod-tracing-api:public
+                      , contra-tracer ^>= 0.2.1
+                      , tasty
+                      , tasty-hunit
+                      , transformers
+
+  ghc-options:        -threaded
+                      -rtsopts
+                      "-with-rtsopts=-N"

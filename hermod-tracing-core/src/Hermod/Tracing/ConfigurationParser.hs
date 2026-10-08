@@ -24,6 +24,7 @@ import           Hermod.Tracing.Types               hiding (backends, detail,
 import           Control.Applicative                 ((<|>))
 import           Control.Exception                   (throwIO)
 import qualified Data.Aeson                          as AE
+import qualified Data.Aeson.KeyMap                   as KeyMap
 import           Data.List                           as List (foldl')
 import           Data.Map.Strict                     (Map)
 import qualified Data.Map.Strict                     as Map
@@ -63,8 +64,15 @@ data ConfigRepresentation = ConfigRepresentation {
 
 instance AE.FromJSON ConfigRepresentation where
     parseJSON = withObject "HermodTracing" $ \obj ->
-      parseAsOuter obj <|> parseAsInner obj
+      case (has "TraceOptions" obj, has "HermodTracing" obj || has "Options" obj) of
+        -- only the deprecated layout: report its own errors
+        (True, False) -> parseAsLegacy obj
+        -- as in trace-dispatcher, the deprecated layout takes precedence
+        (True, True)  -> parseAsLegacy obj <|> parseAsOuter obj <|> parseAsInner obj
+        (False, _)    -> parseAsOuter obj <|> parseAsInner obj
       where
+        has = KeyMap.member
+
         -- configuration object has a top-level key -> object value "HermodTracing": {}
         parseAsOuter obj =
           obj .: "HermodTracing" >>= parseAsInner
@@ -78,6 +86,31 @@ instance AE.FromJSON ConfigRepresentation where
             <*> obj .:? "MetricsPrefix"
             <*> obj .:? "PeriodicTracers" .!= Map.empty
             <*> obj .:? "PrometheusSimpleRun"
+
+        -- Deprecated: trace-dispatcher's top-level layout, still used by the
+        -- configurations generated for cardano-node. Read with trace-dispatcher's
+        -- meaning.
+        parseAsLegacy obj =
+          ConfigRepresentation
+            <$> obj .:  "TraceOptions"
+            <*> obj .:? "TraceOptionForwarder"
+            <*> obj .:? "TraceOptionNodeName"
+            <*> obj .:? "TraceOptionMetricsPrefix"
+            <*> (legacyPeriodicTracers
+                  <$> obj .:? "TraceOptionResourceFrequency"
+                  <*> obj .:? "TraceOptionLedgerMetricsFrequency")
+            <*> obj .:? "TracePrometheusSimpleRun"
+
+        -- trace-dispatcher read both as Int; a negative value is read as 0 (off).
+        legacyPeriodicTracers :: Maybe Int -> Maybe Int -> Map Text Word64
+        legacyPeriodicTracers resources ledgerMetrics =
+          Map.fromList $ catMaybes
+            [ (,) "resources"     . nonNegative <$> resources
+            , (,) "ledgerMetrics" . nonNegative <$> ledgerMetrics
+            ]
+
+        nonNegative :: Int -> Word64
+        nonNegative = fromIntegral . max 0
 
 
 instance AE.ToJSON ConfigRepresentation where

@@ -12,13 +12,13 @@ module Hermod.Tracing.Prometheus.TCPServer
 
 import           Hermod.Tracing.Prometheus.Exposition (renderExpositionFromSample)
 import           Hermod.Tracing.Prometheus.NetworkRun
+import           Hermod.Tracing.Trace (traceWith)
 import           Hermod.Tracing.Types
 import           Hermod.Tracing.Utils (runInLoop, showT)
 
 import           Control.Concurrent.Async (Async, async)
 import qualified Control.Exception as E
 import           Control.Monad (join, when)
-import           Control.Tracer
 import           Data.Aeson.Types as AE (Value (String), (.=))
 import           Data.ByteString (ByteString)
 import           Data.ByteString.Builder
@@ -65,16 +65,16 @@ instance LogFormatting TracePrometheusSimple where
 -- | Run a PrometheusSimple server with default DoS protection, and don't emit any traces.
 --   Will retry / restart Prometheus server when an exception occurs, in increasing intervals.
 runPrometheusSimpleSilent :: EKG.Store -> (Bool, Maybe HostName, PortNumber) -> IO (Async ())
-runPrometheusSimpleSilent = runPrometheusSimple nullTracer
+runPrometheusSimpleSilent = runPrometheusSimple mempty
 
 -- | Run a PrometheusSimple server with default DoS protection.
 --   Will retry / restart Prometheus server when an exception occurs, in increasing intervals.
-runPrometheusSimple :: Tracer IO TracePrometheusSimple -> EKG.Store -> (Bool, Maybe HostName, PortNumber) -> IO (Async ())
+runPrometheusSimple :: Trace IO TracePrometheusSimple -> EKG.Store -> (Bool, Maybe HostName, PortNumber) -> IO (Async ())
 runPrometheusSimple = runPrometheusSimpleWith prometheusSimpleNoOverrides
 
 -- | Run a PrometheusSimple server with custom DoS protection parameter overrides.
 --   Will retry / restart Prometheus server when an exception occurs, in increasing intervals.
-runPrometheusSimpleWith :: PrometheusSimpleRun -> Tracer IO TracePrometheusSimple -> EKG.Store -> (Bool, Maybe HostName, PortNumber) -> IO (Async ())
+runPrometheusSimpleWith :: PrometheusSimpleRun -> Trace IO TracePrometheusSimple -> EKG.Store -> (Bool, Maybe HostName, PortNumber) -> IO (Async ())
 runPrometheusSimpleWith PrometheusSimpleRun{..} tr ekgStore (noSuffixes, mHost, portNo) =
     async $ runInLoop fromScratchThrowing traceInterruption 1 60
   where
