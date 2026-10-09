@@ -24,6 +24,7 @@ import           Hermod.Tracing.Test.Unit.Documentation
 import           Hermod.Tracing.Test.Unit.EKG
 import           Hermod.Tracing.Test.Unit.FrequencyLimiting
 import           Hermod.Tracing.Test.Unit.Routing
+import           Hermod.Tracing.Test.Unit.Span
 import           Hermod.Tracing.Test.Unit.Trivial
 
 
@@ -81,6 +82,27 @@ unitTests = testGroup "hermod-tracing-core-unit-tests"
     , testCase "testLimiting" $ do
         _res <- testLimiting
         assertBool "testLimiting" True -- currently not verified
+    , testCase "testSpanHappy" $ do
+        ok <- testSpanHappy
+        assertBool "testSpanHappy" ok
+    , testCase "testSpanSyncException" $ do
+        ok <- testSpanSyncException
+        assertBool "testSpanSyncException" ok
+    , testCase "testSpanAsyncFromOtherThread" $ do
+        ok <- testSpanAsyncFromOtherThread
+        assertBool "testSpanAsyncFromOtherThread" ok
+    , testCase "testSpanAndMetric" $ do
+        ok <- testSpanAndMetric
+        assertBool "testSpanAndMetric" ok
+    , testCase "testSpanNested" $ do
+        ok <- testSpanNested
+        assertBool "testSpanNested" ok
+    , testCase "testSpanForceCatchesLazyCrash" $ do
+        ok <- testSpanForceCatchesLazyCrash
+        assertBool "testSpanForceCatchesLazyCrash" ok
+    , testCase "testSpanLazyLetsCrashEscape" $ do
+        ok <- testSpanLazyLetsCrashEscape
+        assertBool "testSpanLazyLetsCrashEscape" ok
     ]
 
 localTests :: TestTree

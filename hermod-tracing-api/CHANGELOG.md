@@ -1,5 +1,13 @@
 # Revision history for hermod-tracing-api
 
+## 1.1.0 -- October 2026
+
+* New module `Hermod.Tracing.Span` in the `public` sublibrary. Provides
+  `withSpan` / `withSpanLazy` / `withSpanAndMetric` /
+  `withSpanAndMetricLazy` and the `SpanId` / `SpanTrace` / `SpanError`
+  types for Loki-friendly begin/end span tracing with uniform shape on
+  all exit paths (success, sync exception, async exception).
+
 ## 1.0.0 -- July 2026
 
 * Initial release.  Core types and combinators extracted from `trace-dispatcher`
