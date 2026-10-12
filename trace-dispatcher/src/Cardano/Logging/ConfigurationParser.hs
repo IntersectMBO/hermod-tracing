@@ -77,7 +77,7 @@ instance AE.FromJSON ConfigRepresentation where
 
         -- configuration object has a top-level key -> object value "HermodTracing": {}
         parseAsOuter obj =
-          obj .: "HermodTracing" >>= parseAsInner
+          obj .: "HermodTracing" >>= \o -> (parseAsInner o <|> parseAsLegacy o) 
 
         -- configuration object uses all HermodTracing key/values top-level
         parseAsInner obj =

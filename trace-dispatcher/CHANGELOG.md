@@ -1,6 +1,10 @@
 # Revision history for trace-dispatcher
 
-## 2.31.1 -- October 2026
+## 2.13.2 -- October 2026
+
+* Support parsing Node legacy config inlined into `HermodTracing` object.
+
+## 2.13.1 -- October 2026
 
 * Expose label sets as `# TYPE ... gauge` for full conformance with Prometheus text exposition format.
 
