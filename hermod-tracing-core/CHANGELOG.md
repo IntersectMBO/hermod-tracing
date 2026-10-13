@@ -21,8 +21,9 @@
   Every configuration that 1.0.0 accepted is read as before.
 * By convention, `PeriodicTracers` names are PascalCase, like namespaces; the
   example configuration `doc/config.json` and the docs use `Resources`.
-* The deprecated environment variable `TRACE_DISPATCHER_LOGGING_HOSTNAME` is
-  read when `HERMOD_TRACING_LOGGING_HOSTNAME` is not set.
+* The environment variable `TRACE_DISPATCHER_LOGGING_HOSTNAME` is read again
+  when `HERMOD_TRACING_LOGGING_HOSTNAME` is not set. Deprecated; will be
+  removed together with trace-dispatcher's configuration layout.
 
 ## 1.0.0 -- July 2026
 

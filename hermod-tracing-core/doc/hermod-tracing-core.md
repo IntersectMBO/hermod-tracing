@@ -311,6 +311,12 @@ and `TraceOptionResourceFrequency` / `TraceOptionLedgerMetricsFrequency` → the
 `Resources` / `LedgerMetrics` (a negative frequency fails to parse). Where both layouts are given, the current one
 is read. This layout will be removed once those configurations have moved to the current one.
 
+The host name in formatted and forwarded messages is the system host name, without its domain. The environment
+variable `HERMOD_TRACING_LOGGING_HOSTNAME` overrides it, e.g. to tell apart several instances running on the same
+host; it is set even when empty. The variable is read once, when the application emits its first message, so set it
+before that. *Deprecated*: `TRACE_DISPATCHER_LOGGING_HOSTNAME` is read when `HERMOD_TRACING_LOGGING_HOSTNAME` is not
+set; it will be removed together with trace-dispatcher's configuration layout.
+
 Backends can be a combination of `Forwarder`, `EKGBackend`, `PrometheusSimple [suffix|nosuffix] [bindhost] <port>` and
 one of `Stdout MachineFormat`, `Stdout HumanFormatColoured` and `Stdout HumanFormatUncoloured`.
 
