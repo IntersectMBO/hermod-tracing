@@ -24,7 +24,6 @@ import           Hermod.Tracing.Types               hiding (backends, detail,
 import           Control.Applicative                 ((<|>))
 import           Control.Exception                   (throwIO)
 import qualified Data.Aeson                          as AE
-import qualified Data.Aeson.KeyMap                   as KeyMap
 import           Data.List                           as List (foldl')
 import           Data.Map.Strict                     (Map)
 import qualified Data.Map.Strict                     as Map
@@ -62,56 +61,67 @@ data ConfigRepresentation = ConfigRepresentation {
   }
   deriving Show
 
+-- | A configuration file read by the application: the tracing configuration is
+--   either the object under "HermodTracing" or the file's top-level object.
+--   The current layout in either place takes precedence over the deprecated one.
 instance AE.FromJSON ConfigRepresentation where
     parseJSON = withObject "HermodTracing" $ \obj ->
-      case (has "TraceOptions" obj, has "HermodTracing" obj || has "Options" obj) of
-        -- only the deprecated layout: report its own errors
-        (True, False) -> parseAsLegacy obj
-        -- as in trace-dispatcher, the deprecated layout takes precedence
-        (True, True)  -> parseAsLegacy obj <|> parseAsOuter obj <|> parseAsInner obj
-        (False, _)    -> parseAsOuter obj <|> parseAsInner obj
-      where
-        has = KeyMap.member
+      parseAsOuter obj <|> parseAsInner obj <|> parseAsOuterLegacy obj
 
-        -- configuration object has a top-level key -> object value "HermodTracing": {}
-        parseAsOuter obj =
-          obj .: "HermodTracing" >>= parseAsInner
+-- | A file referenced by a "HermodTracing" file path. Its top-level object takes
+--   the place of the "HermodTracing" object, so it may also be in the deprecated
+--   layout.
+newtype ReferencedConfig = ReferencedConfig ConfigRepresentation
 
-        -- configuration object uses all HermodTracing key/values top-level
-        parseAsInner obj =
-          ConfigRepresentation
-            <$> obj .:  "Options"
-            <*> obj .:? "Forwarder"
-            <*> obj .:? "ApplicationName"
-            <*> obj .:? "MetricsPrefix"
-            <*> obj .:? "PeriodicTracers" .!= Map.empty
-            <*> obj .:? "PrometheusSimpleRun"
+instance AE.FromJSON ReferencedConfig where
+    parseJSON = withObject "HermodTracing" $ \obj ->
+      ReferencedConfig <$>
+        (parseAsOuter obj <|> parseAsInner obj <|> parseAsOuterLegacy obj <|> parseAsLegacy obj)
 
-        -- Deprecated: trace-dispatcher's top-level layout, still used by the
-        -- configurations generated for cardano-node. Read with trace-dispatcher's
-        -- meaning.
-        parseAsLegacy obj =
-          ConfigRepresentation
-            <$> obj .:  "TraceOptions"
-            <*> obj .:? "TraceOptionForwarder"
-            <*> obj .:? "TraceOptionNodeName"
-            <*> obj .:? "TraceOptionMetricsPrefix"
-            <*> (legacyPeriodicTracers
-                  <$> obj .:? "TraceOptionResourceFrequency"
-                  <*> obj .:? "TraceOptionLedgerMetricsFrequency")
-            <*> obj .:? "TracePrometheusSimpleRun"
+-- | The configuration object has a top-level key "HermodTracing" with an object
+--   value in the current layout.
+parseAsOuter :: AE.Object -> Parser ConfigRepresentation
+parseAsOuter obj = obj .: "HermodTracing" >>= parseAsInner
 
-        -- trace-dispatcher read both as Int; a negative value is read as 0 (off).
-        legacyPeriodicTracers :: Maybe Int -> Maybe Int -> Map Text Word64
-        legacyPeriodicTracers resources ledgerMetrics =
-          Map.fromList $ catMaybes
-            [ (,) "resources"     . nonNegative <$> resources
-            , (,) "ledgerMetrics" . nonNegative <$> ledgerMetrics
-            ]
+-- | The configuration object has a top-level key "HermodTracing" with an object
+--   value in the deprecated layout.
+parseAsOuterLegacy :: AE.Object -> Parser ConfigRepresentation
+parseAsOuterLegacy obj = obj .: "HermodTracing" >>= parseAsLegacy
 
-        nonNegative :: Int -> Word64
-        nonNegative = fromIntegral . max 0
+-- | The current layout: all HermodTracing keys in one object.
+parseAsInner :: AE.Object -> Parser ConfigRepresentation
+parseAsInner obj =
+  ConfigRepresentation
+    <$> obj .:  "Options"
+    <*> obj .:? "Forwarder"
+    <*> obj .:? "ApplicationName"
+    <*> obj .:? "MetricsPrefix"
+    <*> obj .:? "PeriodicTracers" .!= Map.empty
+    <*> obj .:? "PrometheusSimpleRun"
 
+-- | Deprecated: trace-dispatcher's layout, still used by the configurations
+--   generated for cardano-node. Accepted only where the current layout's object
+--   would be: inside "HermodTracing", or in a file referenced from there.
+--   To be removed once those configurations have moved to the current layout.
+parseAsLegacy :: AE.Object -> Parser ConfigRepresentation
+parseAsLegacy obj =
+  ConfigRepresentation
+    <$> obj .:  "TraceOptions"
+    <*> obj .:? "TraceOptionForwarder"
+    <*> obj .:? "TraceOptionNodeName"
+    <*> obj .:? "TraceOptionMetricsPrefix"
+    <*> (legacyPeriodicTracers
+          <$> obj .:? "TraceOptionResourceFrequency"
+          <*> obj .:? "TraceOptionLedgerMetricsFrequency")
+    <*> obj .:? "TracePrometheusSimpleRun"
+  where
+    -- A negative frequency fails to parse.
+    legacyPeriodicTracers :: Maybe Word64 -> Maybe Word64 -> Map Text Word64
+    legacyPeriodicTracers resources ledgerMetrics =
+      Map.fromList $ catMaybes
+        [ (,) "Resources"     <$> resources
+        , (,) "LedgerMetrics" <$> ledgerMetrics
+        ]
 
 instance AE.ToJSON ConfigRepresentation where
   toJSON ConfigRepresentation{..} = object $
@@ -225,7 +235,7 @@ readConfigurationInt ::
   -> ConfigSource
   -> IO TraceConfig
 readConfigurationInt modifyConf = \case
-  FromFile fp         -> go 4 fp                -- allow 4 file redirects
+  FromFile fp         -> go False 4 fp          -- allow 4 file redirects
   FromStrictBytes bs  -> handleResult $ decodeEither' bs
   FromLazyBytes bl    -> handleResult $ decodeEither' $ BL.toStrict bl
   FromJSONObject obj  -> handleResult $ parseObject obj
@@ -241,14 +251,17 @@ readConfigurationInt modifyConf = \case
       AE.Success a -> Right a
       AE.Error e   -> Left $ AesonException e
 
-    go :: Int -> FilePath -> IO TraceConfig
-    go redirects fp = do
+    -- 'referenced': the file was reached through a "HermodTracing" file path
+    go :: Bool -> Int -> FilePath -> IO TraceConfig
+    go referenced redirects fp = do
       external :: Either ParseException ExternalFile <- decodeFileEither fp
       case external of
         Right (ExternalFile fp')
-          | redirects > 0 -> go (redirects - 1) (takeDirectory fp </> fp')
+          | redirects > 0 -> go True (redirects - 1) (takeDirectory fp </> fp')
           | otherwise     -> error "hermod.readConfigurationInt: too many redirects"
-        Left{} -> decodeFileEither fp >>= handleResult
+        Left{}
+          | referenced -> decodeFileEither fp >>= handleResult . fmap (\(ReferencedConfig c) -> c)
+          | otherwise  -> decodeFileEither fp >>= handleResult
 
 -- right biased merge
 mergeWithDefault :: TraceConfig -> TraceConfig -> TraceConfig

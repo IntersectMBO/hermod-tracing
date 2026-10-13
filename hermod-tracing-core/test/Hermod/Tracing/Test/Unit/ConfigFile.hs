@@ -1,20 +1,27 @@
 module Hermod.Tracing.Test.Unit.ConfigFile (
     testConfigFileParsing
   , testConfigFileParsingResult
-  , testLegacyConfigParsing
+  , testNestedLegacyConfigParsing
   , testLegacyConfigParsingResult
+  , testTopLevelLegacyConfigParsing
+  , testNegativeFrequencyParsing
   , testLegacyConfigFileParsing
   , testLegacyConfigFileParsingResult
+  , testReferencedLegacyFileDirectly
   , testBothLayoutsParsing
-  , forwarderQueueSizeCases
+  , testNestedBothLayoutsParsing
+  , testTopLevelCurrentNestedLegacyParsing
+  , assertParseFailure
 ) where
 
 import           Hermod.Tracing
 
-import qualified Data.Aeson as AE
+import           Control.Exception (try)
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.Map.Strict as Map
 import           Data.Text (Text)
+import           Data.Yaml (ParseException)
+import           Test.Tasty.HUnit (Assertion, assertFailure)
 
 import           Paths_hermod_tracing_core (getDataFileName)
 
@@ -58,31 +65,40 @@ testConfigFileParsingResult = TraceConfig
   , tcForwarder = Nothing
   , tcApplicationName = Nothing
   , tcMetricsPrefix = Nothing
-  , tcPeriodicTracers = Map.fromList [("resources", 5000)]
+  , tcPeriodicTracers = Map.fromList [("Resources", 5000)]
   , tcPrometheusSimpleRun = Nothing
   }
 
--- | Parse a configuration in trace-dispatcher's deprecated top-level layout,
---   shaped like the tracing part of cardano-node's shipped mainnet configuration.
-testLegacyConfigParsing :: IO TraceConfig
-testLegacyConfigParsing = readConfiguration $ FromStrictBytes $ BS.unlines
-  [ "{ \"Protocol\": \"Cardano\""
-  , ", \"UseTraceDispatcher\": true"
-  , ", \"TraceOptionMetricsPrefix\": \"cardano.node.metrics.\""
+-- | The tracing part of cardano-node's shipped mainnet configuration, in
+--   trace-dispatcher's deprecated layout: JSON object members, comma-separated.
+legacyTracingMembers :: [BS.ByteString]
+legacyTracingMembers =
+  [ "  \"TraceOptionMetricsPrefix\": \"cardano.node.metrics.\""
   , ", \"TraceOptionNodeName\": \"node-1\""
   , ", \"TraceOptionResourceFrequency\": 1000"
   , ", \"TraceOptionLedgerMetricsFrequency\": 0"
   , ", \"TracePrometheusSimpleRun\": { \"connTimeout\": 30 }"
-  , ", \"TraceOptionForwarder\": { \"connQueueSize\": 64, \"disconnQueueSize\": 128 }"
+  , ", \"TraceOptionForwarder\": { \"queueSize\": 128 }"
   , ", \"TraceOptions\":"
   , "    { \"\": { \"severity\": \"Notice\", \"detail\": \"DNormal\""
   , "          , \"backends\": [\"Stdout MachineFormat\", \"EKGBackend\", \"Forwarder\"] }"
   , "    , \"ChainDB\": { \"severity\": \"Info\" }"
   , "    }"
+  ]
+
+-- | A configuration in trace-dispatcher's deprecated layout inside a
+--   "HermodTracing" object.
+testNestedLegacyConfigParsing :: IO TraceConfig
+testNestedLegacyConfigParsing = readConfiguration $ FromStrictBytes $ BS.unlines $
+  [ "{ \"Protocol\": \"Cardano\""
+  , ", \"HermodTracing\":"
+  , "  {"
+  ] ++ legacyTracingMembers ++
+  [ "  }"
   , "}"
   ]
 
--- | What trace-dispatcher read from the configuration in 'testLegacyConfigParsing'.
+-- | What 'testNestedLegacyConfigParsing' should yield.
 testLegacyConfigParsingResult :: TraceConfig
 testLegacyConfigParsingResult = TraceConfig
   { tcOptions = Map.fromList
@@ -95,16 +111,33 @@ testLegacyConfigParsingResult = TraceConfig
   , tcForwarder = Just defaultForwarder { tofQueueSize = 128 }
   , tcApplicationName = Just "node-1"
   , tcMetricsPrefix = Just "cardano.node.metrics."
-  , tcPeriodicTracers = Map.fromList [("ledgerMetrics", 0), ("resources", 1000)]
+  , tcPeriodicTracers = Map.fromList [("LedgerMetrics", 0), ("Resources", 1000)]
   , tcPrometheusSimpleRun = Just prometheusSimpleNoOverrides { connTimeout = Just 30 }
   }
 
--- | Read @test/data/legacy-config.yaml@ the way an application reads its
---   configuration file: YAML, the "_root_" alias, an empty "HermodTracing" key
---   next to "TraceOptions", and a negative frequency.
+-- | The deprecated layout at the top level of a configuration: not accepted.
+testTopLevelLegacyConfigParsing :: IO TraceConfig
+testTopLevelLegacyConfigParsing = readConfiguration $ FromStrictBytes $ BS.unlines $
+  [ "{ \"Protocol\": \"Cardano\""
+  , ","
+  ] ++ legacyTracingMembers ++
+  [ "}" ]
+
+-- | A negative frequency in the deprecated layout: not accepted.
+testNegativeFrequencyParsing :: IO TraceConfig
+testNegativeFrequencyParsing = readConfiguration $ FromStrictBytes $ BS.unlines
+  [ "{ \"HermodTracing\":"
+  , "    { \"TraceOptions\": { \"\": { \"severity\": \"Notice\" } }"
+  , "    , \"TraceOptionResourceFrequency\": -5 }"
+  , "}"
+  ]
+
+-- | Read @test/data/legacy-node-config.yaml@, whose "HermodTracing" refers to
+--   @legacy-config.yaml@, a YAML file in the deprecated layout using the
+--   "_root_" alias.
 testLegacyConfigFileParsing :: IO TraceConfig
 testLegacyConfigFileParsing = do
-  configPath <- getDataFileName "test/data/legacy-config.yaml"
+  configPath <- getDataFileName "test/data/legacy-node-config.yaml"
   readConfiguration (FromFile configPath)
 
 -- | What 'testLegacyConfigFileParsing' should yield.
@@ -120,39 +153,64 @@ testLegacyConfigFileParsingResult = TraceConfig
   , tcForwarder = Just defaultForwarder { tofQueueSize = 128, tofMaxReconnectDelay = 30 }
   , tcApplicationName = Nothing
   , tcMetricsPrefix = Just "cardano.node.metrics."
-  , tcPeriodicTracers = Map.fromList [("resources", 0)]
+  , tcPeriodicTracers = Map.fromList [("Resources", 1000)]
   , tcPrometheusSimpleRun = Nothing
   }
 
--- | A file giving both the deprecated and a current layout is read in the
---   deprecated one, as trace-dispatcher did; returns the application name and
---   the root severity found.
+-- | @test/data/legacy-config.yaml@ read as the application's configuration
+--   file instead of through a "HermodTracing" reference: the deprecated layout
+--   is then at the top level, and not accepted.
+testReferencedLegacyFileDirectly :: IO TraceConfig
+testReferencedLegacyFileDirectly = do
+  configPath <- getDataFileName "test/data/legacy-config.yaml"
+  readConfiguration (FromFile configPath)
+
+-- | The deprecated layout at the top level and a current one in "HermodTracing":
+--   the current one is read.
 testBothLayoutsParsing :: IO (Maybe Text, [ConfigOption])
-testBothLayoutsParsing = do
-  tc <- readConfiguration $ FromStrictBytes $ BS.unlines
-    [ "{ \"HermodTracing\":"
-    , "    { \"Options\": { \"\": { \"severity\": \"Info\" } }"
-    , "    , \"ApplicationName\": \"current\" }"
-    , ", \"TraceOptions\": { \"\": { \"severity\": \"Debug\" } }"
-    , ", \"TraceOptionNodeName\": \"deprecated\""
-    , "}"
-    ]
+testBothLayoutsParsing = nameAndRootSeverity
+  [ "{ \"HermodTracing\":"
+  , "    { \"Options\": { \"\": { \"severity\": \"Info\" } }"
+  , "    , \"ApplicationName\": \"current\" }"
+  , ", \"TraceOptions\": { \"\": { \"severity\": \"Debug\" } }"
+  , ", \"TraceOptionNodeName\": \"deprecated\""
+  , "}"
+  ]
+
+-- | Both layouts inside "HermodTracing": the current one is read.
+testNestedBothLayoutsParsing :: IO (Maybe Text, [ConfigOption])
+testNestedBothLayoutsParsing = nameAndRootSeverity
+  [ "{ \"HermodTracing\":"
+  , "    { \"Options\": { \"\": { \"severity\": \"Info\" } }"
+  , "    , \"ApplicationName\": \"current\""
+  , "    , \"TraceOptions\": { \"\": { \"severity\": \"Debug\" } }"
+  , "    , \"TraceOptionNodeName\": \"deprecated\" }"
+  , "}"
+  ]
+
+-- | The current layout at the top level and the deprecated one in "HermodTracing":
+--   the current one is read.
+testTopLevelCurrentNestedLegacyParsing :: IO (Maybe Text, [ConfigOption])
+testTopLevelCurrentNestedLegacyParsing = nameAndRootSeverity
+  [ "{ \"Options\": { \"\": { \"severity\": \"Info\" } }"
+  , ", \"ApplicationName\": \"current\""
+  , ", \"HermodTracing\":"
+  , "    { \"TraceOptions\": { \"\": { \"severity\": \"Debug\" } }"
+  , "    , \"TraceOptionNodeName\": \"deprecated\" }"
+  , "}"
+  ]
+
+-- | The application name and the root severity a configuration yields.
+nameAndRootSeverity :: [BS.ByteString] -> IO (Maybe Text, [ConfigOption])
+nameAndRootSeverity src = do
+  tc <- readConfiguration $ FromStrictBytes $ BS.unlines src
   pure ( tcApplicationName tc
        , [ o | o@ConfSeverity{} <- Map.findWithDefault [] [] (tcOptions tc) ] )
 
--- | Forwarder options and the queue size they yield: "queueSize" wins; else the
---   deprecated "connQueueSize" / "disconnQueueSize" give the larger of the two
---   (defaulting to 128 / 192), as in trace-dispatcher; else the default.
-forwarderQueueSizeCases :: [(String, Either String Word, Word)]
-forwarderQueueSizeCases =
-  [ (src, tofQueueSize <$> AE.eitherDecodeStrict (BS.pack src), expected)
-  | (src, expected) <-
-      [ ("{}", 192)
-      , ("{\"queueSize\": 50, \"connQueueSize\": 1000}", 50)
-      , ("{\"connQueueSize\": 64, \"disconnQueueSize\": 128}", 128)
-      , ("{\"connQueueSize\": 64}", 192)
-      , ("{\"connQueueSize\": 1000}", 1000)
-      , ("{\"disconnQueueSize\": 100}", 128)
-      , ("{\"disconnQueueSize\": 1000}", 1000)
-      ]
-  ]
+-- | Reading the configuration fails with a parse error.
+assertParseFailure :: IO TraceConfig -> Assertion
+assertParseFailure act = do
+  res <- try act :: IO (Either ParseException TraceConfig)
+  case res of
+    Left _   -> pure ()
+    Right tc -> assertFailure $ "expected a parse error, got " ++ show tc

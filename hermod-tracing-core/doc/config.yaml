@@ -62,4 +62,4 @@ HermodTracing:
       maxFrequency: 2.0
 
   PeriodicTracers:
-    resources: 5000
+    Resources: 5000

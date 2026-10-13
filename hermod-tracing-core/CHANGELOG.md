@@ -8,15 +8,19 @@
   `Hermod.Tracing` and `Hermod.Tracing.API` is unambiguous.
 * Depends on `hermod-tracing-api ^>= 1.1` (both sublibraries); previously
   unbounded.
-* trace-dispatcher's top-level configuration layout (`TraceOptions`,
+* Deprecated: trace-dispatcher's configuration layout (`TraceOptions`,
   `TraceOptionForwarder`, `TraceOptionNodeName`, `TraceOptionMetricsPrefix`,
   `TraceOptionResourceFrequency`, `TraceOptionLedgerMetricsFrequency`,
-  `TracePrometheusSimpleRun`) is read again, with trace-dispatcher's meaning
-  and precedence: whenever a top-level `TraceOptions` is present it wins over a
-  `HermodTracing` object or top-level `Options`. The two frequencies become the
-  `PeriodicTracers` entries `resources` and `ledgerMetrics` (a negative value is
-  read as 0). Deprecated: this keeps existing cardano-node configurations
-  working, and will be removed once they have migrated.
+  `TracePrometheusSimpleRun`) is accepted again, but only in place of the
+  `HermodTracing` object: inside it, or at the top of a file that
+  `HermodTracing` refers to. The current layout takes precedence over it, and
+  it is not accepted at the top level of a configuration file. The two
+  frequencies become the `PeriodicTracers` entries `Resources` and
+  `LedgerMetrics`; a negative frequency fails to parse. This lets cardano-node
+  configurations migrate in steps, and will be removed once they have.
+  Every configuration that 1.0.0 accepted is read as before.
+* By convention, `PeriodicTracers` names are PascalCase, like namespaces; the
+  example configuration `doc/config.json` and the docs use `Resources`.
 * The deprecated environment variable `TRACE_DISPATCHER_LOGGING_HOSTNAME` is
   read when `HERMOD_TRACING_LOGGING_HOSTNAME` is not set.
 

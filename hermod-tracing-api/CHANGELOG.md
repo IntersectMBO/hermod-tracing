@@ -5,9 +5,7 @@
 Additive release: everything a *library* needs to depend on `hermod-tracing-api`
 instead of `contra-tracer`. All additions live in new modules; nothing new is
 reachable through `Hermod.Tracing.Types` or `Hermod.Tracing.Trace`, so
-`hermod-tracing-core-1.0.0` keeps building against this release. The one
-behaviour change is that `TraceOptionForwarder`'s JSON parser reads the
-deprecated queue-size keys again (below).
+`hermod-tracing-core-1.0.0` keeps building against this release.
 
 * New `:internal` module `Hermod.Tracing.Trace.Construct`: `mkTrace`
   (build a trace from a callback; a terminal sink that drops control
@@ -42,10 +40,6 @@ deprecated queue-size keys again (below).
   `Tracer`; kept separate so remaining bridges are greppable.
 * `traceWith` is now `INLINE` (as in `contra-tracer`), so a squelching trace
   does not allocate the message envelope.
-* `TraceOptionForwarder`'s JSON parser again reads the deprecated
-  `connQueueSize` / `disconnQueueSize` when `queueSize` is absent: the larger
-  of the two is used, each defaulting to its old value (128 / 192), as
-  trace-dispatcher did. Existing configurations keep their queue size.
 * Haddock: removed the stale mention of `ForwarderAddr`.
 
 ## 1.0.0 -- July 2026

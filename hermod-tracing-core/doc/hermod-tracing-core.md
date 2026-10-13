@@ -300,15 +300,16 @@ The top-level `HermodTracing` object also accepts three optional global keys:
 - `MetricsPrefix` — a string prepended to all metric names.
 - `PeriodicTracers` — a map from arbitrary tracer identifiers to cardinal numbers. The numbers are interpreted by the host application (as millisecond delays, slot counts, or any other application-defined unit). A value of `0` signals that the named tracer should not run; an absent key leaves the host free to apply its own default.
 
-*Deprecated*: a configuration with a top-level `TraceOptions` is read in trace-dispatcher's layout, as the
-configurations generated for cardano-node still use it: `TraceOptions` → `Options`, `TraceOptionForwarder` →
-`Forwarder`, `TraceOptionNodeName` → `ApplicationName`, `TraceOptionMetricsPrefix` → `MetricsPrefix`,
-`TracePrometheusSimpleRun` → `PrometheusSimpleRun`, and `TraceOptionResourceFrequency` /
-`TraceOptionLedgerMetricsFrequency` → the `PeriodicTracers` entries `resources` / `ledgerMetrics` (a negative value
-is read as 0). As in trace-dispatcher, this layout takes precedence over a `HermodTracing` object or top-level
-`Options` in the same file, so remove the `TraceOption*` keys when moving to the current layout. Forwarder options
-without `queueSize` still honour the old `connQueueSize` / `disconnQueueSize` (the larger of the two). This layout
-will be removed once those configurations have moved to the current one.
+Instead of an object, `HermodTracing` may give the path of a file (relative to the configuration file referring to
+it); the top-level object of that file then takes the place of the `HermodTracing` object.
+
+*Deprecated*: trace-dispatcher's layout, which the configurations generated for cardano-node still use, is accepted
+in place of the `HermodTracing` object, i.e. inside it or at the top of a file it refers to, but not at the top level
+of a configuration file: `TraceOptions` → `Options`, `TraceOptionForwarder` → `Forwarder`, `TraceOptionNodeName` →
+`ApplicationName`, `TraceOptionMetricsPrefix` → `MetricsPrefix`, `TracePrometheusSimpleRun` → `PrometheusSimpleRun`,
+and `TraceOptionResourceFrequency` / `TraceOptionLedgerMetricsFrequency` → the `PeriodicTracers` entries
+`Resources` / `LedgerMetrics` (a negative frequency fails to parse). Where both layouts are given, the current one
+is read. This layout will be removed once those configurations have moved to the current one.
 
 Backends can be a combination of `Forwarder`, `EKGBackend`, `PrometheusSimple [suffix|nosuffix] [bindhost] <port>` and
 one of `Stdout MachineFormat`, `Stdout HumanFormatColoured` and `Stdout HumanFormatUncoloured`.
@@ -351,7 +352,7 @@ HermodTracing:
 
   # Named periodic tracers: host-interpreted cardinal numbers (0 = do not run)
   PeriodicTracers:
-    heartbeat: 5000
+    Heartbeat: 5000
 ```
 
 The same in JSON looks like this:
@@ -383,7 +384,7 @@ The same in JSON looks like this:
     },
     "MetricsPrefix": "my.application.metrics.",
     "PeriodicTracers": {
-      "resources": 5000
+      "Resources": 5000
     }
   }
 }

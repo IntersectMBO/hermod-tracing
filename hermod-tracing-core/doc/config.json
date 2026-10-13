@@ -60,7 +60,7 @@
       }
     },
     "PeriodicTracers": {
-      "resources": 5000
+      "Resources": 5000
     }
   }
 }

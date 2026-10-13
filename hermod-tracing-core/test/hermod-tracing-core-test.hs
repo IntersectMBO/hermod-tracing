@@ -68,24 +68,37 @@ unitTests = testGroup "hermod-tracing-core-unit-tests"
         assertEqual "testConfigFileParsing"
             (show testConfigFileParsingResult)
             (show res)
-    , testCase "testLegacyConfigParsing" $ do
-        res <- testLegacyConfigParsing
-        assertEqual "testLegacyConfigParsing"
+    , testCase "testNestedLegacyConfigParsing" $ do
+        res <- testNestedLegacyConfigParsing
+        assertEqual "testNestedLegacyConfigParsing"
             (show testLegacyConfigParsingResult)
             (show res)
+    , testCase "testTopLevelLegacyConfigParsing" $
+        assertParseFailure testTopLevelLegacyConfigParsing
+    , testCase "testNegativeFrequencyParsing" $
+        assertParseFailure testNegativeFrequencyParsing
     , testCase "testLegacyConfigFileParsing" $ do
         res <- testLegacyConfigFileParsing
         assertEqual "testLegacyConfigFileParsing"
             (show testLegacyConfigFileParsingResult)
             (show res)
+    , testCase "testReferencedLegacyFileDirectly" $
+        assertParseFailure testReferencedLegacyFileDirectly
     , testCase "testBothLayoutsParsing" $ do
         res <- testBothLayoutsParsing
         assertEqual "testBothLayoutsParsing"
-            (Just "deprecated", [ConfSeverity (SeverityF (Just Debug))])
+            (Just "current", [ConfSeverity (SeverityF (Just Info))])
             res
-    , testCase "testForwarderQueueSize" $
-        mapM_ (\(src, actual, expected) -> assertEqual src (Right expected) actual)
-              forwarderQueueSizeCases
+    , testCase "testNestedBothLayoutsParsing" $ do
+        res <- testNestedBothLayoutsParsing
+        assertEqual "testNestedBothLayoutsParsing"
+            (Just "current", [ConfSeverity (SeverityF (Just Info))])
+            res
+    , testCase "testTopLevelCurrentNestedLegacyParsing" $ do
+        res <- testTopLevelCurrentNestedLegacyParsing
+        assertEqual "testTopLevelCurrentNestedLegacyParsing"
+            (Just "current", [ConfSeverity (SeverityF (Just Info))])
+            res
     , testCase "testDocGeneration" $ do
         actual <- docTracers
         expected <- readFile "test/data/docGeneration.md"
