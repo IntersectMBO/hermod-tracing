@@ -136,9 +136,8 @@ testNegativeFrequencyParsing = readConfiguration $ FromStrictBytes $ BS.unlines
 --   @legacy-config.yaml@, a YAML file in the deprecated layout using the
 --   "_root_" alias.
 testLegacyConfigFileParsing :: IO TraceConfig
-testLegacyConfigFileParsing = do
-  configPath <- getDataFileName "test/data/legacy-node-config.yaml"
-  readConfiguration (FromFile configPath)
+testLegacyConfigFileParsing =
+  readConfiguration (FromFile "test/data/legacy-node-config.yaml")
 
 -- | What 'testLegacyConfigFileParsing' should yield.
 testLegacyConfigFileParsingResult :: TraceConfig
@@ -162,8 +161,11 @@ testLegacyConfigFileParsingResult = TraceConfig
 --   is then at the top level, and not accepted.
 testReferencedLegacyFileDirectly :: IO TraceConfig
 testReferencedLegacyFileDirectly = do
-  configPath <- getDataFileName "test/data/legacy-config.yaml"
+  -- a missing file is a parse error, too: make sure the fixture is there
+  _ <- BS.readFile configPath
   readConfiguration (FromFile configPath)
+  where
+    configPath = "test/data/legacy-config.yaml"
 
 -- | The deprecated layout at the top level and a current one in "HermodTracing":
 --   the current one is read.

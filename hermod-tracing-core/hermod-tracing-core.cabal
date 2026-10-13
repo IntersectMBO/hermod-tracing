@@ -20,7 +20,9 @@ license-files:          LICENSE
 extra-doc-files:        CHANGELOG.md
                         README.md
                         doc/hermod-tracing-core.md
+                        doc/config.yaml
 data-files:             doc/config.json
+extra-source-files:     test/data/docGeneration.md
                         test/data/legacy-config.yaml
                         test/data/legacy-node-config.yaml
 
