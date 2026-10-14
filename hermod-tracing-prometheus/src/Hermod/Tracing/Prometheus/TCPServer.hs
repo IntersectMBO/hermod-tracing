@@ -13,6 +13,7 @@ module Hermod.Tracing.Prometheus.TCPServer
 import           Hermod.Tracing.Prometheus.Exposition (renderExpositionFromSample)
 import           Hermod.Tracing.Prometheus.NetworkRun
 import           Hermod.Tracing.Trace (traceWith)
+import           Hermod.Tracing.Trace.Construct (nullTrace)
 import           Hermod.Tracing.Types
 import           Hermod.Tracing.Utils (runInLoop, showT)
 
@@ -65,7 +66,7 @@ instance LogFormatting TracePrometheusSimple where
 -- | Run a PrometheusSimple server with default DoS protection, and don't emit any traces.
 --   Will retry / restart Prometheus server when an exception occurs, in increasing intervals.
 runPrometheusSimpleSilent :: EKG.Store -> (Bool, Maybe HostName, PortNumber) -> IO (Async ())
-runPrometheusSimpleSilent = runPrometheusSimple mempty
+runPrometheusSimpleSilent = runPrometheusSimple nullTrace
 
 -- | Run a PrometheusSimple server with default DoS protection.
 --   Will retry / restart Prometheus server when an exception occurs, in increasing intervals.
