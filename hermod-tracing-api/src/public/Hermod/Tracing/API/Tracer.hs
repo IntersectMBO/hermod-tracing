@@ -18,7 +18,8 @@
 --   unchanged: 'mkTracer' builds a terminal sink that drops control messages.
 --
 --   Do not import this module and "Hermod.Tracing.API" unqualified into the
---   same module: 'contramapM' takes its arguments in the opposite order.
+--   same module: 'contramapM' is the same operation in both, but defined with
+--   the opposite argument order here (function first, as in @contra-tracer@).
 module Hermod.Tracing.API.Tracer (
     Tracer
   , traceWith
@@ -60,7 +61,10 @@ natTracer :: (forall x. m x -> n x) -> Tracer m a -> Tracer n a
 natTracer = natTrace
 
 -- | Contravariant transformation with a Kleisli arrow, function first, as in
---   @contra-tracer@.  The effect is only run when a downstream trace emits.
+--   @contra-tracer@.  This is 'premapM' under @contra-tracer@'s name, and the
+--   same operation as 'Hermod.Tracing.API.contramapM' (which takes the trace
+--   first): the effect is run only when a downstream trace emits, never over
+--   'nullTracer'; control messages pass through unchanged.
 {-# INLINE contramapM #-}
 contramapM :: Monad m => (a -> m b) -> Tracer m b -> Tracer m a
 contramapM = premapM

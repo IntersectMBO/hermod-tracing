@@ -61,16 +61,23 @@ nullTrace = Trace T.nullTracer
 --   be a synchronous, effect-preserving monad morphism (no forking, batching
 --   or dropping), otherwise the ordering contract of
 --   'Hermod.Tracing.Types.TraceControl' is violated.
+--   Written with the trace argument on the right-hand side so that the
+--   @INLINE@ also fires for point-free uses such as @natTrace lift@.
 {-# INLINE natTrace #-}
 natTrace :: (forall x. m x -> n x) -> Trace m a -> Trace n a
-natTrace h (Trace tr) = Trace (T.natTracer h tr)
+natTrace h = \(Trace tr) -> Trace (T.natTracer h tr)
 
 -- | Contravariant transformation with a Kleisli arrow, in @contra-tracer@'s
 --   argument order (function first).
 --
---   Unlike 'Hermod.Tracing.Trace.Combinators.contramapM', this is built on
---   the arrow representation: the effect is /not/ run when the downstream
---   trace is squelching.  Control messages are forwarded unchanged.
+--   Built on the arrow representation: the effect is /not/ run when the
+--   downstream trace is squelching (e.g. 'nullTrace').  Control messages are
+--   forwarded unchanged.  This is the semantics of every Kleisli contramap in
+--   the public API — 'Hermod.Tracing.API.contramapM' and
+--   'Hermod.Tracing.API.Tracer.contramapM' are the same operation, they only
+--   differ in argument order.  (The envelope-level
+--   'Hermod.Tracing.Trace.Combinators.contramapM' that @hermod-tracing-core@
+--   uses internally is built with 'T.emit' and always runs its effect.)
 {-# INLINE premapM #-}
 premapM :: Monad m => (a -> m b) -> Trace m b -> Trace m a
 premapM f (Trace tr) = Trace (T.contramapM g tr)

@@ -15,6 +15,7 @@ module Hermod.Tracing.API.Trace (
   , Contravariant (..)
   , (>$<)
   , contramapM
+  , premapM
   , contramapMCond
   , filterTrace
   , filterTraceMaybe

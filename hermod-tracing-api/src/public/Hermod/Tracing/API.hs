@@ -1,5 +1,4 @@
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TupleSections #-}
 -- | Stable public API for the Hermod tracing system.
 --
 -- This is the single-import front door for @hermod-tracing-api@. It
@@ -14,8 +13,9 @@
 --
 -- * __Filter__: 'filterTrace', 'filterTraceMaybe'.
 --
--- * __Construct and bridge__: 'mkTrace', 'nullTrace', 'natTrace' and the
---   test helpers 'debugTrace' \/ 'stdoutTrace'.
+-- * __Construct__: 'mkTrace', 'nullTrace', 'natTrace', 'premapM' and the
+--   test helpers 'debugTrace' \/ 'stdoutTrace'.  The bridges to APIs that
+--   still take a @contra-tracer@ @Tracer@ live in "Hermod.Tracing.API.ContraTracer".
 --
 -- === For tracer authors
 --
@@ -58,10 +58,16 @@
 -- 4. /Never configure a merge./ @tr1 <> tr2@ broadcasts control messages to
 --    both branches; register and configure the components, not the merge.
 --
--- Libraries that prefer @contra-tracer@'s spellings (@Tracer@, @mkTracer@,
--- @nullTracer@, …) import "Hermod.Tracing.API.Tracer" instead of this
--- module; the two must not be imported unqualified into one module, because
--- 'contramapM' takes its arguments in the opposite order there.
+-- === Kleisli contramaps
+--
+-- 'contramapM' (trace first), 'premapM' and "Hermod.Tracing.API.Tracer"'s
+-- @contramapM@ (both function first, as in @contra-tracer@) are one and the
+-- same operation: the effect is run only when a downstream trace emits, so
+-- over 'nullTrace' it never runs; control messages pass through unchanged.
+-- Pick by argument order.  Libraries that prefer @contra-tracer@'s spellings
+-- (@Tracer@, @mkTracer@, @nullTracer@, …) import "Hermod.Tracing.API.Tracer"
+-- instead of this module; do not import the two unqualified into one module,
+-- because @contramapM@ is defined with the opposite argument order there.
 --
 -- === Configuration and control (consumed by @hermod-tracing-core@)
 --
@@ -76,24 +82,24 @@ import           Hermod.Tracing.Types as Export hiding (Trace(..), TraceControl(
 import           Hermod.Tracing.Types as Export (Trace)
 import           Hermod.Tracing.Trace.Combinators as Export (traceWith, routingTrace)
 import           Hermod.Tracing.Trace as Export (filterTraceMaybe)
-import           Hermod.Tracing.Trace.Construct as Export (mkTrace, nullTrace, natTrace, debugTrace, stdoutTrace)
+import           Hermod.Tracing.Trace.Construct as Export (mkTrace, nullTrace, natTrace, premapM, debugTrace, stdoutTrace)
 import           Hermod.Tracing.Types.ShowT as Export (showT, showTHex, showTReal)
 import           Data.Functor.Contravariant as Export (Contravariant (..), (>$<))
 
-import           qualified Hermod.Tracing.Trace.Combinators as Internal (contramapM, contramapMCond , foldTraceM, foldCondTraceM)
+import           qualified Hermod.Tracing.Trace.Combinators as Internal (foldTraceM, foldCondTraceM)
 import           qualified Hermod.Tracing.Trace as Internal (filterTrace)
 
 import           Control.Monad.IO.Unlift
 
--- | Contramap a monadic function over a trace.
+-- | Contramap a monadic function over a trace: 'premapM' with the trace
+--   first.  The effect is run only when a downstream trace emits (never over
+--   'nullTrace'); control messages pass through unchanged.
 {-# INLINE contramapM #-}
 contramapM :: Monad m
   => Trace m b
   -> (a -> m b)
   -> Trace m a
-contramapM tr f = Internal.contramapM tr apply where
-  apply (x, Left c) = pure (x, Left c)
-  apply (lc, Right x) = (lc, ) . Right <$> f x
+contramapM tr f = premapM f tr
 
 -- | Like 'contramapM' but can also filter out messages by returning 'Nothing'.
 {-# INLINE contramapMCond #-}
@@ -101,9 +107,7 @@ contramapMCond :: Monad m
   => Trace m b
   -> (a -> m (Maybe b))
   -> Trace m a
-contramapMCond tr f = Internal.contramapMCond tr apply where
-  apply (x, Left c) = pure (Just (x, Left c))
-  apply (lc, Right x) = fmap ((lc, ) . Right) <$> f x
+contramapMCond tr f = premapM f (filterTraceMaybe tr)
 
 -- | Fold a monadic accumulator function over a trace.
 --   Uses an 'MVar' to hold the state.

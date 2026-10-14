@@ -107,7 +107,3 @@ test-suite hermod-tracing-api-test
                       , tasty
                       , tasty-hunit
                       , transformers
-
-  ghc-options:        -threaded
-                      -rtsopts
-                      "-with-rtsopts=-N"

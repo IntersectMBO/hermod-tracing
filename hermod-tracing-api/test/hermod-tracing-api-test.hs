@@ -3,6 +3,7 @@
 --   'MonadIO'.
 module Main (main) where
 
+import qualified Hermod.Tracing.API as API (contramapM, contramapMCond)
 import           Hermod.Tracing.API.ContraTracer (fromContraTracer, toContraTracer)
 import           Hermod.Tracing.API.Test.Shapes ()
 import           Hermod.Tracing.API.Tracer
@@ -48,7 +49,7 @@ main = defaultMain $ testGroup "hermod-tracing-api"
       ]
   , testGroup "nullTracer"
       [ testCase "is squelching" $
-          isSquelching (toContraTracer (nullTracer :: Tracer Log Int)) @?= True
+          (case nullTracer :: Tracer Log Int of Trace tr -> isSquelching tr) @?= True
       , testCase "does not evaluate a contramapped function" $
           logOf (traceWith (contramap (error "boom" :: () -> String) nullTracer) ()) @?= []
       ]
@@ -71,6 +72,19 @@ main = defaultMain $ testGroup "hermod-tracing-api"
       , testCase "contramapM does not run its effect over nullTracer" $
           logOf (traceWith (contramapM (\a -> tell ["effect"] >> pure (a :: String)) nullTracer) "m")
             @?= []
+      , testCase "API.contramapM (trace first) has the same semantics" $
+          ( logOf (traceWith (API.contramapM observing (\a -> tell ["effect"] >> pure (a ++ "!"))) "m")
+          , logOf (traceWith (API.contramapM nullTracer (\a -> tell ["effect"] >> pure (a :: String))) "m")
+          , logOf (sendControl (API.contramapM observing (\a -> tell ["effect"] >> pure (a :: String))))
+          ) @?= (["effect", "m!"], [], ["ctrl"])
+      , testCase "API.contramapMCond keeps Just, drops Nothing, forwards controls" $
+          let keepUnless :: String -> String -> Log (Maybe String)
+              keepUnless x a = tell ["effect"] >> pure (if a == x then Nothing else Just a)
+          in ( logOf (traceWith (API.contramapMCond observing (keepUnless "drop")) "keep")
+             , logOf (traceWith (API.contramapMCond observing (keepUnless "drop")) "drop")
+             , logOf (traceWith (API.contramapMCond nullTracer (keepUnless "drop")) "keep")
+             , logOf (sendControl (API.contramapMCond observing (keepUnless "drop")))
+             ) @?= (["effect", "keep"], ["effect"], [], ["ctrl"])
       , testCase "<> broadcasts a control message to both branches" $
           logOf (sendControl (observing <> observing)) @?= ["ctrl", "ctrl"]
       ]
