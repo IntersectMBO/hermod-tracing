@@ -1,7 +1,28 @@
 # Revision history for hermod-tracing-core
 
-## 1.0.1 -- October 2026
+## 1.1.0 -- October 2026
 
+A major bump because `Hermod.Tracing` exports less (first bullet). No
+integration exists on 1.0.0, so downstream packages constrain
+`hermod-tracing-core ^>= 1.1` without a migration.
+
+* `Hermod.Tracing` no longer re-exports `contra-tracer`'s `Control.Tracer`
+  wholesale. It keeps the arrow primitives a custom backend is built from
+  (`arrow`, `use`, `squelch`, `emit`, `effect`, `nat`) and `Contravariant(..)`
+  / `(>$<)`; `mkTracer`, `natTracer`, `stdoutTracer`, `debugTracer`,
+  `traceMaybe`, `squelchUnless` and the other `Control.Tracer` names are
+  gone from it. They were different entities from the functions of the same
+  names in `Hermod.Tracing.API.Tracer`, so `Hermod.Tracing` could not be
+  imported unqualified next to the facade. Code that used them through
+  `Hermod.Tracing` imports `Control.Tracer` directly, or bridges with
+  `toContraTracer` / `fromContraTracer`.
+* `Hermod.Tracing` re-exports `Hermod.Tracing.Trace.Construct` (`mkTrace`,
+  `nullTrace`, `natTrace`, `premapM`, `debugTrace`, `stdoutTrace`,
+  `toContraTracer`, `fromContraTracer`), so application code does not need
+  `Hermod.Tracing.API` for them. Its haddock states which names it shares
+  with `Hermod.Tracing.API` as the same entities and which five
+  (`contramapM`, `contramapMCond`, `foldTraceM`, `foldCondTraceM`,
+  `filterTrace`) are the envelope-level variants.
 * `showT`, `showTHex` and `showTReal` now live in `hermod-tracing-api`
   (`Hermod.Tracing.Types.ShowT`, re-exported by `Hermod.Tracing.API`);
   `Hermod.Tracing.Utils` re-exports the same entities, so importing both

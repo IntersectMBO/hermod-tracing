@@ -60,6 +60,16 @@ Kindly consider the following important suggestions:
 
 - When developing new tracers, consider creating the new tracers first and subsequently mapping to old tracers.
 
+- Libraries depend on `hermod-tracing-api:public` only and import `Hermod.Tracing.API` (or the `contra-tracer`-spelled
+  facade `Hermod.Tracing.API.Tracer`); applications that construct and configure backends import `Hermod.Tracing` from this
+  package. `Hermod.Tracing` and `Hermod.Tracing.API` export the same entities for the types, `traceWith`, `routingTrace`,
+  `filterTraceMaybe`, the constructors `mkTrace` / `nullTrace` / `natTrace` / `premapM` and the `showT` helpers, so those
+  may be imported from both unqualified. Five names are different functions in the two modules: `contramapM`,
+  `contramapMCond`, `foldTraceM`, `foldCondTraceM` and `filterTrace` work on the full message envelope in `Hermod.Tracing`
+  and on the payload in `Hermod.Tracing.API`. A module that needs both imports one of them qualified. `Hermod.Tracing`
+  re-exports only the arrow primitives of `contra-tracer` (`arrow`, `emit`, …); for a plain `contra-tracer` `Tracer`
+  import `Control.Tracer` directly, or bridge with `toContraTracer` / `fromContraTracer`.
+
 - Bug reports and contributions are welcome via the project issue tracker.
 
 # Basic Tracer Topics

@@ -1,7 +1,7 @@
 cabal-version: 3.0
 
 name:                   hermod-tracing-core
-version:                1.0.1
+version:                1.1.0
 synopsis:               Modern, modular, configurable tracing and metrics system
 description:            This is Hermod's core package and API for development of simple and efficient tracers
                         around the arrow based contra-tracer package
@@ -146,7 +146,6 @@ test-suite hermod-tracing-core-test
                       , hermod-tracing-core
                       , unordered-containers
                       , utf8-string
-                      , yaml
                       , yaml
                       , QuickCheck
 
