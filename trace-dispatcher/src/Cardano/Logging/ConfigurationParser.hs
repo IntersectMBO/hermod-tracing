@@ -75,9 +75,14 @@ instance AE.FromJSON ConfigRepresentation where
             <*> obj .:? "TraceOptionLedgerMetricsFrequency"
             <*> obj .:? "TracePrometheusSimpleRun"
 
-        -- configuration object has a top-level key -> object value "HermodTracing": {}
+        -- configuration object has a key -> object value "HermodTracing": {},
+        -- either at the top level or nested in the "Configuration" envelope
+        -- that cardano-config writes
         parseAsOuter obj =
-          obj .: "HermodTracing" >>= \o -> (parseAsInner o <|> parseAsLegacy o) 
+              (obj .: "HermodTracing" >>= section)
+          <|> (obj .: "Configuration" >>= (.: "HermodTracing") >>= section)
+          where
+            section o = parseAsInner o <|> parseAsLegacy o
 
         -- configuration object uses all HermodTracing key/values top-level
         parseAsInner obj =

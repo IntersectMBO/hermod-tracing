@@ -1,5 +1,9 @@
 # Revision history for trace-dispatcher
 
+## 2.13.3 -- October 2026
+
+* Read the `"HermodTracing"` config key from inside a `"Configuration"` envelope as well as from the top level, so a node configuration written by `cardano-config` can be parsed.
+
 ## 2.13.2 -- October 2026
 
 * Support parsing Node legacy config inlined into `HermodTracing` object.
