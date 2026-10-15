@@ -1,8 +1,9 @@
 -- | The narrow plumbing subset of "Hermod.Tracing.API": just the 'Trace' type
 --   and the combinators needed to pass tracers around, adapt them and build
 --   test doubles.  Nothing about namespaces, severities, metrics or
---   configuration is exported, so this module is safe to import unqualified
---   into library code without shadowing risk.
+--   configuration is exported, so it can be imported unqualified into
+--   library code that doesn't also import @Control.Tracer@ or
+--   "Hermod.Tracing".
 --
 --   See "Hermod.Tracing.API" for the rules of using a 'Trace' in a library.
 --   The @contra-tracer@-spelled equivalent is "Hermod.Tracing.API.Tracer".

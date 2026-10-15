@@ -39,7 +39,7 @@ jobs:
         /usr/bin/pacman -S --noconfirm mingw-w64-x86_64-pkg-config mingw-w64-x86_64-sed base-devel autoconf-wrapper autoconf automake libtool make
 
     - name: Install Haskell
-      uses: input-output-hk/actions/haskell@dbb6ea6d50ffc37a2d481fd8047aff028bac3223 # latest
+      uses: input-output-hk/actions/haskell@dbb6ea6d50ffc37a2d481fd8047aff028bac3223 # as in cardano-node
       id: setup-haskell
       with:
         ghc-version: ${{ matrix.ghc }}
