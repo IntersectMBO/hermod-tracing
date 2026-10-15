@@ -1,8 +1,15 @@
 {-# LANGUAGE NumericUnderscores #-}
 
 module Hermod.Tracing.Utils
-       ( module Hermod.Tracing.Utils )
+       ( module Hermod.Tracing.Utils
+       -- * Re-exported from hermod-tracing-api
+       , showT
+       , showTHex
+       , showTReal
+       )
        where
+
+import           Hermod.Tracing.Types.ShowT (showT, showTHex, showTReal)
 
 
 import           Control.Concurrent (threadDelay)
@@ -11,11 +18,6 @@ import           Control.DeepSeq (NFData, force)
 import           Control.Exception (SomeAsyncException (..), SomeException, evaluate, fromException,
                    tryJust)
 import           Data.IORef
-import qualified Data.Text as T
-import qualified Data.Text.Lazy as TL (toStrict)
-import qualified Data.Text.Lazy.Builder as T (toLazyText)
-import qualified Data.Text.Lazy.Builder.Int as T
-import qualified Data.Text.Lazy.Builder.RealFloat as T (realFloat)
 import           Data.Word (Word64)
 import           GHC.Conc (labelThread, myThreadId)
 
@@ -60,19 +62,6 @@ excludeAsyncExceptions e =
 {-# INLINE tryEvalNF #-}
 tryEvalNF :: NFData a => a -> IO (Either SomeException a)
 tryEvalNF = tryJust excludeAsyncExceptions . evaluate . force
-
--- | Convenience function for a Show instance to be converted to text immediately
-{-# INLINE showT #-}
-showT :: Show a => a -> T.Text
-showT = T.pack . show
-
-{-# INLINE showTHex #-}
-showTHex :: Integral a => a -> T.Text
-showTHex = TL.toStrict . T.toLazyText . T.hexadecimal
-
-{-# INLINE showTReal #-}
-showTReal :: RealFloat a => a -> T.Text
-showTReal = TL.toStrict . T.toLazyText . T.realFloat
 
 threadLabelMe :: String -> IO ()
 threadLabelMe label = myThreadId >>= flip labelThread label

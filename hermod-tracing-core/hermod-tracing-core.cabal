@@ -1,7 +1,7 @@
 cabal-version: 3.0
 
 name:                   hermod-tracing-core
-version:                1.0.0
+version:                1.1.0
 synopsis:               Modern, modular, configurable tracing and metrics system
 description:            This is Hermod's core package and API for development of simple and efficient tracers
                         around the arrow based contra-tracer package
@@ -20,7 +20,11 @@ license-files:          LICENSE
 extra-doc-files:        CHANGELOG.md
                         README.md
                         doc/hermod-tracing-core.md
+                        doc/config.yaml
 data-files:             doc/config.json
+extra-source-files:     test/data/docGeneration.md
+                        test/data/legacy-config.yaml
+                        test/data/legacy-node-config.yaml
 
 common project-config
   default-language:     Haskell2010
@@ -65,8 +69,8 @@ library
   other-modules:      Hermod.Tracing.Types.DocuGenerator
 
   build-depends:        base >=4.12 && <5
-                      , hermod-tracing-api:internal
-                      , hermod-tracing-api:public
+                      , hermod-tracing-api:internal ^>= 1.1
+                      , hermod-tracing-api:public ^>= 1.1
                       , aeson >= 2.1.0.0
                       , aeson-pretty
                       , async
@@ -117,6 +121,7 @@ test-suite hermod-tracing-core-test
                         Hermod.Tracing.Test.Unit.DataPoint
                         Hermod.Tracing.Test.Unit.FrequencyLimiting
                         Hermod.Tracing.Test.Unit.Documentation
+                        Hermod.Tracing.Test.Unit.Hostname
                         Paths_hermod_tracing_core
 
   autogen-modules:      Paths_hermod_tracing_core
@@ -131,6 +136,7 @@ test-suite hermod-tracing-core-test
                       , ekg-core
                       , generic-data
                       , hostname
+                      , process
                       , text
                       , stm
                       , tasty

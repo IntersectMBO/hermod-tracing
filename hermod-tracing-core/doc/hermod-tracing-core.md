@@ -60,6 +60,16 @@ Kindly consider the following important suggestions:
 
 - When developing new tracers, consider creating the new tracers first and subsequently mapping to old tracers.
 
+- Libraries depend on `hermod-tracing-api:public` only and import `Hermod.Tracing.API` (or the `contra-tracer`-spelled
+  facade `Hermod.Tracing.API.Tracer`); applications that construct and configure backends import `Hermod.Tracing` from this
+  package. `Hermod.Tracing` and `Hermod.Tracing.API` export the same entities for the types, `traceWith`, `routingTrace`,
+  `filterTraceMaybe`, the constructors `mkTrace` / `nullTrace` / `natTrace` / `premapM` and the `showT` helpers, so those
+  may be imported from both unqualified. Five names are different functions in the two modules: `contramapM`,
+  `contramapMCond`, `foldTraceM`, `foldCondTraceM` and `filterTrace` work on the full message envelope in `Hermod.Tracing`
+  and on the payload in `Hermod.Tracing.API`. A module that needs both imports one of them qualified. `Hermod.Tracing`
+  re-exports only the arrow primitives of `contra-tracer` (`arrow`, `emit`, …); for a plain `contra-tracer` `Tracer`
+  import `Control.Tracer` directly, or bridge with `toContraTracer` / `fromContraTracer`.
+
 - Bug reports and contributions are welcome via the project issue tracker.
 
 # Basic Tracer Topics
@@ -300,6 +310,23 @@ The top-level `HermodTracing` object also accepts three optional global keys:
 - `MetricsPrefix` — a string prepended to all metric names.
 - `PeriodicTracers` — a map from arbitrary tracer identifiers to cardinal numbers. The numbers are interpreted by the host application (as millisecond delays, slot counts, or any other application-defined unit). A value of `0` signals that the named tracer should not run; an absent key leaves the host free to apply its own default.
 
+Instead of an object, `HermodTracing` may give the path of a file (relative to the configuration file referring to
+it); the top-level object of that file then takes the place of the `HermodTracing` object.
+
+*Deprecated*: trace-dispatcher's layout, which the configurations generated for cardano-node still use, is accepted
+in place of the `HermodTracing` object, i.e. inside it or at the top of a file it refers to, but not at the top level
+of a configuration file: `TraceOptions` → `Options`, `TraceOptionForwarder` → `Forwarder`, `TraceOptionNodeName` →
+`ApplicationName`, `TraceOptionMetricsPrefix` → `MetricsPrefix`, `TracePrometheusSimpleRun` → `PrometheusSimpleRun`,
+and `TraceOptionResourceFrequency` / `TraceOptionLedgerMetricsFrequency` → the `PeriodicTracers` entries
+`Resources` / `LedgerMetrics` (a negative frequency fails to parse). Where both layouts are given, the current one
+is read. This layout will be removed once those configurations have moved to the current one.
+
+The host name in formatted and forwarded messages is the system host name, without its domain. The environment
+variable `HERMOD_TRACING_LOGGING_HOSTNAME` overrides it, e.g. to tell apart several instances running on the same
+host; it is set even when empty. The variable is read once, when the application emits its first message, so set it
+before that. *Deprecated*: `TRACE_DISPATCHER_LOGGING_HOSTNAME` is read when `HERMOD_TRACING_LOGGING_HOSTNAME` is not
+set; it will be removed together with trace-dispatcher's configuration layout.
+
 Backends can be a combination of `Forwarder`, `EKGBackend`, `PrometheusSimple [suffix|nosuffix] [bindhost] <port>` and
 one of `Stdout MachineFormat`, `Stdout HumanFormatColoured` and `Stdout HumanFormatUncoloured`.
 
@@ -341,7 +368,7 @@ HermodTracing:
 
   # Named periodic tracers: host-interpreted cardinal numbers (0 = do not run)
   PeriodicTracers:
-    heartbeat: 5000
+    Heartbeat: 5000
 ```
 
 The same in JSON looks like this:
@@ -373,7 +400,7 @@ The same in JSON looks like this:
     },
     "MetricsPrefix": "my.application.metrics.",
     "PeriodicTracers": {
-      "resources": 5000
+      "Resources": 5000
     }
   }
 }

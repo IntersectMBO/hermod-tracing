@@ -8,6 +8,7 @@ import qualified Data.ByteString.Char8 as BS
 import           Data.Text (Text, breakOn, replace, stripEnd)
 import           Data.Text.Encoding
 import           Data.Text.IO (readFile)
+import           System.Environment (lookupEnv)
 import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
@@ -23,17 +24,19 @@ import           Hermod.Tracing.Test.Unit.DataPoint
 import           Hermod.Tracing.Test.Unit.Documentation
 import           Hermod.Tracing.Test.Unit.EKG
 import           Hermod.Tracing.Test.Unit.FrequencyLimiting
+import           Hermod.Tracing.Test.Unit.Hostname
 import           Hermod.Tracing.Test.Unit.Routing
 import           Hermod.Tracing.Test.Unit.Trivial
 
 
 main :: IO ()
-main = defaultMain tests
+main = lookupEnv hostnameChildVar >>= maybe (defaultMain tests) (const hostnameChild)
 
 -- Add unitTests to the main test group
 tests :: TestTree
 tests = testGroup "Tests"
   [ unitTests
+  , hostnameTests
   , localTests
   ]
 
@@ -65,6 +68,37 @@ unitTests = testGroup "hermod-tracing-core-unit-tests"
         assertEqual "testConfigFileParsing"
             (show testConfigFileParsingResult)
             (show res)
+    , testCase "testNestedLegacyConfigParsing" $ do
+        res <- testNestedLegacyConfigParsing
+        assertEqual "testNestedLegacyConfigParsing"
+            (show testLegacyConfigParsingResult)
+            (show res)
+    , testCase "testTopLevelLegacyConfigParsing" $
+        assertParseFailure testTopLevelLegacyConfigParsing
+    , testCase "testNegativeFrequencyParsing" $
+        assertParseFailure testNegativeFrequencyParsing
+    , testCase "testLegacyConfigFileParsing" $ do
+        res <- testLegacyConfigFileParsing
+        assertEqual "testLegacyConfigFileParsing"
+            (show testLegacyConfigFileParsingResult)
+            (show res)
+    , testCase "testReferencedLegacyFileDirectly" $
+        assertParseFailure testReferencedLegacyFileDirectly
+    , testCase "testBothLayoutsParsing" $ do
+        res <- testBothLayoutsParsing
+        assertEqual "testBothLayoutsParsing"
+            (Just "current", [ConfSeverity (SeverityF (Just Info))])
+            res
+    , testCase "testNestedBothLayoutsParsing" $ do
+        res <- testNestedBothLayoutsParsing
+        assertEqual "testNestedBothLayoutsParsing"
+            (Just "current", [ConfSeverity (SeverityF (Just Info))])
+            res
+    , testCase "testTopLevelCurrentNestedLegacyParsing" $ do
+        res <- testTopLevelCurrentNestedLegacyParsing
+        assertEqual "testTopLevelCurrentNestedLegacyParsing"
+            (Just "current", [ConfSeverity (SeverityF (Just Info))])
+            res
     , testCase "testDocGeneration" $ do
         actual <- docTracers
         expected <- readFile "test/data/docGeneration.md"

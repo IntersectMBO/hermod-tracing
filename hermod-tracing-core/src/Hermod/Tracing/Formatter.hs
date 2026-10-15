@@ -31,6 +31,7 @@ import           Codec.Serialise (Serialise (..), serialise)
 import           Control.DeepSeq (NFData)
 import           Data.ByteString (ByteString)
 import           GHC.Generics (Generic)
+import           Control.Applicative ((<|>))
 import           Control.Concurrent (myThreadId)
 import           Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Control.Tracer as T
@@ -86,18 +87,23 @@ data TraceObject = TraceObject {
     (Serialise, NFData)
 
 
--- | If the @HERMOD_TRACING_LOGGING_HOSTNAME@ environment variable is set,
---   it overrides the system hostname in the trace message. This is useful when
---   multiple instances of a service or application on the same host.
+-- | If the @HERMOD_TRACING_LOGGING_HOSTNAME@ environment variable is set (even to
+--   an empty value), it overrides the system hostname in the trace message. This
+--   is useful when multiple instances of a service or application run on the same
+--   host.
+--   The deprecated name @TRACE_DISPATCHER_LOGGING_HOSTNAME@ is read when the
+--   new one is not set.
 --
 --   The env var is expected to be set (if desired) before the application emits its first trace, as this is evaluated only once.
 hostname :: Text
 {-# NOINLINE hostname #-}
-hostname = unsafePerformIO $
-  lookupEnv "HERMOD_TRACING_LOGGING_HOSTNAME" >>= maybe hostNameOnly (pure . T.pack)
+hostname = unsafePerformIO $ do
+  env     <- lookupEnv "HERMOD_TRACING_LOGGING_HOSTNAME"
+  envDepr <- lookupEnv "TRACE_DISPATCHER_LOGGING_HOSTNAME"
+  T.pack <$> maybe hostNameOnly pure (env <|> envDepr)
   where
     -- disregard FQDNs
-    hostNameOnly = T.pack . takeWhile (/= '.') <$> getHostName
+    hostNameOnly = takeWhile (/= '.') <$> getHostName
 
 
 -- | Format this trace as metrics

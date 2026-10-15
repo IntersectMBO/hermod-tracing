@@ -1,5 +1,51 @@
 # Revision history for hermod-tracing-core
 
+## 1.1.0 -- October 2026
+
+A major bump because `Hermod.Tracing` exports less (first bullet). No
+integration exists on 1.0.0, so downstream packages constrain
+`hermod-tracing-core ^>= 1.1` without a migration.
+
+* `Hermod.Tracing` no longer re-exports `contra-tracer`'s `Control.Tracer`
+  wholesale. It keeps the arrow primitives a custom backend is built from
+  (`arrow`, `use`, `squelch`, `emit`, `effect`, `nat`) and `Contravariant(..)`
+  / `(>$<)`; `mkTracer`, `natTracer`, `stdoutTracer`, `debugTracer`,
+  `traceMaybe`, `squelchUnless` and the other `Control.Tracer` names are
+  gone from it. They were different entities from the functions of the same
+  names in `Hermod.Tracing.API.Tracer`, so `Hermod.Tracing` could not be
+  imported unqualified next to the facade. Code that used them through
+  `Hermod.Tracing` imports `Control.Tracer` directly, or bridges with
+  `toContraTracer` / `fromContraTracer`.
+* `Hermod.Tracing` re-exports `Hermod.Tracing.Trace.Construct` (`mkTrace`,
+  `nullTrace`, `natTrace`, `premapM`, `debugTrace`, `stdoutTrace`,
+  `toContraTracer`, `fromContraTracer`), so application code does not need
+  `Hermod.Tracing.API` for them. Its haddock states which names it shares
+  with `Hermod.Tracing.API` as the same entities and which five
+  (`contramapM`, `contramapMCond`, `foldTraceM`, `foldCondTraceM`,
+  `filterTrace`) are the envelope-level variants.
+* `showT`, `showTHex` and `showTReal` now live in `hermod-tracing-api`
+  (`Hermod.Tracing.Types.ShowT`, re-exported by `Hermod.Tracing.API`);
+  `Hermod.Tracing.Utils` re-exports the same entities, so importing both
+  `Hermod.Tracing` and `Hermod.Tracing.API` is unambiguous.
+* Depends on `hermod-tracing-api ^>= 1.1` (both sublibraries); previously
+  unbounded.
+* Deprecated: trace-dispatcher's configuration layout (`TraceOptions`,
+  `TraceOptionForwarder`, `TraceOptionNodeName`, `TraceOptionMetricsPrefix`,
+  `TraceOptionResourceFrequency`, `TraceOptionLedgerMetricsFrequency`,
+  `TracePrometheusSimpleRun`) is accepted again, but only in place of the
+  `HermodTracing` object: inside it, or at the top of a file that
+  `HermodTracing` refers to. The current layout takes precedence over it, and
+  it is not accepted at the top level of a configuration file. The two
+  frequencies become the `PeriodicTracers` entries `Resources` and
+  `LedgerMetrics`; a negative frequency fails to parse. This lets cardano-node
+  configurations migrate in steps, and will be removed once they have.
+  Every configuration that 1.0.0 accepted is read as before.
+* By convention, `PeriodicTracers` names are PascalCase, like namespaces; the
+  example configuration `doc/config.json` and the docs use `Resources`.
+* The environment variable `TRACE_DISPATCHER_LOGGING_HOSTNAME` is read again
+  when `HERMOD_TRACING_LOGGING_HOSTNAME` is not set. Deprecated; will be
+  removed together with trace-dispatcher's configuration layout.
+
 ## 1.0.0 -- July 2026
 
 * Initial release: based on `trace-dispatcher-2.13.0`.

@@ -14,6 +14,25 @@
 --    with 'configureTracers'.  Use 'checkTraceConfiguration' to validate the
 --    config against all known namespaces at startup.
 --
+-- === Importing alongside the API facade
+--
+-- This module and "Hermod.Tracing.API" (from @hermod-tracing-api@) export the
+-- /same/ entities for the types, 'traceWith', 'routingTrace',
+-- 'filterTraceMaybe', the constructors of "Hermod.Tracing.Trace.Construct"
+-- ('mkTrace', 'nullTrace', 'natTrace', 'premapM', …) and the @showT@ helpers,
+-- so importing both unqualified is unambiguous for those.  Five names are
+-- /different/ entities: 'contramapM', 'contramapMCond', 'foldTraceM',
+-- 'foldCondTraceM' and 'filterTrace' work on the full message envelope
+-- (@(LoggingContext, Either TraceControl a)@) here, and on the payload @a@
+-- in "Hermod.Tracing.API".  Application code that needs both imports one of
+-- the two qualified.  "Hermod.Tracing.API.Tracer" (the @contra-tracer@-spelled
+-- facade) shares no names with this module other than the common ones above
+-- and @contramapM@, which it defines with the function first.
+--
+-- The names of @contra-tracer@'s @Control.Tracer@ are /not/ re-exported here
+-- (only the arrow primitives below are); import @Control.Tracer@ directly for
+-- a plain @contra-tracer@ @Tracer@, @mkTracer@, @natTracer@ etc., or use
+-- 'toContraTracer' \/ 'fromContraTracer' to bridge.
 
 module Hermod.Tracing (
     module X
@@ -22,6 +41,8 @@ module Hermod.Tracing (
 -- Core API types and combinators (from hermod-tracing-api)
 import           Hermod.Tracing.Types as X
 import           Hermod.Tracing.Trace as X
+import           Hermod.Tracing.Trace.Construct as X
+import           Data.Functor.Contravariant as X (Contravariant (..), (>$<))
 
 -- Backend constructors
 import           Hermod.Tracing.Tracer.Composed as X
@@ -43,6 +64,8 @@ import           Hermod.Tracing.Formatter as X
 -- Utilities: showT, showTHex, showTReal, runInLoop
 import           Hermod.Tracing.Utils as X
 
--- Re-exports arrow/emit/squelch from contra-tracer for custom backend authors.
--- traceWith, contramapM, nullTracer, Tracer are shadowed by this package's own versions.
-import           Control.Tracer as X hiding (Tracer, contramapM, nullTracer, traceWith)
+-- The arrow primitives of contra-tracer, for custom backend authors
+-- (a backend is @Trace $ arrow $ emit …@).  Nothing else of Control.Tracer
+-- is re-exported, so that this module can be imported together with the
+-- Hermod.Tracing.API.* facades without name clashes.
+import           Control.Tracer as X (arrow, use, squelch, emit, effect, nat)

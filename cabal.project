@@ -30,6 +30,17 @@ constraints:
   -- our GHC 9.6 build.
   megaparsec < 9.8.0
 
+-- GHC >= 9.14 (base-4.22): upper bounds of a few dependencies lag behind;
+-- the same escape hatches downstream repositories carry.
+if impl(ghc >= 9.14)
+  allow-newer:
+    , cborg-json:base
+    , cborg:base
+    , cborg:containers
+    , serialise:base
+    , serialise:containers
+    , serialise:time
+
 test-show-details: direct
 
 write-ghc-environment-files: always

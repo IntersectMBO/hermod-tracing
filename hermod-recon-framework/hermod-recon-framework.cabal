@@ -154,7 +154,7 @@ executable hermod-recon
       , hermod-recon-framework
       , hermod-tracing-core
       , hermod-tracing-api:public
-      , hermod-tracing-prometheus
+      , hermod-tracing-prometheus ^>= 1.1
       , aeson
       , streaming
       , async
@@ -163,7 +163,6 @@ executable hermod-recon
       , ekg-core
       , network
       , hostname
-      , contra-tracer
 
 
     -- Directories containing source files.

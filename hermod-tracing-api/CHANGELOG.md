@@ -1,5 +1,59 @@
 # Revision history for hermod-tracing-api
 
+## 1.1.0 -- October 2026
+
+Everything a *library* needs to depend on `hermod-tracing-api` instead of
+`contra-tracer`. All additions live in new modules; nothing new is reachable
+through `Hermod.Tracing.Types` or `Hermod.Tracing.Trace`, so
+`hermod-tracing-core-1.0.0` keeps building against this release. The one
+behaviour change is in `Hermod.Tracing.API.contramapM` / `contramapMCond`,
+whose effect no longer runs over a squelching trace (below).
+
+* New `:internal` module `Hermod.Tracing.Trace.Construct`: `mkTrace`
+  (build a trace from a callback; a terminal sink that drops control
+  messages), `nullTrace` (named `mempty`), `natTrace` (change the monad with a
+  natural transformation, control-preserving), `premapM` (Kleisli contramap in
+  `contra-tracer` argument order, effect not run when squelched), the test
+  helpers `debugTrace` / `stdoutTrace`, and the bridges `toContraTracer` /
+  `fromContraTracer`.
+* New `:internal` module `Hermod.Tracing.Types.ShowT`: `showT`, `showTHex`,
+  `showTReal` (moved from `hermod-tracing-core`'s `Hermod.Tracing.Utils`,
+  which re-exports them from 1.1.0 on), so instance-only packages no longer
+  need `hermod-tracing-core`.
+* `Hermod.Tracing.API` additionally exports `mkTrace`, `nullTrace`, `natTrace`,
+  `premapM`, `debugTrace`, `stdoutTrace`, `Contravariant(..)`, `(>$<)`, `showT`,
+  `showTHex`, `showTReal`, and documents the rules for using a `Trace` in a
+  library (control direction, parameter rule, STM rule, never configure a
+  merge).
+* `Hermod.Tracing.API.contramapM` and `contramapMCond` are now built on the
+  arrow representation, like `premapM`: the effect is run only when a
+  downstream trace emits, so never over `nullTrace` / `mempty`; control
+  messages pass through unchanged. Previously the effect always ran. Every
+  Kleisli contramap in the public API (`contramapM`, `premapM`,
+  `Hermod.Tracing.API.Tracer.contramapM`) now has these semantics and they
+  differ only in argument order.
+* New `:public` module `Hermod.Tracing.API.Trace`: the narrow plumbing subset
+  of the front door (`Trace`, `traceWith`, `mkTrace`, `nullTrace`, `natTrace`,
+  `Contravariant(..)`, `(>$<)`, `contramapM`, `premapM`, `contramapMCond`,
+  `filterTrace`, `filterTraceMaybe`, `routingTrace`, `debugTrace`, `stdoutTrace`).
+* New `:public` module `Hermod.Tracing.API.Tracer`: a `contra-tracer`-compatible
+  vocabulary over `Trace` — `type Tracer = Trace`, `traceWith`, `mkTracer`,
+  `nullTracer`, `natTracer`, `contramapM` (function-first argument order),
+  `Contravariant(..)`, `(>$<)`, `debugTracer`, `stdoutTracer`. A library
+  migrates by swapping `import Control.Tracer` for
+  `import Hermod.Tracing.API.Tracer` and the build dependency for
+  `hermod-tracing-api:public`. Do not import it unqualified together with
+  `Hermod.Tracing.API`: `contramapM` is the same operation in both, defined
+  with the opposite argument order.
+* New `:public` module `Hermod.Tracing.API.ContraTracer`: `toContraTracer`,
+  `fromContraTracer` for third-party APIs that still take a `contra-tracer`
+  `Tracer`; kept separate so remaining bridges are greppable.
+* `traceWith` is `INLINE`, as in `contra-tracer`. `premapM` (and so both
+  `contramapM`s) is `INLINE` too, which lets GHC specialise the `Monad`
+  dictionary away where the trace is built; `natTrace` is written so that its
+  `INLINE` also fires for point-free uses such as `natTrace lift`.
+* Haddock: removed the stale mention of `ForwarderAddr`.
+
 ## 1.0.0 -- July 2026
 
 * Initial release.  Core types and combinators extracted from `trace-dispatcher`
