@@ -1,5 +1,12 @@
 # Revision history for hermod-tracing-api
 
+## NEXT
+
+* `Trace`'s `(<>)` runs both sides one after the other in a single effect
+  instead of `contra-tracer`'s arrow fan-out, and returns the other side
+  unchanged if one side squelches. Same semantics (order of effects,
+  squelching exactly when both sides do), much cheaper per message.
+
 ## 1.1.0 -- October 2026
 
 Everything a *library* needs to depend on `hermod-tracing-api` instead of
