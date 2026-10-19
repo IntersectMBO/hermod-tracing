@@ -156,18 +156,23 @@ benchmark hermod-tracing-core-bench
   hs-source-dirs:       bench, test
   main-is:              hermod-tracing-core-bench.hs
 
-  other-modules:        Hermod.Tracing.Test.Types
+  other-modules:        FilterStages
+                        MixedConfig
+                        Hermod.Tracing.Test.Types
                         Hermod.Tracing.Test.Oracles
                         Hermod.Tracing.Test.Config
                         Hermod.Tracing.Test.Tracer
                         Hermod.Tracing.Test.Script
 
   ghc-options:          -Wno-incomplete-patterns
+                        -rtsopts
+                        "-with-rtsopts=-T"
 
   build-depends:        base >=4.12 && <5
                       , aeson
                       , containers
                       , criterion
+                      , deepseq
                       , ekg-core
                       , text
                       , time
