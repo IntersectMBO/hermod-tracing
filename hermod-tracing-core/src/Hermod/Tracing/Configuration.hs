@@ -83,6 +83,7 @@ configureTracers cr config tracers = do
 
 -- | Switch off any message of a particular tracer based on the configuration.
 -- If the top tracer is silent and no subtracer is not silent, then switch it off
+{-# INLINABLE maybeSilent #-}
 maybeSilent :: forall m a. (MonadIO m) =>
    ( TraceConfig -> Namespace a -> Bool)
   -> [Text]
@@ -169,6 +170,7 @@ data NamespaceConfig m a b =
 -- | Take a selector function called 'extract'.
 -- Take a function from trace to trace with this config dependent value.
 -- In this way construct a trace transformer with a config value
+{-# INLINABLE withNamespaceConfig #-}
 withNamespaceConfig :: forall m a b c. (MonadIO m, Ord b) =>
      String
   -> (TraceConfig -> Namespace a -> m b)
@@ -260,6 +262,7 @@ withNamespaceConfig name extract withConfig tr = do
 
 
 -- | Filter a trace by severity and take the filter value from the config
+{-# INLINABLE filterSeverityFromConfig #-}
 filterSeverityFromConfig :: (MonadIO m) =>
      Trace m a
   -> m (Trace m a)
@@ -289,6 +292,7 @@ filterSeverityFromConfig =
 
 
 -- | Set detail level of a trace from the config
+{-# INLINABLE withDetailsFromConfig #-}
 withDetailsFromConfig :: (MonadIO m) =>
      Trace m a
   -> m (Trace m a)
@@ -301,6 +305,7 @@ withDetailsFromConfig =
               Nothing  -> setDetails DNormal b)
 
 -- | Routing and formatting of a trace from the config
+{-# INLINABLE withBackendsFromConfig #-}
 withBackendsFromConfig :: (MonadIO m) =>
   (Maybe [BackendConfig] -> Trace m FormattedMessage -> Trace m a)
   -> m (Trace m a)
@@ -324,6 +329,7 @@ instance Show (Limiter m a) where
 
 
 -- | Routing and formatting of a trace from the config
+{-# INLINABLE withLimitersFromConfig #-}
 withLimitersFromConfig :: forall a m . (MonadUnliftIO m)
   => Trace m HermodTracingMessage
   -> Trace m a
