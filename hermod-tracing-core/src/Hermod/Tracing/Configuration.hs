@@ -160,12 +160,26 @@ hasNoMetrics _tc _ns =
 --   an earlier one.
 data NamespaceConfig m a b =
     -- | Values per namespace, collected since the last 'TCReset'.
-    Collecting !(Map.Map [Text] b)
+    Collecting !(Map.Map NSKey b)
     -- | The same tracer for all namespaces.
   | Uniform !(Trace m a)
     -- | Tracers for the namespaces that deviate from the most common value,
     --   and the tracer for that value.
-  | Mixed !(Map.Map [Text] (Trace m a)) !(Trace m a)
+  | Mixed !(Map.Map NSKey (Trace m a)) !(Trace m a)
+
+-- | A namespace as a stage sees it: prefix and inner namespace.  The inner
+--   namespace is compared first: the namespaces of one stage almost always
+--   share their prefix, so it mostly decides a comparison on its own.
+data NSKey = NSKey ![Text] ![Text]
+
+instance Eq NSKey where
+  NSKey p i == NSKey p' i' = i == i' && p == p'
+
+instance Ord NSKey where
+  compare (NSKey p i) (NSKey p' i') = compare i i' <> compare p p'
+
+nsKey :: LoggingContext -> NSKey
+nsKey lc = NSKey (lcNSPrefix lc) (lcNSInner lc)
 
 -- | Take a selector function called 'extract'.
 -- Take a function from trace to trace with this config dependent value.
@@ -185,7 +199,7 @@ withNamespaceConfig name extract withConfig tr = do
     selectTrace :: LoggingContext -> NamespaceConfig m a b -> Maybe (Trace m a)
     selectTrace lc = \case
       Uniform tt     -> Just tt
-      Mixed tmap tt  -> Just $ Map.findWithDefault tt (lcNSPrefix lc ++ lcNSInner lc) tmap
+      Mixed tmap tt  -> Just $ Map.findWithDefault tt (nsKey lc) tmap
       Collecting _   -> Nothing
     mapFunc ref =
       \case
@@ -205,10 +219,10 @@ withNamespaceConfig name extract withConfig tr = do
           nsConfig <- liftIO $ readIORef ref
           case nsConfig of
             Collecting cmap ->
-              case Map.lookup nst cmap of
+              case Map.lookup (nsKey lc) cmap of
                 Nothing -> do
                   liftIO
-                      $ writeIORef ref (Collecting (Map.insert nst val cmap))
+                      $ writeIORef ref (Collecting (Map.insert (nsKey lc) val cmap))
                   let tt = withConfig (Just val) tr
                   T.traceWith (unpackTrace tt) (lc, Left (TCConfig c))
                 Just v  -> do
