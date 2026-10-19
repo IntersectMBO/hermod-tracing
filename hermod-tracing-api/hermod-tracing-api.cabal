@@ -107,3 +107,16 @@ test-suite hermod-tracing-api-test
                       , tasty
                       , tasty-hunit
                       , transformers
+
+benchmark hermod-tracing-api-bench
+  import:             project-config
+  type:               exitcode-stdio-1.0
+  hs-source-dirs:     bench
+  main-is:            hermod-tracing-api-bench.hs
+
+  ghc-options:        -rtsopts
+                      "-with-rtsopts=-T"
+
+  build-depends:        base >=4.12 && <5
+                      , hermod-tracing-api:public
+                      , criterion
