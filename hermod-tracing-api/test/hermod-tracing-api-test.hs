@@ -27,6 +27,15 @@ observing = Trace $ T.mkTracer $ \case
     (_, Right a) -> tell [a]
     (_, Left _)  -> tell ["ctrl"]
 
+-- | Like 'observing', with each message tagged by the trace's name.
+observingAs :: String -> Trace Log String
+observingAs name = Trace $ T.mkTracer $ \case
+    (_, Right a) -> tell [name <> ":" <> a]
+    (_, Left _)  -> tell [name <> ":ctrl"]
+
+squelches :: Trace Log String -> Bool
+squelches (Trace tr) = isSquelching tr
+
 -- | Inject a control message at the root, as 'configureTracers' does.
 sendControl :: Trace Log a -> Log ()
 sendControl (Trace tr) = T.traceWith tr (emptyLoggingContext, Left TCReset)
@@ -87,6 +96,34 @@ main = defaultMain $ testGroup "hermod-tracing-api"
              ) @?= (["effect", "keep"], ["effect"], [], ["ctrl"])
       , testCase "<> broadcasts a control message to both branches" $
           logOf (sendControl (observing <> observing)) @?= ["ctrl", "ctrl"]
+      ]
+  , testGroup "<>"
+      [ testCase "runs the left trace, then the right one" $
+          logOf (traceWith (observingAs "l" <> observingAs "r") "m") @?= ["l:m", "r:m"]
+      , testCase "is associative in its effects" $
+          ( logOf (traceWith ((observingAs "a" <> observingAs "b") <> observingAs "c") "m")
+          , logOf (traceWith (observingAs "a" <> (observingAs "b" <> observingAs "c")) "m")
+          ) @?= (["a:m", "b:m", "c:m"], ["a:m", "b:m", "c:m"])
+      , testCase "has nullTracer as identity" $
+          ( logOf (traceWith (nullTracer <> observing) "m")
+          , logOf (traceWith (observing <> nullTracer) "m")
+          , logOf (sendControl (nullTracer <> observing <> nullTracer))
+          ) @?= (["m"], ["m"], ["ctrl"])
+      , testCase "is squelching exactly when both sides are" $
+          ( squelches (nullTracer <> nullTracer)
+          , squelches (observing <> nullTracer)
+          , squelches (nullTracer <> observing)
+          , squelches (observing <> observing)
+          ) @?= (True, False, False, False)
+      , testCase "a Kleisli contramap runs its effect only if a side emits" $
+          let effectful :: Tracer Log String -> Tracer Log String
+              effectful = contramapM (\a -> tell ["effect"] >> pure a)
+          in ( logOf (traceWith (effectful (nullTracer <> nullTracer)) "m")
+             , logOf (traceWith (effectful (observing <> nullTracer)) "m")
+             ) @?= ([], ["effect", "m"])
+      , testCase "does not evaluate a contramapped function when both sides squelch" $
+          logOf (traceWith (contramap (error "boom" :: () -> String) (nullTracer <> nullTracer)) ())
+            @?= []
       ]
   , testGroup "contra-tracer bridges"
       [ testCase "toContraTracer delivers into the pipeline" $
