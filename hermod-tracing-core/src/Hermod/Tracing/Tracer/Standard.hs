@@ -3,7 +3,8 @@
 
 module Hermod.Tracing.Tracer.Standard (
     standardTracer
-  , stdoutThread   -- re-exported for tests
+  , stdoutThread
+  , stdoutThreadWith
 ) where
 
 import           Hermod.Tracing.DocuGenerator
@@ -75,10 +76,28 @@ startStdoutThread stateRef = do
     link as
     atomicWriteIORef stateRef $ StandardTracerState (Just (inChan, outChan, as))
 
--- | The new thread, which does the actual write from the queue.
---   Will safely terminate when all producers have gone out of scope.
+-- | Specialisation of 'stdoutThreadWith' using the production @emit@:
+--   @try \@IOException@ around the write, classified via
+--   'ioeGetErrorType' (encode-fail skipped; sink-dead switches to drain).
 stdoutThread :: OutChan Text -> IO ()
-stdoutThread outChan =
+stdoutThread = stdoutThreadWith \str -> do
+  res <- try @IOException do
+    TIO.hPutStrLn stdout str
+    hFlush stdout
+  case first @Either ioeGetErrorType res of
+    Right ()              -> pure True
+    Left InvalidArgument  -> pure True                  -- bad line: skip silently, keep printing
+    Left ResourceVanished -> pure False                 -- EPIPE: sink gone
+    Left IllegalOperation -> pure False                 -- closed handle: sink gone
+    Left _                -> pure False                 -- unknown: treat as gone (conservative)
+
+-- | The writer thread, parameterised over @emit@ (@True@ = keep looping,
+--   @False@ = sink gone, switch to drain). Safely terminates when all
+--   producers have gone out of scope. Exported in addition to
+--   'stdoutThread' so tests can inject their own emit (e.g. the
+--   catch-less legacy variant from trace-dispatcher-2.13.0).
+stdoutThreadWith :: (Text -> IO Bool) -> OutChan Text -> IO ()
+stdoutThreadWith emit outChan =
   catch (loop outChan) \BlockedIndefinitelyOnMVar ->
     pure ()
   where
@@ -99,19 +118,6 @@ stdoutThread outChan =
     -- sink dead -> switch to drain
     (if ok then loop else drain) chan
 
-  emit :: Text -> IO Bool
-  emit str = do
-    res <- try @IOException do
-      TIO.hPutStrLn stdout str
-      hFlush stdout
-    case first @Either ioeGetErrorType res of
-      Right ()              -> pure True
-      Left InvalidArgument  -> pure True                  -- bad line: skip silently, keep printing
-      Left ResourceVanished -> pure False                 -- EPIPE: sink gone
-      Left IllegalOperation -> pure False                 -- closed handle: sink gone
-      Left _                -> pure False                 -- unknown: treat as gone (conservative)
-
   -- no stdout, no stderr; still terminates
   drain :: OutChan a -> IO ()
   drain = forever . void . readChan
-

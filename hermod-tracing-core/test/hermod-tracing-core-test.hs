@@ -116,9 +116,9 @@ unitTests = testGroup "hermod-tracing-core-unit-tests"
     , testCase "testLimiting" $ do
         _res <- testLimiting
         assertBool "testLimiting" True -- currently not verified
-    , testCase "testStdoutTracerHiraganaSurvives" $ do
-        ok <- testStdoutTracerHiraganaSurvives
-        assertBool "testStdoutTracerHiraganaSurvives" ok
+    , testCase "testStdoutTracerHiraganaFull" $ do
+        ok <- testStdoutTracerHiraganaFull
+        assertBool "testStdoutTracerHiraganaFull" ok
     ]
 
 localTests :: TestTree

@@ -1,5 +1,7 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Cardano.Logging.Tracer.Standard (
     standardTracer
@@ -12,14 +14,17 @@ import           Cardano.Logging.Utils (threadLabelMe, tryEvalNF)
 import           Control.Concurrent.Async
 import           Control.Concurrent.Chan.Unagi.Bounded
 import           Control.Exception
-import           Control.Monad (forever, when)
+import           Control.Monad (forever, void, when)
 import           Control.Monad.IO.Class
 import qualified Control.Tracer as T
+import           Data.Bifunctor (first)
 import           Data.IORef
 import           Data.Maybe (isNothing)
 import           Data.Text (Text)
 import qualified Data.Text.IO as TIO
+import           GHC.IO.Exception (IOErrorType (..))
 import           System.IO (hFlush, hPutStrLn, stderr, stdout)
+import           System.IO.Error (ioeGetErrorType)
 
 -- | The state of a standard tracer
 newtype StandardTracerState =  StandardTracerState {
@@ -72,32 +77,39 @@ startStdoutThread stateRef = do
 
 -- | The new thread, which does the actual write from the queue.
 --   Will safely terminate when all producers have gone out of scope.
-stdoutThread :: Handle -> OutChan Text -> IO ()
-stdoutThread h outChan =
+stdoutThread :: OutChan Text -> IO ()
+stdoutThread = stdoutThreadWith \str -> do
+  res <- try @IOException do
+    TIO.hPutStrLn stdout str
+    hFlush stdout
+  case first @Either ioeGetErrorType res of
+    Right ()              -> pure True
+    Left InvalidArgument  -> pure True                  -- bad line: skip silently, keep printing
+    Left ResourceVanished -> pure False                 -- EPIPE: sink gone
+    Left IllegalOperation -> pure False                 -- closed handle: sink gone
+    Left _                -> pure False                 -- unknown: treat as gone (conservative)
+
+stdoutThreadWith :: (Text -> IO Bool) -> OutChan Text -> IO ()
+stdoutThreadWith emit outChan =
   catch (loop outChan) \BlockedIndefinitelyOnMVar ->
-    pure () 
+    pure ()
   where
   loop :: OutChan Text -> IO ()
   loop chan = do
     t  <- readChan chan
     ok <- tryEvalNF t >>= \case
             Right t' -> emit t'
-            -- forcing failed; skip, keep going
-            Left{}   -> pure True
+            -- Can't render the trace message. Report it on stderr
+            -- as a bypass; if stderr itself refuses the write
+            -- (closed, EPIPE, …), stay silent and keep going.
+            Left ex  -> do
+              _ <- try @IOException $ do
+                     hPutStrLn stderr $
+                       "Error rendering trace message: " ++ displayException ex
+                     hFlush stderr
+              pure True
     -- sink dead -> switch to drain
     (if ok then loop else drain) chan
-
-  emit :: Text -> IO Bool
-  emit str = do
-    res <- try @IOException do
-      TIO.hPutStrLn h str
-      hFlush h
-    case first @Either ioeGetErrorType res of
-      Right ()              -> pure True
-      Left InvalidArgument  -> pure True                  -- bad line: skip silently, keep printing
-      Left ResourceVanished -> pure False                 -- EPIPE: sink gone
-      Left IllegalOperation -> pure False                 -- closed handle: sink gone
-      Left _                -> pure False                 -- unknown: treat as gone (conservative)
 
   -- no stdout, no stderr; still terminates
   drain :: OutChan a -> IO ()
