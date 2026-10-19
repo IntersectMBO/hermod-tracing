@@ -1,5 +1,10 @@
 # Revision history for hermod-tracing-core
 
+## NEXT
+
+* A configured tracer builds its per-namespace tracers once per
+  configuration, not once per traced message.
+
 ## 1.1.0 -- October 2026
 
 A major bump because `Hermod.Tracing` exports less (first bullet). No
