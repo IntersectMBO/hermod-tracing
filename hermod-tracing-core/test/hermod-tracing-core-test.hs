@@ -26,6 +26,7 @@ import           Hermod.Tracing.Test.Unit.EKG
 import           Hermod.Tracing.Test.Unit.FrequencyLimiting
 import           Hermod.Tracing.Test.Unit.Hostname
 import           Hermod.Tracing.Test.Unit.Routing
+import           Hermod.Tracing.Test.Unit.StdoutTracer
 import           Hermod.Tracing.Test.Unit.Trivial
 
 
@@ -115,6 +116,9 @@ unitTests = testGroup "hermod-tracing-core-unit-tests"
     , testCase "testLimiting" $ do
         _res <- testLimiting
         assertBool "testLimiting" True -- currently not verified
+    , testCase "testStdoutTracerHiraganaSurvives" $ do
+        ok <- testStdoutTracerHiraganaSurvives
+        assertBool "testStdoutTracerHiraganaSurvives" ok
     ]
 
 localTests :: TestTree

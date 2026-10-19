@@ -72,10 +72,33 @@ startStdoutThread stateRef = do
 
 -- | The new thread, which does the actual write from the queue.
 --   Will safely terminate when all producers have gone out of scope.
-stdoutThread :: OutChan Text -> IO ()
-stdoutThread outChan =
-  handle (\BlockedIndefinitelyOnMVar -> pure ()) $
-    forever $
-      readChan outChan >>= tryEvalNF >>= \case
-        Right t                     -> TIO.putStrLn t >> hFlush stdout
-        Left (ex :: SomeException)  -> hPutStrLn stderr $ "Error rendering trace message: " ++ displayException ex
+stdoutThread :: Handle -> OutChan Text -> IO ()
+stdoutThread h outChan =
+  catch (loop outChan) \BlockedIndefinitelyOnMVar ->
+    pure () 
+  where
+  loop :: OutChan Text -> IO ()
+  loop chan = do
+    t  <- readChan chan
+    ok <- tryEvalNF t >>= \case
+            Right t' -> emit t'
+            -- forcing failed; skip, keep going
+            Left{}   -> pure True
+    -- sink dead -> switch to drain
+    (if ok then loop else drain) chan
+
+  emit :: Text -> IO Bool
+  emit str = do
+    res <- try @IOException do
+      TIO.hPutStrLn h str
+      hFlush h
+    case first @Either ioeGetErrorType res of
+      Right ()              -> pure True
+      Left InvalidArgument  -> pure True                  -- bad line: skip silently, keep printing
+      Left ResourceVanished -> pure False                 -- EPIPE: sink gone
+      Left IllegalOperation -> pure False                 -- closed handle: sink gone
+      Left _                -> pure False                 -- unknown: treat as gone (conservative)
+
+  -- no stdout, no stderr; still terminates
+  drain :: OutChan a -> IO ()
+  drain = forever . void . readChan
