@@ -25,6 +25,7 @@ import           Hermod.Tracing.Test.Unit.Documentation
 import           Hermod.Tracing.Test.Unit.EKG
 import           Hermod.Tracing.Test.Unit.FrequencyLimiting
 import           Hermod.Tracing.Test.Unit.Hostname
+import           Hermod.Tracing.Test.Unit.Reconfiguration
 import           Hermod.Tracing.Test.Unit.Routing
 import           Hermod.Tracing.Test.Unit.StdoutTracer
 import           Hermod.Tracing.Test.Unit.Trivial
@@ -64,6 +65,7 @@ unitTests = testGroup "hermod-tracing-core-unit-tests"
         res <- testConfig
         bres <- testLoggingMessagesEq res testConfigResult
         assertBool "testConfig" bres
+    , testCase "testReconfigurationLiveHeap" testReconfigurationLiveHeap
     , testCase "testConfigFileParsing" $ do
         res <- testConfigFileParsing
         assertEqual "testConfigFileParsing"
