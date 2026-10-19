@@ -53,6 +53,13 @@ jobs:
         $env:PATH=("C:\msys64\mingw64\bin;{0}" -f $env:PATH)
         echo "PATH=$env:PATH" >> $env:GITHUB_ENV
 
+    # One build plan for libraries, tests and benchmarks: benchmarks get build
+    # coverage, and the test steps below reuse the build instead of
+    # reconfiguring the packages.
+    - name: Enable tests and benchmarks
+      shell: bash
+      run: printf 'tests: True\nbenchmarks: True\n' > cabal.project.local
+
     - name: Update Hackage and CHaP
       run: cabal update
 
@@ -80,7 +87,7 @@ jobs:
         path: ${{ steps.setup-haskell.outputs.cabal-store }}
         key: ${{ steps.cache-dependencies.outputs.cache-primary-key }}
 
-    - name: Build all packages
+    - name: Build all packages, tests and benchmarks
       run: cabal build all -j
 
     - name: hermod-tracing-api [test]
