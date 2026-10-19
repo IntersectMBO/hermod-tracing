@@ -9,6 +9,8 @@
 * Added tests forcing IO exceptions on `stdoutThread`.
 * A configured tracer builds its per-namespace tracers once per
   configuration, not once per traced message.
+* The configuration stages are specialised to the tracer's monad, so a
+  traced message no longer goes through class dictionaries.
 
 ## 1.1.0 -- October 2026
 
