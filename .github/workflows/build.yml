@@ -45,7 +45,7 @@ jobs:
         ghc-version: ${{ matrix.ghc }}
         cabal-version: "3.12.1.0"
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
     - name: Update PATH
       if: runner.os == 'Windows'
@@ -62,7 +62,7 @@ jobs:
         cabal build all --dry-run
         cat dist-newstyle/cache/plan.json | jq -r '."install-plan"[] | select(.style != "local") | .id' | sort | uniq > dependencies.txt
 
-    - uses: actions/cache/restore@v4
+    - uses: actions/cache/restore@v6
       name: "Restore cache: `cabal store`"
       id: cache-dependencies
       with:
@@ -73,7 +73,7 @@ jobs:
     - name: Build dependencies
       run: cabal build --only-dependencies all -j
 
-    - uses: actions/cache/save@v4
+    - uses: actions/cache/save@v6
       name: "Save cache: `cabal store`"
       if: always() && steps.cache-dependencies.outputs.cache-hit != 'true'
       with:
