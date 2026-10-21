@@ -3,6 +3,8 @@
 
 module Hermod.Tracing.Tracer.Standard (
     standardTracer
+  , stdoutThread
+  , stdoutThreadWith
 ) where
 
 import           Hermod.Tracing.DocuGenerator
@@ -13,14 +15,17 @@ import           Hermod.Tracing.Utils (threadLabelMe, tryEvalNF)
 import           Control.Concurrent.Async
 import           Control.Concurrent.Chan.Unagi.Bounded
 import           Control.Exception
-import           Control.Monad (forever, when)
+import           Control.Monad (forever, void, when)
 import           Control.Monad.IO.Class
 import qualified Control.Tracer as T
+import           Data.Bifunctor (first)
 import           Data.IORef
 import           Data.Maybe (isNothing)
 import           Data.Text (Text)
 import qualified Data.Text.IO as TIO
+import           GHC.IO.Exception (IOErrorType (..))
 import           System.IO (hFlush, hPutStrLn, stderr, stdout)
+import           System.IO.Error (ioeGetErrorType)
 
 -- | The state of a standard tracer
 newtype StandardTracerState =  StandardTracerState {
@@ -71,12 +76,48 @@ startStdoutThread stateRef = do
     link as
     atomicWriteIORef stateRef $ StandardTracerState (Just (inChan, outChan, as))
 
--- | The new thread, which does the actual write from the queue.
---   Will safely terminate when all producers have gone out of scope.
+-- | Specialisation of 'stdoutThreadWith' using the production @emit@:
+--   @try \@IOException@ around the write, classified via
+--   'ioeGetErrorType' (encode-fail skipped; sink-dead switches to drain).
 stdoutThread :: OutChan Text -> IO ()
-stdoutThread outChan =
-  handle (\BlockedIndefinitelyOnMVar -> pure ()) $
-    forever $
-      readChan outChan >>= tryEvalNF >>= \case
-        Right t                     -> TIO.putStrLn t >> hFlush stdout
-        Left (ex :: SomeException)  -> hPutStrLn stderr $ "Error rendering trace message: " ++ displayException ex
+stdoutThread = stdoutThreadWith \str -> do
+  res <- try @IOException do
+    TIO.hPutStrLn stdout str
+    hFlush stdout
+  case first @Either ioeGetErrorType res of
+    Right ()              -> pure True
+    Left InvalidArgument  -> pure True                  -- bad line: skip silently, keep printing
+    Left ResourceVanished -> pure False                 -- EPIPE: sink gone
+    Left IllegalOperation -> pure False                 -- closed handle: sink gone
+    Left _                -> pure False                 -- unknown: treat as gone (conservative)
+
+-- | The writer thread, parameterised over @emit@ (@True@ = keep looping,
+--   @False@ = sink gone, switch to drain). Safely terminates when all
+--   producers have gone out of scope. Exported in addition to
+--   'stdoutThread' so tests can inject their own emit (e.g. the
+--   catch-less legacy variant from trace-dispatcher-2.13.0).
+stdoutThreadWith :: (Text -> IO Bool) -> OutChan Text -> IO ()
+stdoutThreadWith emit outChan =
+  catch (loop outChan) \BlockedIndefinitelyOnMVar ->
+    pure ()
+  where
+  loop :: OutChan Text -> IO ()
+  loop chan = do
+    t  <- readChan chan
+    ok <- tryEvalNF t >>= \case
+            Right t' -> emit t'
+            -- Can't render the trace message. Report it on stderr
+            -- as a bypass; if stderr itself refuses the write
+            -- (closed, EPIPE, …), stay silent and keep going.
+            Left ex  -> do
+              _ <- try @IOException $ do
+                     hPutStrLn stderr $
+                       "Error rendering trace message: " ++ displayException ex
+                     hFlush stderr
+              pure True
+    -- sink dead -> switch to drain
+    (if ok then loop else drain) chan
+
+  -- no stdout, no stderr; still terminates
+  drain :: OutChan a -> IO ()
+  drain = forever . void . readChan

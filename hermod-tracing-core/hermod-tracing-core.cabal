@@ -32,6 +32,8 @@ common project-config
   default-extensions:   LambdaCase
                         NamedFieldPuns
                         OverloadedStrings
+                        BlockArguments
+                        TypeApplications
 
   ghc-options:          -Wall
                         -Wcompat
@@ -122,6 +124,7 @@ test-suite hermod-tracing-core-test
                         Hermod.Tracing.Test.Unit.FrequencyLimiting
                         Hermod.Tracing.Test.Unit.Documentation
                         Hermod.Tracing.Test.Unit.Hostname
+                        Hermod.Tracing.Test.Unit.StdoutTracer
                         Paths_hermod_tracing_core
 
   autogen-modules:      Paths_hermod_tracing_core
@@ -130,9 +133,11 @@ test-suite hermod-tracing-core-test
 
   build-depends:        base >=4.12 && <5
                       , aeson
+                      , async
                       , bytestring
                       , containers
                       , deepseq
+                      , directory
                       , ekg-core
                       , generic-data
                       , hostname
@@ -144,6 +149,7 @@ test-suite hermod-tracing-core-test
                       , tasty-quickcheck
                       , time
                       , hermod-tracing-core
+                      , unagi-chan
                       , unordered-containers
                       , utf8-string
                       , yaml

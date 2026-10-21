@@ -25,6 +25,8 @@ common project-config
   default-extensions:   LambdaCase
                         NamedFieldPuns
                         OverloadedStrings
+                        BlockArguments
+                        TypeApplications
 
   ghc-options:          -Wall
                         -Wcompat
