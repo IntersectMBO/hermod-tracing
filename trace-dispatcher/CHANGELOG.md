@@ -1,5 +1,16 @@
 # Revision history for trace-dispatcher
 
+## 2.13.3 -- October 2026
+
+* `Cardano.Logging.Tracer.Standard.stdoutThread` no longer crashes the
+  process when stdout rejects a message (e.g. a non-UTF-8 locale
+  cannot encode a code point). The write is `try`-wrapped; the first
+  failure after a successful write is reported on stderr and the loop
+  continues. Rendering failures (NF-force) are reported on stderr and
+  the loop continues. All stderr writes are themselves wrapped in
+  `try`, so a broken stderr does not escalate.
+  Fixes IntersectMBO/hermod-tracing#22.
+
 ## 2.13.2 -- October 2026
 
 * Support parsing Node legacy config inlined into `HermodTracing` object.
