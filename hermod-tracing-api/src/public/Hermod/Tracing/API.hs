@@ -84,6 +84,7 @@ import           Hermod.Tracing.Trace.Combinators as Export (traceWith, routingT
 import           Hermod.Tracing.Trace as Export (filterTraceMaybe)
 import           Hermod.Tracing.Trace.Construct as Export (mkTrace, nullTrace, natTrace, premapM, debugTrace, stdoutTrace)
 import           Hermod.Tracing.Types.ShowT as Export (showT, showTHex, showTReal)
+import           Hermod.Tracing.Span as Export (SpanId (..), SpanTrace (..), SpanError (..), withSpan, withSpanLazy)
 import           Data.Functor.Contravariant as Export (Contravariant (..), (>$<))
 
 import           qualified Hermod.Tracing.Trace.Combinators as Internal (foldTraceM, foldCondTraceM)
