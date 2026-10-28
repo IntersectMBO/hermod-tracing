@@ -53,6 +53,13 @@ whose effect no longer runs over a squelching trace (below).
   dictionary away where the trace is built; `natTrace` is written so that its
   `INLINE` also fires for point-free uses such as `natTrace lift`.
 * Haddock: removed the stale mention of `ForwarderAddr`.
+* New `:public` module `Hermod.Tracing.Span`: begin/end span tracing with
+  uniform shape on all exit paths. `withSpan` / `withSpanLazy` /
+  `withSpanAndMetric` / `withSpanAndMetricLazy` bracket an action; every
+  `SpanBegin` is matched by a single end event (`SpanEnd` or
+  `SpanEndWithMetric`) whose `Maybe SpanError` field encodes success,
+  sync exception, or async exception, so downstream never has to pair
+  up orphans.
 
 ## 1.0.0 -- July 2026
 
