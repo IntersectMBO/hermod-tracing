@@ -28,15 +28,9 @@ jobs:
 
     env:
       # Modify this value to "invalidate" all cabal caches.
-      CABAL_CACHE_VERSION: "2026-09-18"
+      CABAL_CACHE_VERSION: "2026-11-02"
 
     steps:
-
-    - name: "Install System Dependencies via pacman (msys2)"
-      if: runner.os == 'Windows'
-      shell: 'C:/msys64/usr/bin/bash.exe -e {0}'
-      run: |
-        /usr/bin/pacman -S --noconfirm mingw-w64-x86_64-pkg-config base-devel autoconf-wrapper autoconf automake libtool make
 
     - name: Install Haskell
       uses: input-output-hk/actions/haskell@dbb6ea6d50ffc37a2d481fd8047aff028bac3223 # as in cardano-node
