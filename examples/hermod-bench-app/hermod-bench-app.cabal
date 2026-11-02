@@ -1,0 +1,72 @@
+cabal-version: 3.0
+
+name:                   hermod-bench-app
+version:                0.1.0
+synopsis:               A chatty application for benchmarking Hermod at application level
+description:            Worker threads compute, keep a live heap busy and trace the
+                        events of an anime cast through tracers configured like
+                        cardano-node's. Not published; see README.md.
+category:               Trace
+copyright:              2026 Intersect.
+maintainer:             michael@icangroup.co.uk
+license:                Apache-2.0
+build-type:             Simple
+extra-doc-files:        README.md
+extra-source-files:     config/*.yaml
+
+common project-config
+  default-language:     Haskell2010
+
+  default-extensions:   BangPatterns
+                        LambdaCase
+                        NamedFieldPuns
+                        OverloadedStrings
+                        ScopedTypeVariables
+
+  ghc-options:          -Wall
+                        -Wcompat
+                        -Wincomplete-uni-patterns
+                        -Wincomplete-record-updates
+                        -Wpartial-fields
+                        -Widentities
+                        -Wredundant-constraints
+                        -Wmissing-export-lists
+                        -Wno-unticked-promoted-constructors
+                        -Wunused-packages
+
+executable hermod-bench-app
+  import:               project-config
+  hs-source-dirs:       app, src
+  main-is:              Main.hs
+  other-modules:        Cast
+                        Tracers
+                        Workload
+
+  ghc-options:          -threaded
+                        -rtsopts
+                        "-with-rtsopts=-T -N2"
+
+  build-depends:        base >=4.12 && <5
+                      , aeson
+                      , array
+                      , async
+                      , bytestring
+                      , containers
+                      , contra-tracer
+                      , ekg-core
+                      , hermod-tracing-api:public
+                      , hermod-tracing-core
+                      , optparse-applicative
+                      , text
+
+executable hermod-bench-compare
+  import:               project-config
+  hs-source-dirs:       compare
+  main-is:              Main.hs
+
+  build-depends:        base >=4.12 && <5
+                      , aeson
+                      , bytestring
+                      , filepath
+                      , optparse-applicative
+                      , process

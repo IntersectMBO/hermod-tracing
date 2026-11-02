@@ -1,0 +1,10 @@
+# Every character silenced: each tracer is switched off at configuration, so
+# a traced message is dropped at the first stage.  Nothing is emitted.
+HermodTracing:
+  Options:
+    "":
+      severity: Silence
+      detail: DNormal
+      backends:
+        - Stdout MachineFormat
+        - EKGBackend

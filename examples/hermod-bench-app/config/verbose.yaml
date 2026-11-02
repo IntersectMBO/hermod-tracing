@@ -1,0 +1,9 @@
+# Everything emitted: the worst case, dominated by rendering.
+HermodTracing:
+  Options:
+    "":
+      severity: Debug
+      detail: DNormal
+      backends:
+        - Stdout MachineFormat
+        - EKGBackend

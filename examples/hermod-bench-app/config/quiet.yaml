@@ -1,0 +1,10 @@
+# Like a mainnet node: Notice and above, so nearly every traced message is
+# dropped by the severity filter; the metrics of all messages still go to EKG.
+HermodTracing:
+  Options:
+    "":
+      severity: Notice
+      detail: DNormal
+      backends:
+        - Stdout MachineFormat
+        - EKGBackend

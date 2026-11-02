@@ -1,0 +1,43 @@
+# Like cardano-node's benchmark configuration: some characters chatty, others
+# quiet, with silenced subtrees and a frequency limiter, so most stages hold a
+# configuration per namespace.
+HermodTracing:
+  Options:
+    "":
+      severity: Notice
+      detail: DNormal
+      backends:
+        - Stdout MachineFormat
+        - EKGBackend
+
+    Goku:
+      severity: Debug
+    Goku.Training.PowerLevel:
+      severity: Silence
+    Goku.Feats:
+      severity: Info
+
+    Eren:
+      severity: Info
+    Eren.ODM:
+      severity: Silence
+
+    SailorMercury:
+      severity: Debug
+    SailorMercury.Computer.Scan.Progress:
+      maxFrequency: 2.0
+
+    Chihiro:
+      severity: Info
+    Chihiro.Bathhouse.Chore:
+      severity: Silence
+
+    Levi:
+      severity: Info
+    Levi.Cleaning:
+      severity: Debug
+    Squad:
+      severity: Info
+
+    Naruto.Ramen:
+      severity: Info
