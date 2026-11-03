@@ -1,5 +1,12 @@
 # Revision history for trace-dispatcher
 
+## 2.13.3 -- November 2026
+
+* `Cardano.Logging.Tracer.Standard.stdoutThread` catches all IO
+  exceptions, and reports to stderr. If the exception condition is
+  removed from the environment, the stdoutThread will resume normal
+  operations. Fixes IntersectMBO/hermod-tracing#22.
+
 ## 2.13.2 -- October 2026
 
 * Support parsing Node legacy config inlined into `HermodTracing` object.

@@ -1,5 +1,13 @@
 # Revision history for hermod-tracing-core
 
+## NEXT
+
+* `Hermod.Tracing.Tracer.Standard.stdoutThread` catches all IO
+  exceptions, and reports to stderr. If the exception condition is
+  removed from the environment, the stdoutThread will resume normal
+  operations. Fixes IntersectMBO/hermod-tracing#22.
+* Added tests forcing IO exceptions on `stdoutThread`.
+
 ## 1.1.0 -- October 2026
 
 A major bump because `Hermod.Tracing` exports less (first bullet). No
