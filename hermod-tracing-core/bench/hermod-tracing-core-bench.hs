@@ -1,4 +1,4 @@
-import           Hermod.Tracing hiding (stdoutTracer)
+import           Hermod.Tracing
 import           Hermod.Tracing.Test.Config
 import           Hermod.Tracing.Test.Tracer
 import           Hermod.Tracing.Test.Types
