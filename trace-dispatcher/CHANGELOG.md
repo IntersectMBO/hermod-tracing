@@ -6,7 +6,6 @@
   exceptions, and reports to stderr. If the exception condition is
   removed from the environment, the stdoutThread will resume normal
   operations. Fixes IntersectMBO/hermod-tracing#22.
-* Added tests forcing IO exceptions on `stdoutThread`.
 
 ## 2.13.2 -- October 2026
 

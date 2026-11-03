@@ -39,7 +39,8 @@ testStdoutTracerHiraganaSurvives = do
       hDuplicateTo saved stdout
       hClose saved
 
-  bracket acquire release $ \_ -> do
+  hFlush stdout
+  ret <- bracket acquire release $ \_ -> do
     hDuplicateTo tempH stdout
     hClose tempH
     hSetEncoding stdout latin1           -- CP1252-like: no Hiragana
@@ -60,10 +61,12 @@ testStdoutTracerHiraganaSurvives = do
 
     hFlush stdout
     contents <- TIO.readFile path
-    removeFile path
 
     pure $ and
       [ Text.isInfixOf "ASCII before" contents
       , Text.isInfixOf "ASCII after"  contents
       , not (Text.isInfixOf "\12373"  contents)
       ]
+
+  removeFile path
+  pure ret
