@@ -7,6 +7,12 @@
   removed from the environment, the stdoutThread will resume normal
   operations. Fixes IntersectMBO/hermod-tracing#22.
 * Added tests forcing IO exceptions on `stdoutThread`.
+* A configured tracer builds its per-namespace tracers once per
+  configuration, not once per traced message.
+* The configuration stages are specialised to the tracer's monad, so a
+  traced message no longer goes through class dictionaries.
+* A message's namespace is looked up in a per-namespace configuration
+  without allocating, comparing its inner names before its prefix.
 
 ## 1.1.0 -- October 2026
 

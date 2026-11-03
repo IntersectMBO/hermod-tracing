@@ -27,6 +27,7 @@ import           Hermod.Tracing.Types.Config
 import           Hermod.Tracing.Types.Doc
 
 import qualified Control.Tracer as T
+import qualified Control.Tracer.Arrow as TA
 import qualified Data.Aeson     as AE
 import           Data.Text      (Text)
 
@@ -44,8 +45,17 @@ instance Monad m => T.Contravariant (Trace m) where
       (lc, Left tc) -> (lc, Left tc)
 
 -- | @tr1 \<\> tr2@ will run @tr1@ and then @tr2@ with the same input.
+--   A squelching side is dropped (its effects are never run anyway), so the
+--   result squelches exactly when both sides do.  Two emitting sides run one
+--   after the other in a single effect, which is cheaper per message than
+--   @contra-tracer@'s arrow fan-out.
 instance Monad m => Semigroup (Trace m a) where
-  Trace a1 <> Trace a2 = Trace (a1 <> a2)
+  {-# INLINE (<>) #-}
+  Trace (T.Tracer (TA.Squelching _)) <> tr2 = tr2
+  tr1 <> Trace (T.Tracer (TA.Squelching _)) = tr1
+  Trace a1 <> Trace a2 = Trace $ T.arrow $ T.emit $ \x -> do
+    T.traceWith a1 x
+    T.traceWith a2 x
 
 instance Monad m => Monoid (Trace m a) where
     mappend = (<>)

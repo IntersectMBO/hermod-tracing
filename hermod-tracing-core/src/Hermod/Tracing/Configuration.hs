@@ -39,7 +39,7 @@ import           Control.Monad.IO.Unlift (MonadUnliftIO)
 import qualified Control.Tracer as T
 import           Data.IORef (IORef, modifyIORef, newIORef, readIORef, writeIORef)
 import           Data.List (inits, maximumBy, nub)
-import qualified Data.Map.Lazy as Map
+import qualified Data.Map.Strict as Map
 import           Data.Maybe (fromMaybe, listToMaybe, mapMaybe)
 import qualified Data.Set as Set
 import           Data.Text (Text, intercalate, unpack)
@@ -83,6 +83,7 @@ configureTracers cr config tracers = do
 
 -- | Switch off any message of a particular tracer based on the configuration.
 -- If the top tracer is silent and no subtracer is not silent, then switch it off
+{-# INLINABLE maybeSilent #-}
 maybeSilent :: forall m a. (MonadIO m) =>
    ( TraceConfig -> Namespace a -> Bool)
   -> [Text]
@@ -152,9 +153,38 @@ hasNoMetrics _tc _ns =
     let allNS = allNamespaces :: [Namespace a]
     in all (null . metricsDocFor) allNS
 
+-- | The state of a 'withNamespaceConfig' stage.  While a configuration is
+--   applied ('TCConfig'), the values per namespace are collected; 'TCOptimize'
+--   then builds the downstream tracer once for each value, so that a traced
+--   message only selects its tracer.  Strict throughout, so no state refers to
+--   an earlier one.
+data NamespaceConfig m a b =
+    -- | Values per namespace, collected since the last 'TCReset'.
+    Collecting !(Map.Map NSKey b)
+    -- | The same tracer for all namespaces.
+  | Uniform !(Trace m a)
+    -- | Tracers for the namespaces that deviate from the most common value,
+    --   and the tracer for that value.
+  | Mixed !(Map.Map NSKey (Trace m a)) !(Trace m a)
+
+-- | A namespace as a stage sees it: prefix and inner namespace.  The inner
+--   namespace is compared first: the namespaces of one stage almost always
+--   share their prefix, so it mostly decides a comparison on its own.
+data NSKey = NSKey ![Text] ![Text]
+
+instance Eq NSKey where
+  NSKey p i == NSKey p' i' = i == i' && p == p'
+
+instance Ord NSKey where
+  compare (NSKey p i) (NSKey p' i') = compare i i' <> compare p p'
+
+nsKey :: LoggingContext -> NSKey
+nsKey lc = NSKey (lcNSPrefix lc) (lcNSInner lc)
+
 -- | Take a selector function called 'extract'.
 -- Take a function from trace to trace with this config dependent value.
 -- In this way construct a trace transformer with a config value
+{-# INLINABLE withNamespaceConfig #-}
 withNamespaceConfig :: forall m a b c. (MonadIO m, Ord b) =>
      String
   -> (TraceConfig -> Namespace a -> m b)
@@ -162,42 +192,37 @@ withNamespaceConfig :: forall m a b c. (MonadIO m, Ord b) =>
   -> Trace m c
   -> m (Trace m a)
 withNamespaceConfig name extract withConfig tr = do
-    ref  <- liftIO (newIORef (Left (Map.empty, Nothing)))
+    ref  <- liftIO (newIORef (Collecting Map.empty))
     pure $ Trace $ T.mkTracer $ mapFunc ref
   where
     configError = liftIO . throwIO . HermodConfigException
+    selectTrace :: LoggingContext -> NamespaceConfig m a b -> Maybe (Trace m a)
+    selectTrace lc = \case
+      Uniform tt     -> Just tt
+      Mixed tmap tt  -> Just $ Map.findWithDefault tt (nsKey lc) tmap
+      Collecting _   -> Nothing
     mapFunc ref =
       \case
         (lc, Right a) -> do
-          eitherConf <- liftIO $ readIORef ref
-          case eitherConf of
-            Right val -> do
-              let tt = withConfig (Just val) tr
-              T.traceWith (unpackTrace tt) (lc, Right a)
-            Left (cmap, Just v) ->
-              case Map.lookup (lcNSPrefix lc ++ lcNSInner lc) cmap of
-                    Just val -> do
-                      let tt = withConfig (Just val) tr
-                      T.traceWith (unpackTrace tt) (lc, Right a)
-                    Nothing  -> do
-                      let tt = withConfig (Just v) tr
-                      T.traceWith (unpackTrace tt) (lc, Right a)
+          nsConfig <- liftIO $ readIORef ref
+          case selectTrace lc nsConfig of
+            Just tt -> T.traceWith (unpackTrace tt) (lc, Right a)
             -- This can happen during reconfiguration, so we don't throw an error any more
-            Left (_cmap, Nothing) -> pure ()
+            Nothing -> pure ()
         (lc, Left TCReset) -> do
-          liftIO $ writeIORef ref (Left (Map.empty, Nothing))
+          liftIO $ writeIORef ref (Collecting Map.empty)
           let tt = withConfig Nothing tr
           T.traceWith (unpackTrace tt) (lc, Left TCReset)
         (lc, Left (TCConfig c)) -> do
           let nst = lcNSPrefix lc ++ lcNSInner lc
           !val <- extract c (Namespace (lcNSPrefix lc) (lcNSInner lc))
-          eitherConf <- liftIO $ readIORef ref
-          case eitherConf of
-            Left (cmap, Nothing) ->
-              case Map.lookup nst cmap of
+          nsConfig <- liftIO $ readIORef ref
+          case nsConfig of
+            Collecting cmap ->
+              case Map.lookup (nsKey lc) cmap of
                 Nothing -> do
                   liftIO
-                      $ writeIORef ref (Left (Map.insert nst val cmap, Nothing))
+                      $ writeIORef ref (Collecting (Map.insert (nsKey lc) val cmap))
                   let tt = withConfig (Just val) tr
                   T.traceWith (unpackTrace tt) (lc, Left (TCConfig c))
                 Just v  -> do
@@ -207,21 +232,21 @@ withNamespaceConfig name extract withConfig tr = do
                       T.traceWith tt (lc, Left (TCConfig c))
                     else configError $ "Inconsistent trace configuration with context "
                                       ++ show nst
-            Right _val -> configError $ "Trace not reset before reconfiguration (1)"
+            Uniform _ -> configError $ "Trace not reset before reconfiguration (1)"
                                 ++ show nst
-            Left (_cmap, Just _v) -> configError $ "Trace not reset before reconfiguration (2)"
+            Mixed _ _ -> configError $ "Trace not reset before reconfiguration (2)"
                                 ++ show nst
         (lc, Left (TCOptimize cr)) -> do
-          eitherConf <- liftIO $ readIORef ref
+          nsConfig <- liftIO $ readIORef ref
           let nst = lcNSPrefix lc ++ lcNSInner lc
-          case eitherConf of
-            Left (cmap, Nothing) ->
+          case nsConfig of
+            Collecting cmap ->
               case nub (Map.elems cmap) of
                 []     -> pure ()
                 [val]  -> do
-                            liftIO $ writeIORef ref $ Right val
-                            let Trace tt = withConfig (Just val) tr
-                            T.traceWith tt (lc, Left (TCOptimize cr))
+                            let !tt = withConfig (Just val) tr
+                            liftIO $ writeIORef ref $ Uniform tt
+                            T.traceWith (unpackTrace tt) (lc, Left (TCOptimize cr))
                 _      -> let decidingDict =
                                 foldl
                                   (\acc e -> Map.insertWith (+) e (1 :: Int) acc)
@@ -230,36 +255,28 @@ withNamespaceConfig name extract withConfig tr = do
                               (mostCommon, _) = maximumBy
                                                   (\(_, n') (_, m') -> compare n' m')
                                                   (Map.assocs decidingDict)
-                              newmap = Map.filter (/= mostCommon) cmap
+                              !tmap = Map.map (\v -> withConfig (Just v) tr)
+                                        (Map.filter (/= mostCommon) cmap)
+                              !tt   = withConfig (Just mostCommon) tr
                           in do
-                            liftIO $ writeIORef ref (Left (newmap, Just mostCommon))
-                            let Trace tt = withConfig Nothing tr
-                            T.traceWith tt (lc, Left (TCOptimize cr))
-            Right _val -> configError $ "Trace not reset before reconfiguration (3)"
+                            liftIO $ writeIORef ref (Mixed tmap tt)
+                            let Trace tt' = withConfig Nothing tr
+                            T.traceWith tt' (lc, Left (TCOptimize cr))
+            Uniform _ -> configError $ "Trace not reset before reconfiguration (3)"
                                 ++ show nst
-            Left (_cmap, Just _v) ->
+            Mixed _ _ ->
                           configError $ "Trace not reset before reconfiguration (4)"
                                       ++ show nst
         (lc, Left dc@TCDocument {}) -> do
-          eitherConf <- liftIO $ readIORef ref
+          nsConfig <- liftIO $ readIORef ref
           let nst = lcNSPrefix lc ++ lcNSInner lc
-          case eitherConf of
-            Right val -> do
-              let tt = withConfig (Just val) tr
-              T.traceWith
-                (unpackTrace tt) (lc, Left dc)
-            Left (cmap, Just v) ->
-              case Map.lookup nst cmap of
-                    Just val -> do
-                      let tt = withConfig (Just val) tr
-                      T.traceWith (unpackTrace tt) (lc, Left dc)
-                    Nothing  -> do
-                      let tt = withConfig (Just v) tr
-                      T.traceWith (unpackTrace tt) (lc, Left dc)
-            Left (_cmap, Nothing) -> configError $ "Missing configuration(2) " <> name <> " ns " <> show nst
+          case selectTrace lc nsConfig of
+            Just tt -> T.traceWith (unpackTrace tt) (lc, Left dc)
+            Nothing -> configError $ "Missing configuration(2) " <> name <> " ns " <> show nst
 
 
 -- | Filter a trace by severity and take the filter value from the config
+{-# INLINABLE filterSeverityFromConfig #-}
 filterSeverityFromConfig :: (MonadIO m) =>
      Trace m a
   -> m (Trace m a)
@@ -289,6 +306,7 @@ filterSeverityFromConfig =
 
 
 -- | Set detail level of a trace from the config
+{-# INLINABLE withDetailsFromConfig #-}
 withDetailsFromConfig :: (MonadIO m) =>
      Trace m a
   -> m (Trace m a)
@@ -301,6 +319,7 @@ withDetailsFromConfig =
               Nothing  -> setDetails DNormal b)
 
 -- | Routing and formatting of a trace from the config
+{-# INLINABLE withBackendsFromConfig #-}
 withBackendsFromConfig :: (MonadIO m) =>
   (Maybe [BackendConfig] -> Trace m FormattedMessage -> Trace m a)
   -> m (Trace m a)
@@ -324,6 +343,7 @@ instance Show (Limiter m a) where
 
 
 -- | Routing and formatting of a trace from the config
+{-# INLINABLE withLimitersFromConfig #-}
 withLimitersFromConfig :: forall a m . (MonadUnliftIO m)
   => Trace m HermodTracingMessage
   -> Trace m a

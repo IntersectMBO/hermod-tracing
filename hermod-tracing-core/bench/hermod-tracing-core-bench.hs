@@ -3,6 +3,9 @@ import           Hermod.Tracing.Test.Config
 import           Hermod.Tracing.Test.Tracer
 import           Hermod.Tracing.Test.Types
 
+import           FilterStages
+import           MixedConfig
+
 import           Data.IORef
 import           System.Metrics (newStore)
 
@@ -11,6 +14,8 @@ import           Criterion.Main
 
 -- Can be run with:
 -- cabal bench hermod-tracing-core-bench --benchmark-option='-o benchmark-trace.html'
+--
+-- Allocation per iteration is reported with --benchmark-option='--regress allocated:iters'.
 
 main :: IO ()
 main = do
@@ -21,6 +26,8 @@ main = do
   imtr    <- inMemoryTracers configState
   tlTr    <- timeLimitedTracers configState stdioTr
   ekgTr   <- ekgTracers configState
+  stages  <- filterStageBenchmarks
+  mixed   <- mixedConfigBenchmarks
   defaultMain [
     bgroup "tracer" [
                         bench "sendMessageStdout1"  $ whnfIO (sendMessage 1 tr)
@@ -46,6 +53,8 @@ main = do
                       , bench "sendEKG 5/100"  $ whnfIO (sendMessage 100 ekgTr)
                       , bench "sendEKG 5/1000"  $ whnfIO (sendMessage 1000 ekgTr)
                     ]
+              , stages
+              , mixed
               ]
 
 stdoutTracers :: ConfigReflection -> Trace IO FormattedMessage -> IO (Trace IO Message)
@@ -74,10 +83,8 @@ filterTracers confState stdoutTracer = do
 
 inMemoryTracers :: ConfigReflection -> IO (Trace IO Message)
 inMemoryTracers confState = do
-    stdoutTrRef     <- newIORef []
-    stdoutTracer'   <- testTracer stdoutTrRef
-    forwardTrRef    <- newIORef []
-    forwardTracer'  <- testTracer forwardTrRef
+    stdoutTracer'   <- testTracerNF
+    forwardTracer'  <- testTracerNF
     tr              <- mkHermodTracer
                         stdoutTracer'
                         forwardTracer'

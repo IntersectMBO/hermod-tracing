@@ -1,8 +1,11 @@
+{-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 
 module Hermod.Tracing.Test.Tracer (
     testTracer
+  , testTracerNF
   , formattedMsgAsText
   , testLoggingMessageEq
   , testLoggingMessagesEq
@@ -12,6 +15,7 @@ import           Hermod.Tracing
 import           Hermod.Tracing.DocuGenerator (docIt)
 import           Hermod.Tracing.Types.TraceMessage
 
+import           Control.DeepSeq (NFData (..))
 import           Control.Monad.IO.Class
 import           Data.Aeson (decodeStrict)
 import           Data.Function (on)
@@ -33,6 +37,30 @@ testTracer ioRef = liftIO $
         (Stdout MachineFormat)
         (lc, c)
     output (LoggingContext{}, _) = pure ()
+
+-- | Like 'testTracer', but evaluates each message fully, as a backend that
+--   renders it would, and keeps nothing, so the live heap stays constant.
+--   For benchmarks; 'testTracer' stores the messages unevaluated.
+testTracerNF :: MonadIO m => m (Trace m FormattedMessage)
+testTracerNF = liftIO $
+    pure $ Trace $ arrow $ emit output
+  where
+    output (LoggingContext{}, Right msg) = liftIO $ do
+      !_ <- tryEvalNF msg
+      pure ()
+    output (lc, c@(Left TCDocument {})) =
+       docIt
+        (Stdout MachineFormat)
+        (lc, c)
+    output (LoggingContext{}, _) = pure ()
+
+instance NFData FormattedMessage where
+  rnf = \case
+    FormattedHuman colours text -> rnf colours `seq` rnf text
+    FormattedMachine text       -> rnf text
+    FormattedMetrics metrics    -> rnf metrics
+    FormattedForwarder obj      -> rnf obj
+    FormattedCBOR bytes         -> rnf bytes
 
 
 formattedMsgAsText :: FormattedMessage -> Text

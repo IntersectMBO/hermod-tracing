@@ -6,6 +6,15 @@
   exceptions, and reports to stderr. If the exception condition is
   removed from the environment, the stdoutThread will resume normal
   operations. Fixes IntersectMBO/hermod-tracing#22.
+* A configured tracer builds its per-namespace tracers once per
+  configuration, not once per traced message.
+* The configuration stages are specialised to the tracer's monad, so a
+  traced message no longer goes through class dictionaries.
+* A message's namespace is looked up in a per-namespace configuration
+  without allocating, comparing its inner names before its prefix.
+* `Trace`'s `(<>)` runs both sides one after the other in a single effect
+  instead of `contra-tracer`'s arrow fan-out, and returns the other side
+  unchanged if one side squelches.
 
 ## 2.13.2 -- October 2026
 

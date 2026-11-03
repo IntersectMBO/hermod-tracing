@@ -124,11 +124,14 @@ test-suite hermod-tracing-core-test
                         Hermod.Tracing.Test.Unit.Documentation
                         Hermod.Tracing.Test.Unit.Hostname
                         Hermod.Tracing.Test.Unit.StdoutTracer
+                        Hermod.Tracing.Test.Unit.Reconfiguration
                         Paths_hermod_tracing_core
 
   autogen-modules:      Paths_hermod_tracing_core
 
   ghc-options:          -Wno-incomplete-patterns
+                        -rtsopts
+                        "-with-rtsopts=-T"
 
   build-depends:        base >=4.12 && <5
                       , aeson
@@ -160,18 +163,23 @@ benchmark hermod-tracing-core-bench
   hs-source-dirs:       bench, test
   main-is:              hermod-tracing-core-bench.hs
 
-  other-modules:        Hermod.Tracing.Test.Types
+  other-modules:        FilterStages
+                        MixedConfig
+                        Hermod.Tracing.Test.Types
                         Hermod.Tracing.Test.Oracles
                         Hermod.Tracing.Test.Config
                         Hermod.Tracing.Test.Tracer
                         Hermod.Tracing.Test.Script
 
   ghc-options:          -Wno-incomplete-patterns
+                        -rtsopts
+                        "-with-rtsopts=-T"
 
   build-depends:        base >=4.12 && <5
                       , aeson
                       , containers
                       , criterion
+                      , deepseq
                       , ekg-core
                       , text
                       , time
