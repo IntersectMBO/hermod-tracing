@@ -91,6 +91,9 @@ jobs:
     - name: hermod-tracing-core [test]
       run: cabal test hermod-tracing-core --test-show-details=direct
 
+    - name: hermod-tracing-prometheus [test]
+      run: cabal test hermod-tracing-prometheus --test-show-details=direct
+
     - name: hermod-trace-resources [test]
       run: cabal test hermod-trace-resources --test-show-details=direct
 

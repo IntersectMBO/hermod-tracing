@@ -1,5 +1,15 @@
 # Revision history for hermod-tracing-prometheus
 
+## NEXT
+
+* `mkTCPServerRunner` releases a connection's per-host and global slot
+  even when closing the socket is interrupted by an asynchronous
+  exception, such as a late `TimeoutThread` from the inactivity timeout.
+  Before, each such interruption leaked one slot, and a host that
+  leaked `runConnLimitPerHost` slots was refused until restart.
+  Fixes IntersectMBO/hermod-tracing#28.
+* Added a test suite with a test for this case.
+
 ## 1.1.0 -- October 2026
 
 * `runPrometheusSimple` and `runPrometheusSimpleWith` take a hermod `Trace` instead of a

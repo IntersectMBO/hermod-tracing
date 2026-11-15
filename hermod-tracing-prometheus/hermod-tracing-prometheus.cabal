@@ -62,3 +62,20 @@ library
                       , time-manager
                       , unix-compat
                       , unordered-containers
+
+test-suite hermod-tracing-prometheus-test
+  import:               project-config
+  type:                 exitcode-stdio-1.0
+  hs-source-dirs:       test
+  main-is:              hermod-tracing-prometheus-test.hs
+  other-modules:        Hermod.Tracing.Prometheus.Test.NetworkRun
+
+  ghc-options:          -threaded
+
+  build-depends:        base >=4.12 && <5
+                      , bytestring
+                      , hermod-tracing-prometheus
+                      , network
+                      , tasty
+                      , tasty-hunit
+                      , time-manager
