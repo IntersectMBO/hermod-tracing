@@ -1,6 +1,6 @@
 # Revision history for trace-dispatcher
 
-## NEXT
+## 2.13.4 -- November 2026
 
 * The Prometheus TCP server releases a connection's per-host and global
   slot even when closing the socket is interrupted by an asynchronous
@@ -8,6 +8,8 @@
   Before, each such interruption leaked one slot, and a host that
   leaked `runConnLimitPerHost` slots was refused until restart.
   Fixes IntersectMBO/hermod-tracing#28.
+  Thanks to [@chadaibbhot-git](https://github.com/chadaibbhot-git) for the
+  report and the fix (IntersectMBO/hermod-tracing#29).
 
 ## 2.13.3 -- November 2026
 

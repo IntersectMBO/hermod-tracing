@@ -1,5 +1,8 @@
 # Changelog for the Hermod Tracing Project
 
+## November 2026
+* Release `trace-dispatcher-2.13.4`, `hermod-tracing-prometheus 1.1.1`.
+
 ## October 2026
 * Release `hermod-tracing-api 1.1.0`, `hermod-tracing-core 1.1.0`,
   `hermod-tracing-prometheus 1.1.0`.

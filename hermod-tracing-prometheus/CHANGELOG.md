@@ -1,6 +1,6 @@
 # Revision history for hermod-tracing-prometheus
 
-## NEXT
+## 1.1.1 -- November 2026
 
 * `mkTCPServerRunner` releases a connection's per-host and global slot
   even when closing the socket is interrupted by an asynchronous
@@ -8,6 +8,8 @@
   Before, each such interruption leaked one slot, and a host that
   leaked `runConnLimitPerHost` slots was refused until restart.
   Fixes IntersectMBO/hermod-tracing#28.
+  Thanks to [@chadaibbhot-git](https://github.com/chadaibbhot-git) for the
+  report and the fix (IntersectMBO/hermod-tracing#29).
 * Added a test suite with a test for this case.
 
 ## 1.1.0 -- October 2026
