@@ -29,7 +29,10 @@ testReleaseAfterInterruptedClose :: IO [Bool]
 testReleaseAfterInterruptedClose = do
   port   <- freePort
   runner <- mkTCPServerRunner params (Just host) port server
-  E.bracket (forkIO runner) killThread $ \_ ->
+  -- On Windows, accept is a blocking safe foreign call, so killThread
+  -- would wait for a connection that never comes. Kill the server
+  -- without waiting for it.
+  E.bracket (forkIO runner) (void . forkIO . killThread) $ \_ ->
     forM [0 .. runConnLimitPerHost params] $ \_ -> served port
   where
     host   = "127.0.0.1"
