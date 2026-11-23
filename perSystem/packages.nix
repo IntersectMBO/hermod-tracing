@@ -18,6 +18,7 @@
       checks.hermod-tracing-core-test        = td.checks.hermod-tracing-core-test;
 
       packages.hermod-tracing-prometheus     = tdp.components.library;
+      checks.hermod-tracing-prometheus-test  = tdp.checks.hermod-tracing-prometheus-test;
 
       packages.hermod-recon                  = hrf.components.exes.hermod-recon;
       packages.hermod-recon-grep             = hrf.components.exes.hermod-recon-grep;

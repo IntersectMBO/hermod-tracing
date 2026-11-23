@@ -86,8 +86,12 @@ runTCPServerWithSocket runParams@NetworkRunParams{..} sock server = do
     waitForLimiter rateLimiter
     E.bracketOnError (accept sock) (close . fst) $ \(conn, peer) -> do
       noLimitHit <- canServeThisPeer peer
+      -- The close handler runs masked, but gracefulClose blocks interruptibly,
+      -- so an asynchronous exception (e.g. a late TimeoutThread) can abort it.
+      -- The peer is released in any case; otherwise its slot leaks for good.
       if noLimitHit
-        then void $ forkFinally (runServer mgr conn) (const $ gclose conn >> releasePeer peer)
+        then void $ forkFinally (runServer mgr conn) $ const $
+          gclose conn `E.finally` E.uninterruptibleMask_ (releasePeer peer)
         else close conn
   where
     gclose = if runSocketGraceful > 0 then flip gracefulClose runSocketGraceful else close
